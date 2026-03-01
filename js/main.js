@@ -34,7 +34,7 @@ function initCountdown() {
   setInterval(update, 1000);
 }
 
-// --- Mobile Navigation ---
+// --- Mobile Navigation Toggle ---
 function initMobileNav() {
   const toggle = document.querySelector('.nav-toggle');
   const links = document.querySelector('.nav-links');
@@ -45,4 +45,86 @@ function initMobileNav() {
     toggle.classList.toggle('active');
     links.classList.toggle('open');
   });
+
+  // Close menu when a link is clicked
+  links.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      toggle.classList.remove('active');
+      links.classList.remove('open');
+    });
+  });
 }
+
+// --- Navbar Scroll Effect ---
+function initNavScroll() {
+  const navbar = document.querySelector('.navbar');
+  if (!navbar) return;
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      navbar.classList.add('scrolled');
+    } else {
+      navbar.classList.remove('scrolled');
+    }
+  });
+}
+
+// --- FAQ Accordion ---
+function initFAQ() {
+  const items = document.querySelectorAll('.faq-item');
+
+  items.forEach(item => {
+    const question = item.querySelector('.faq-question');
+    if (!question) return;
+
+    question.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+
+      // Close all
+      items.forEach(i => i.classList.remove('open'));
+
+      // Open clicked (if it wasn't already open)
+      if (!isOpen) {
+        item.classList.add('open');
+      }
+    });
+  });
+}
+
+// --- Active Nav Link ---
+function setActiveNav() {
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const navLinks = document.querySelectorAll('.nav-links a:not(.btn)');
+
+  navLinks.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href === currentPage || (currentPage === '' && href === 'index.html')) {
+      link.classList.add('active');
+    }
+  });
+}
+
+// --- Newsletter Form ---
+function initNewsletter() {
+  const form = document.querySelector('.newsletter-form');
+  if (!form) return;
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = form.querySelector('input[type="email"]').value;
+    if (email) {
+      alert('Thank you for subscribing! We\'ll keep you updated on Tour de Outback.');
+      form.reset();
+    }
+  });
+}
+
+// --- Initialize Everything ---
+document.addEventListener('DOMContentLoaded', () => {
+  initCountdown();
+  initMobileNav();
+  initNavScroll();
+  initFAQ();
+  setActiveNav();
+  initNewsletter();
+});
