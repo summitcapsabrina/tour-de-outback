@@ -3,13 +3,247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  
-  <tOeË<¯regon Tour de Outback 2026 | Gravel & Road Cycling Event</title>
-  <meta name="description" content="Oregon Tour de Outbackâ€¤ June 27, 2026 in Lakeview, OR. Gravel and road cycling through Oregon's stunning outback. All new routes, all new venue, same small-town welcome.">
+  <title>Oregon Tour de Outback 2026 | Gravel & Road Cycling Event</title>
+  <meta name="description" content="Oregon Tour de Outback â€” June 27, 2026 in Lakeview, OR. Gravel and road cycling through Oregon's stunning outback. All new routes, all new venue, same small-town welcome.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  
-  
-   5•cript>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preload" as="image" href="images/hero-road.jpg">
 </head>
+<body>
 
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">
+        <img src="images/logo-white-red.png" alt="Oregon Tour de Outback" class="nav-logo-img">
+      </a>
+      <div class="nav-toggle">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="nav-links">
+        <a href="index.html" class="active">Home</a>
+        <a href="routes.html">Routes</a>
+        <a href="schedule.html">Schedule</a>
+        <a href="about.html">About</a>
+        <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-bg" style="background-image: url('images/hero-road.jpg'); background-color: #4a6741;"></div>
+    <div class="hero-content">
+      <h1>Oregon Tour de Outback</h1>
+      <div class="event-date">June 27, 2026 &bull; Lakeview, OR</div>
+      <p class="tagline">All New Routes, All New Venue, Same Small-Town Welcome</p>
+      <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register Now</a>
+      <a href="routes.html" class="btn btn-outline">Explore Routes</a>
+    </div>
+  </section>
+
+  <!-- Countdown Timer -->
+  <section class="countdown-section">
+    <div class="container">
+      <div class="countdown-grid">
+        <div class="countdown-item">
+          <div class="number" id="countdown-days">--</div>
+          <div class="label">Days</div>
+        </div>
+        <div class="countdown-item">
+          <div class="number" id="countdown-hours">--</div>
+          <div class="label">Hours</div>
+        </div>
+        <div class="countdown-item">
+          <div class="number" id="countdown-mins">--</div>
+          <div class="label">Minutes</div>
+        </div>
+        <div class="countdown-item">
+          <div class="number" id="countdown-secs">--</div>
+          <div class="label">Seconds</div>
+        </div>
+      </div>
+      <div class="tagline-text">Until Tour de Outback 2026</div>
+    </div>
+  </section>
+
+  <!-- Route Overview -->
+  <section class="section-padding semi-transparent">
+    <div class="container container-wide">
+      <div class="section-heading">
+        <div class="accent-line"></div>
+        <h2>Choose Your Adventure</h2>
+        <p>Two types of rides through Oregon's breathtaking outback landscape</p>
+      </div>
+      <div class="routes-grid">
+        <!-- Gravel Card -->
+        <div class="route-card">
+          <div class="card-image" style="background-image: url('images/black-cap-ride.png'); background-color: #8B7355;">
+            <span class="badge">Gravel</span>
+          </div>
+          <div class="card-body">
+            <h3>Gravel Rides</h3>
+            <div class="card-stats">
+              <div class="stat">
+                <span class="stat-value">36 or 52</span> miles
+              </div>
+            </div>
+            <p>Experience Oregon's rugged outback on gravel roads that wind through vast open landscapes, sagebrush valleys, and stunning high desert terrain.</p>
+            <a href="routes.html" class="btn btn-dark">View Routes</a>
+          </div>
+        </div>
+        <!-- Road Card -->
+        <div class="route-card">
+          <div class="card-image" style="background-image: url('images/road-mountains.jpg'); background-color: #5A7B4A; background-position: center 75%;">
+            <span class="badge">Road</span>
+          </div>
+          <div class="card-body">
+            <h3>Road Rides</h3>
+            <div class="card-stats">
+              <div class="stat">
+                <span class="stat-value">40, 53, or 105</span> miles
+              </div>
+            </div>
+            <p>Cruise through wide-open highways with panoramic mountain views, rolling hills, and the quiet solitude of Lake County's scenic backroads.</p>
+            <a href="routes.html" class="btn btn-dark">View Routes</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Venue Highlight -->
+  <section class="section-padding bg-light">
+    <div class="container">
+      <div class="info-split">
+        <div class="info-image" style="background-image: url('images/camp-fairgrounds.jpg'); background-color: #7A8B6A;"></div>
+        <div class="info-text">
+          <h2>Camp Tour de Outback</h2>
+          <p>This year, we're excited to announce Camp Tour de Outback will be hosted at the <strong>Lake County Fairgrounds</strong> in Lakeview, Oregon!</p>
+          <p>Enjoy RV and tent dry camping right at the event venue. With wide open spaces, small-town hospitality, and stunning high-desert scenery, Lakeview is the perfect basecamp for your adventure.</p>
+          <a href="schedule.html" class="btn btn-primary">See the Schedule</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial -->
+  <section class="testimonial-section">
+    <div class="container">
+      <blockquote>
+        "I've never ridden a more welcoming and friendly bike event. The route, scenery, support, food &mdash; everything is top tier!"
+      </blockquote>
+      <div class="attribution">&mdash; Sam Stuckey, Molalla OR</div>
+    </div>
+  </section>
+
+  <!-- Video Section -->
+  <section class="video-section">
+    <div class="container">
+      <div class="section-heading">
+        <div class="accent-line"></div>
+        <h2>See What Awaits</h2>
+      </div>
+      <div class="video-wrapper">
+        <iframe
+          src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+          title="2026 Tour de Outback"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- Great Cause Section -->
+  <section class="section-padding bg-dark text-center">
+    <div class="container">
+      <div class="section-heading">
+        <div class="accent-line"></div>
+        <h2 style="color: #fff;">Great Rides, Great Fun, for a Great Cause</h2>
+        <p style="color: rgba(255,255,255,0.7);">All proceeds benefit Lake County Search and Rescue. Presented by the Lake County Chamber of Commerce.</p>
+      </div>
+      <a href="about.html" class="btn btn-outline">Learn More</a>
+    </div>
+  </section>
+
+  <!-- Newsletter -->
+  <section class="newsletter-section">
+    <div class="container">
+      <h2>Stay in the Loop</h2>
+      <p>Sign up for updates on routes, registration, and event news.</p>
+      <form class="newsletter-form">
+        <input type="email" placeholder="Your email address" required>
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Sponsors -->
+  <section class="sponsors-section">
+    <div class="container">
+      <div class="section-heading">
+        <h2>Our Sponsors</h2>
+      </div>
+      <div class="sponsors-grid">
+        <div class="sponsor-logo">Sponsor 1</div>
+        <div class="sponsor-logo">Sponsor 2</div>
+        <div class="sponsor-logo">Sponsor 3</div>
+        <div class="sponsor-logo">Sponsor 4</div>
+        <div class="sponsor-logo">Sponsor 5</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <h3><img src="images/logo-white-red.png" alt="Oregon Tour de Outback" style="height: 40px;"></h3>
+          <p>Great rides, great fun, for a great cause. Join us June 27, 2026 in Lakeview, Oregon for gravel and road cycling through the stunning Oregon outback.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="routes.html">Routes</a></li>
+            <li><a href="schedule.html">Schedule</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="register.html">Register</a></li>
+          </ul>
+        </div>
+        <div class="footer-social">
+          <h4>Follow Us</h4>
+          <div class="social-icons">
+            <a href="#" aria-label="Facebook">f</a>
+            <a href="#" aria-label="Instagram">ig</a>
+            <a href="#" aria-label="YouTube">yt</a>
+            <a href="#" aria-label="Email">@</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        &copy; 2026 Oregon Tour de Outback. All rights reserved. | Presented by Lake County Chamber of Commerce
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <!--Start of Tawk.to Script-->
+  <script type="text/javascript">
+  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+  (function(){
+  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+  s1.async=true;
+  s1.src='https://embed.tawk.to/69a3fa1d4ebd121c340a9c32/1jik8i17d';
+  s1.charset='UTF-8';
+  s1.setAttribute('crossorigin','*');
+  s0.parentNode.insertBefore(s1,s0);
+  })();
+  </script>
+  <!--End of Tawk.to Script-->
+</body>
+</html>
