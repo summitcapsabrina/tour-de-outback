@@ -104,17 +104,68 @@ function setActiveNav() {
   });
 }
 
-// --- Newsletter Form ---
+// --- Newsletter Form (EmailOctopus) ---
 function initNewsletter() {
   const form = document.querySelector('.newsletter-form');
   if (!form) return;
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = form.querySelector('input[type="email"]').value;
-    if (email) {
-      alert('Thank you for subscribing! We\'ll keep you updated on Tour de Outback.');
-      form.reset();
+    const input = form.querySelector('input[type="email"]');
+    const btn = form.querySelector('button');
+    const email = input.value.trim();
+    if (!email) return;
+
+    // Disable form while submitting
+    input.disabled = true;
+    btn.disabled = true;
+    btn.textContent = 'Signing up...';
+
+    try {
+      const response = await fetch('https://emailoctopus.com/api/1.6/lists/35e53e2a-1812-11f1-bdf7-2131ac6e0118/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: 'eo_a7a922b0c394ea97ab45290411ffc56b9106fe9bc8fec966de81ec64ad29c0af',
+          email_address: email,
+          status: 'SUBSCRIBED'
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success
+        form.reset();
+        btn.textContent = 'You\'re In!';
+        btn.style.background = '#2ecc71';
+        setTimeout(() => {
+          btn.textContent = 'Sign Up';
+          btn.style.background = '';
+          input.disabled = false;
+          btn.disabled = false;
+        }, 3000);
+      } else if (data.error && data.error.code === 'MEMBER_EXISTS_WITH_EMAIL_ADDRESS') {
+        // Already subscribed
+        form.reset();
+        btn.textContent = 'Already Subscribed!';
+        setTimeout(() => {
+          btn.textContent = 'Sign Up';
+          input.disabled = false;
+          btn.disabled = false;
+        }, 3000);
+      } else {
+        throw new Error(data.error ? data.error.message : 'Something went wrong');
+      }
+    } catch (err) {
+      btn.textContent = 'Try Again';
+      btn.style.background = '#e74c3c';
+      setTimeout(() => {
+        btn.textContent = 'Sign Up';
+        btn.style.background = '';
+        input.disabled = false;
+        btn.disabled = false;
+      }, 3000);
     }
   });
 }
