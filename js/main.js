@@ -129,6 +129,56 @@ function initRegisterTracking() {
   });
 }
 
+// --- Weather Widget (Open-Meteo API — Lakeview, OR) ---
+function initWeather() {
+  var widget = document.getElementById('weather-widget');
+  if (!widget) return;
+
+  function renderWeather(icon, temp) {
+    widget.innerHTML = '<span class="weather-location">Lake County</span>' +
+      '<span class="weather-bottom"><span class="weather-icon">' + icon + '</span> ' +
+      '<span class="weather-temp">' + temp + '°F</span></span>';
+  }
+
+  // Check cache first — instant render on page navigation
+  var cached = sessionStorage.getItem('weatherData');
+  if (cached) {
+    var c = JSON.parse(cached);
+    // Use cache if less than 15 minutes old
+    if (Date.now() - c.timestamp < 15 * 60 * 1000) {
+      renderWeather(c.icon, c.temp);
+      return;
+    }
+  }
+
+  // WMO weather code to emoji
+  var weatherCodes = {
+    0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
+    45: '🌫️', 48: '🌫️',
+    51: '🌦️', 53: '🌦️', 55: '🌧️',
+    61: '🌦️', 63: '🌧️', 65: '🌧️',
+    71: '🌨️', 73: '❄️', 75: '❄️', 77: '🌨️',
+    80: '🌦️', 81: '🌧️', 82: '🌧️',
+    85: '🌨️', 86: '🌨️',
+    95: '⛈️', 96: '⛈️', 99: '⛈️'
+  };
+
+  // Lakeview, OR: 42.1888° N, 120.3458° W
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=42.1888&longitude=-120.3458&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=America/Los_Angeles')
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var temp = Math.round(data.current.temperature_2m);
+      var icon = weatherCodes[data.current.weather_code] || '🌡️';
+      renderWeather(icon, temp);
+      sessionStorage.setItem('weatherData', JSON.stringify({
+        icon: icon, temp: temp, timestamp: Date.now()
+      }));
+    })
+    .catch(function() {
+      widget.innerHTML = '';
+    });
+}
+
 // --- Initialize Everything ---
 document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
@@ -138,4 +188,5 @@ document.addEventListener('DOMContentLoaded', () => {
   setActiveNav();
   initNewsletter();
   initRegisterTracking();
+  initWeather();
 });

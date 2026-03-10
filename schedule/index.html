@@ -36,6 +36,8 @@
         <a href="/volunteer/">Volunteer</a>
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
+      <div class="weather-widget" id="weather-widget"></div>
+      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);if(Date.now()-d.timestamp<9e5){var w=document.getElementById('weather-widget');if(w)w.innerHTML='<span class="weather-location">Lake County</span><span class="weather-bottom"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>'}}}()</script>
     </div>
   </nav>
 

@@ -148,6 +148,47 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
+   Weather Widget (inside navbar)
+   ============================================ */
+.weather-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-body);
+  color: rgba(255, 255, 255, 0.5);
+  margin-left: 40px;
+  white-space: nowrap;
+  line-height: 1.2;
+  flex-shrink: 0;
+  min-width: 65px;
+  min-height: 28px;
+}
+
+.weather-widget .weather-location {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.6;
+}
+
+.weather-widget .weather-bottom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.weather-widget .weather-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.weather-widget .weather-temp {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
    Navigation
    ============================================ */
 .navbar {
@@ -170,8 +211,9 @@ h1, h2, h3, h4, h5, h6 {
 .navbar .container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: 100%;
+  max-width: 100%;
+  padding: 0 42px;
 }
 
 .nav-logo {
@@ -200,6 +242,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 32px;
+  margin-left: auto;
 }
 
 .nav-links a {
@@ -265,7 +308,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* --- Mobile Nav --- */
 @media (max-width: 768px) {
-  .nav-toggle { display: flex; }
+  .weather-widget {
+    display: none;
+  }
+  .nav-toggle { display: flex; margin-left: auto; }
 
   .nav-links {
     position: fixed;
