@@ -93,12 +93,15 @@ function initFAQ() {
 
 // --- Active Nav Link ---
 function setActiveNav() {
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const path = window.location.pathname;
   const navLinks = document.querySelectorAll('.nav-links a:not(.btn)');
 
   navLinks.forEach(link => {
     const href = link.getAttribute('href');
-    if (href === currentPage || (currentPage === '' && href === 'index.html')) {
+    if (
+      (href === '/' && (path === '/' || path === '/index.html')) ||
+      (href !== '/' && path.startsWith(href.replace(/\/$/, '')))
+    ) {
       link.classList.add('active');
     }
   });
