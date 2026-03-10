@@ -111,6 +111,21 @@ function initNewsletter() {
   // Placeholder — EO script handles everything
 }
 
+// --- Register Button Click Tracking (GA4) ---
+function initRegisterTracking() {
+  document.querySelectorAll('a[href*="bikereg.com"]').forEach(link => {
+    link.addEventListener('click', () => {
+      if (typeof gtag === 'function') {
+        gtag('event', 'register_click', {
+          event_category: 'conversion',
+          event_label: link.textContent.trim(),
+          transport_type: 'beacon'
+        });
+      }
+    });
+  });
+}
+
 // --- Initialize Everything ---
 document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
@@ -119,4 +134,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initFAQ();
   setActiveNav();
   initNewsletter();
+  initRegisterTracking();
 });
