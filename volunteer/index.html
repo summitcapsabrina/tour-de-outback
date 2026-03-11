@@ -460,27 +460,28 @@
         body: new FormData(form),
         headers: { 'Accept': 'application/json' }
       }).then(function(response) {
-        if (response.ok) {
-          // If newsletter checkbox is checked, subscribe to EmailOctopus
-          if (newsletterChecked) {
-            subscribeToNewsletter(emailVal);
+        return response.json().then(function(data) {
+          if (response.ok) {
+            if (newsletterChecked) {
+              subscribeToNewsletter(emailVal);
+            }
+            form.style.display = 'none';
+            msg.className = 'form-message success';
+            msg.textContent = 'Thank you! We will be in touch with you shortly.';
+            msg.style.display = 'block';
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'Submit';
+            msg.className = 'form-message error';
+            msg.textContent = 'Error: ' + (data.error || data.errors && data.errors.map(function(e){return e.message || e.code}).join(', ') || JSON.stringify(data));
+            msg.style.display = 'block';
           }
-          form.style.display = 'none';
-          msg.className = 'form-message success';
-          msg.textContent = 'Thank you! We will be in touch with you shortly.';
-          msg.style.display = 'block';
-        } else {
-          btn.disabled = false;
-          btn.textContent = 'Submit';
-          msg.className = 'form-message error';
-          msg.textContent = 'Oops! Something went wrong. Please try again.';
-          msg.style.display = 'block';
-        }
-      }).catch(function() {
+        });
+      }).catch(function(err) {
         btn.disabled = false;
         btn.textContent = 'Submit';
         msg.className = 'form-message error';
-        msg.textContent = 'Oops! Something went wrong. Please try again.';
+        msg.textContent = 'Network error: ' + err.message;
         msg.style.display = 'block';
       });
     });
