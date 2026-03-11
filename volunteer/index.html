@@ -295,7 +295,7 @@
 
         <div class="volunteer-form">
           <h3>Volunteer Sign-Up</h3>
-          <form id="volunteerForm" action="https://formspree.io/f/placeholder" method="POST">
+          <form id="volunteerForm" action="https://formspree.io/f/xqeyprrz" method="POST">
             <div class="form-row">
               <div class="form-group">
                 <label>First Name <span>(required)</span></label>
@@ -413,24 +413,75 @@
     </div>
   </footer>
 
+  <!-- Hidden EmailOctopus form for newsletter signup -->
+  <div style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" aria-hidden="true">
+    <div class="eo-form-wrapper" id="eo-volunteer-form">
+      <script async src="https://eomail5.com/form/7af0939a-1815-11f1-a0fc-21017c1a5f14.js" data-form="7af0939a-1815-11f1-a0fc-21017c1a5f14"></script>
+    </div>
+  </div>
+
   <script src="../js/main.min.js"></script>
   <script>
-    // Simple form handling - show success message
     const form = document.getElementById('volunteerForm');
     const msg = document.getElementById('formMessage');
 
+    function subscribeToNewsletter(email) {
+      // Wait for EmailOctopus form to load, then fill and submit
+      var attempts = 0;
+      var interval = setInterval(function() {
+        attempts++;
+        var eoContainer = document.getElementById('eo-volunteer-form');
+        var eoForm = eoContainer ? eoContainer.querySelector('form') : null;
+        var eoEmail = eoForm ? eoForm.querySelector('input[type="email"]') : null;
+        if (eoEmail && eoForm) {
+          clearInterval(interval);
+          eoEmail.value = email;
+          // Trigger input event so EmailOctopus picks up the value
+          eoEmail.dispatchEvent(new Event('input', { bubbles: true }));
+          // Find and click the submit button
+          var eoBtn = eoForm.querySelector('button[type="submit"], input[type="submit"]');
+          if (eoBtn) eoBtn.click();
+        }
+        if (attempts > 30) clearInterval(interval); // Stop after 3 seconds
+      }, 100);
+    }
+
     form.addEventListener('submit', function(e) {
       e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      const emailVal = form.querySelector('input[name="email"]').value;
+      const newsletterChecked = document.getElementById('newsletter').checked;
 
-      // Collect form data
-      const formData = new FormData(form);
-
-      // For now, show a thank-you message
-      // Replace the form action URL with your Formspree or other endpoint
-      form.style.display = 'none';
-      msg.className = 'form-message success';
-      msg.textContent = 'Thank you for signing up! We\'ll be in touch shortly.';
-      msg.style.display = 'block';
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' }
+      }).then(function(response) {
+        if (response.ok) {
+          // If newsletter checkbox is checked, subscribe to EmailOctopus
+          if (newsletterChecked) {
+            subscribeToNewsletter(emailVal);
+          }
+          form.style.display = 'none';
+          msg.className = 'form-message success';
+          msg.textContent = 'Thank you for signing up! We\'ll be in touch shortly.';
+          msg.style.display = 'block';
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Submit';
+          msg.className = 'form-message error';
+          msg.textContent = 'Oops! Something went wrong. Please try again.';
+          msg.style.display = 'block';
+        }
+      }).catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Submit';
+        msg.className = 'form-message error';
+        msg.textContent = 'Oops! Something went wrong. Please try again.';
+        msg.style.display = 'block';
+      });
     });
   </script>
   <!--Start of Tawk.to Script-->
