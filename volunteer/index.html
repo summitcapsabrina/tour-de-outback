@@ -357,8 +357,9 @@
             <div class="form-submit">
               <button type="submit" class="btn btn-primary">Submit</button>
             </div>
-            <div class="form-message" id="formMessage"></div>
           </form>
+          <div class="form-message" id="formMessage"></div>
+          <p class="recaptcha-notice" style="color: #999;">This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy" target="_blank" rel="noopener" style="color: #777;">Privacy Policy</a> and <a href="https://policies.google.com/terms" target="_blank" rel="noopener" style="color: #777;">Terms of Service</a> apply.</p>
         </div>
       </div>
     </div>
@@ -466,7 +467,7 @@
           }
           form.style.display = 'none';
           msg.className = 'form-message success';
-          msg.textContent = 'Thank you for signing up! We\'ll be in touch shortly.';
+          msg.textContent = 'Thank you! We will be in touch with you shortly.';
           msg.style.display = 'block';
         } else {
           btn.disabled = false;
