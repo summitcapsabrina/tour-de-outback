@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-959LC5LDBS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-959LC5LDBS');
+  </script>
+  <title>Blog | Oregon Tour de Outback</title>
+  <meta name="description" content="Stories, guides, and insider tips from Oregon's high desert outback. Explore Lakeview, Lake County, gravel cycling, and the Tour de Outback community.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.googletagmanager.com">
+  <link rel="preconnect" href="https://api.open-meteo.com">
+  <link rel="dns-prefetch" href="https://eomail5.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" href="/images/favicon.png">
+  <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+  <link rel="canonical" href="https://www.tourdeoregon.com/blog/">
+  <link rel="preload" as="image" href="../images/hero-road.jpg">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.tourdeoregon.com/blog/">
+  <meta property="og:title" content="Blog | Oregon Tour de Outback">
+  <meta property="og:description" content="Stories, guides, and insider tips from Oregon's high desert outback.">
+  <meta property="og:image" content="https://www.tourdeoregon.com/images/hero-road.jpg">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Blog | Oregon Tour de Outback">
+  <meta name="twitter:description" content="Stories, guides, and insider tips from Oregon's high desert outback.">
+  <meta name="twitter:image" content="https://www.tourdeoregon.com/images/hero-road.jpg">
+  <!-- Breadcrumb Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.tourdeoregon.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://www.tourdeoregon.com/blog/" }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="nav-logo"><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" class="nav-logo-img"></a>
+      <div class="nav-toggle"><span></span><span></span><span></span></div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/routes/">Routes</a>
+        <a href="/schedule/">Schedule</a>
+        <a href="/about/">About</a>
+        <a href="/shop/">Shop</a>
+        <a href="/volunteer/">Volunteer</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
+      </div>
+      <div class="weather-widget" id="weather-widget"></div>
+      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);if(Date.now()-d.timestamp<9e5){var w=document.getElementById('weather-widget');if(w)w.innerHTML='<span class="weather-location">Lake County</span><span class="weather-bottom"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>'}}}()</script>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero hero-page">
+    <div class="hero-bg" style="background-image: url('../images/drone-landscape.jpg');"></div>
+    <div class="hero-content">
+      <h1>The Outback Journal</h1>
+    </div>
+  </section>
+
+  <!-- Blog Listing -->
+  <div class="page-content">
+    <section class="section-padding">
+      <div class="container">
+        <div class="section-heading">
+          <h2>Stories From the Outback</h2>
+          <div class="accent-line"></div>
+          <p>Guides, adventures, and insider tips from Oregon's high desert frontier</p>
+        </div>
+
+        <div class="blog-grid">
+
+          <a href="/blog/explore-lakeview/" class="blog-card">
+            <div class="blog-card-image" style="background-image: url('../images/road-lake.jpg');"></div>
+            <div class="blog-card-body">
+              <span class="blog-card-category">Destination</span>
+              <h3>Explore Lakeview: Oregon's Hidden Gem in the Outback</h3>
+              <p>At nearly 4,800 feet, the "Tallest Town in Oregon" offers hot springs, towering rim rock, wildlife refuges, and a small-town welcome that makes you want to extend your stay.</p>
+              <span class="blog-card-date">March 10, 2026</span>
+            </div>
+          </a>
+
+          <a href="/blog/first-gravel-ride/" class="blog-card">
+            <div class="blog-card-image" style="background-image: url('../images/gravel-explorer.jpg');"></div>
+            <div class="blog-card-body">
+              <span class="blog-card-category">Cycling Guide</span>
+              <h3>How to Prepare for Your First Gravel Ride</h3>
+              <p>From tire pressure to pacing strategy, everything you need to know before your wheels hit the dirt for the first time.</p>
+              <span class="blog-card-date">March 10, 2026</span>
+            </div>
+          </a>
+
+          <a href="/blog/wild-beauty-lake-county/" class="blog-card">
+            <div class="blog-card-image" style="background-image: url('../images/drone-landscape.jpg');"></div>
+            <div class="blog-card-body">
+              <span class="blog-card-category">Exploration</span>
+              <h3>The Wild Beauty of Lake County: Oregon's Last Frontier</h3>
+              <p>Pronghorn antelope, 2,500-foot fault scarps, dark sky sanctuaries, and hot springs — welcome to the most stunning landscape most Oregonians have never seen.</p>
+              <span class="blog-card-date">March 10, 2026</span>
+            </div>
+          </a>
+
+          <a href="/blog/gravel-cycling-fastest-growing-sport/" class="blog-card">
+            <div class="blog-card-image" style="background-image: url('../images/riders-on-road.jpg');"></div>
+            <div class="blog-card-body">
+              <span class="blog-card-category">Cycling Culture</span>
+              <h3>5 Reasons Gravel Cycling Is the Fastest-Growing Sport in America</h3>
+              <p>From a niche curiosity to a billion-dollar industry — why riders everywhere are ditching the pavement and hitting the dirt.</p>
+              <span class="blog-card-date">March 10, 2026</span>
+            </div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="newsletter-section">
+      <div class="container">
+        <h2>Stay in the Loop</h2>
+        <p>Get new posts, route updates, and event news delivered to your inbox.</p>
+        <div class="eo-form-wrapper">
+          <div class="emailoctopus-form-wrapper" id="emailoctopus-form-wrapper">
+            <p class="email-loading" style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Loading signup form...</p>
+          </div>
+          <script src="https://eomail5.com/form/7af0939a-1815-11f1-a0fc-21017c1a5f14.js" data-form="7af0939a-1815-11f1-a0fc-21017c1a5f14"></script>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-about">
+            <h3><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" style="height: 40px;" loading="lazy"></h3>
+            <p>Great rides, great fun, for a great cause. Join us June 27, 2026 in Lakeview, Oregon for gravel and road cycling through the stunning Oregon outback.</p>
+          </div>
+          <div class="footer-links">
+            <h4>Quick Links</h4>
+            <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/routes/">Routes</a></li>
+              <li><a href="/schedule/">Schedule</a></li>
+              <li><a href="/about/">About</a></li>
+              <li><a href="/shop/">Shop</a></li>
+              <li><a href="/volunteer/">Volunteer</a></li>
+              <li><a href="/blog/">Blog</a></li>
+              <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
+              <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
+            </ul>
+          </div>
+          <div class="footer-social">
+            <h4>Follow Us</h4>
+            <div class="social-icons">
+              <a href="https://www.facebook.com/oregontourdeoutback" target="_blank" aria-label="Facebook">f</a>
+              <a href="https://www.instagram.com/oregontourdeoutback/" target="_blank" aria-label="Instagram">ig</a>
+              <a href="https://www.youtube.com/@tourdeoutback" target="_blank" aria-label="YouTube">yt</a>
+              <a href="mailto:info@tourdeoutback.org" aria-label="Email">@</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          &copy; 2026 Oregon Tour de Outback. All rights reserved. | Presented by Lake County Chamber of Commerce
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="../js/main.min.js"></script>
+</body>
+</html>
