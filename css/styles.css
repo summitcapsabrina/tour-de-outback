@@ -867,6 +867,7 @@ h1, h2, h3, h4, h5, h6 {
   background-position: center;
 }
 
+
 .info-split .info-text h2 {
   font-size: 2rem;
   color: var(--charcoal);
@@ -891,6 +892,7 @@ h1, h2, h3, h4, h5, h6 {
     height: 280px;
     min-height: 280px;
   }
+
 
   .info-split .info-text {
     padding: 24px;
