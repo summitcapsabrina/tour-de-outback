@@ -867,6 +867,16 @@ h1, h2, h3, h4, h5, h6 {
   background-position: center;
 }
 
+.info-split .info-image:last-child {
+  margin-right: -1px;
+  padding-right: 1px;
+}
+
+.info-split .info-image:first-child {
+  margin-left: -1px;
+  padding-left: 1px;
+}
+
 
 .info-split .info-text h2 {
   font-size: 2rem;
