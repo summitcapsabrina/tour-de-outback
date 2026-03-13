@@ -355,10 +355,18 @@ function initRouteSwitch() {
         if (placeholder) placeholder.style.display = 'none';
         iframe.style.display = '';
         if (app === 'ridewithgps') {
+          iframe.style.width = '1px';
+          iframe.style.minWidth = '100%';
           iframe.style.height = '700px';
+          iframe.style.border = 'none';
+          iframe.setAttribute('scrolling', 'no');
           mapDiv.style.maxHeight = '700px';
         } else {
+          iframe.style.width = '100%';
+          iframe.style.minWidth = '';
           iframe.style.height = '1051px';
+          iframe.style.border = '';
+          iframe.removeAttribute('scrolling');
           mapDiv.style.maxHeight = '720px';
         }
         iframe.src = src;
