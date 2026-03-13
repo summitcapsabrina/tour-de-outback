@@ -770,7 +770,7 @@ display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
-height: 500px;
+height: 100%;
 background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
 color: var(--charcoal);
 text-align: center;
@@ -1514,7 +1514,7 @@ border-radius: 10px;
 .route-app-inner { padding: 20px 24px; }
 .route-app-label { font-size: 1rem; letter-spacing: 2px; }
 .route-app-btn { font-size: 0.85rem; padding: 10px 20px; }
-.route-coming-soon { height: 350px; }
+.route-coming-soon { height: 100%; }
 .route-coming-soon .coming-soon-text { font-size: 1rem; }
 .info-split .info-image { height: 220px; min-height: 220px; }
 .info-split { margin: 0 12px; border-radius: 8px; }
