@@ -134,18 +134,29 @@ function initWeather() {
   var widget = document.getElementById('weather-widget');
   if (!widget) return;
 
-  // Wind direction degrees to compass abbreviation
-  function degToCompass(deg) {
-    var dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-    return dirs[Math.round(deg / 22.5) % 16];
+  function buildCompass(windDir, windSpeed) {
+    return '<svg class="wind-compass-svg" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">' +
+      '<text x="25" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.7)" font-family="sans-serif">N</text>' +
+      '<text x="25" y="46" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">S</text>' +
+      '<text x="5" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">W</text>' +
+      '<text x="45" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">E</text>' +
+      '<g transform="rotate(' + windDir + ' 25 25)">' +
+        '<polygon points="25,3 22,14 25,12 28,14" fill="#cc0000"/>' +
+      '</g>' +
+      '<text x="25" y="29" text-anchor="middle" font-size="13" font-weight="700" fill="rgba(255,255,255,0.9)" font-family="sans-serif">' + windSpeed + '</text>' +
+    '</svg>';
   }
 
-  function renderWeather(icon, temp, windSpeed, windDir) {
-    var html = '<span class="weather-location">Lake County</span>' +
-      '<span class="weather-bottom"><span class="weather-icon">' + icon + '</span> ' +
-      '<span class="weather-temp">' + temp + '°F</span></span>';
-    if (windSpeed !== undefined && windDir !== undefined) {
-      html += '<span class="weather-wind">' + degToCompass(windDir) + ' ' + windSpeed + ' mph</span>';
+  function renderWeather(icon, temp, windSpeed, windDir, windGusts) {
+    var html = '<span class="weather-main">' +
+        '<span class="weather-icon">' + icon + '</span> ' +
+        '<span class="weather-temp">' + temp + '°F</span>' +
+      '</span>';
+    if (windSpeed !== undefined && windSpeed !== null && windDir !== null) {
+      html += '<span class="weather-wind">' +
+        buildCompass(windDir, windSpeed) +
+        (windGusts ? '<span class="wind-gusts">Gusts ' + windGusts + ' mph</span>' : '') +
+      '</span>';
     }
     widget.innerHTML = html;
   }
@@ -154,33 +165,50 @@ function initWeather() {
   var cached = sessionStorage.getItem('weatherData');
   if (cached) {
     var c = JSON.parse(cached);
-    renderWeather(c.icon, c.temp, c.windSpeed, c.windDir);
+    renderWeather(c.icon, c.temp, c.windSpeed, c.windDir, c.windGusts);
   }
 
-  // WMO weather code to emoji
-  var weatherCodes = {
-    0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
-    45: '🌫️', 48: '🌫️',
-    51: '🌦️', 53: '🌦️', 55: '🌧️',
-    61: '🌦️', 63: '🌧️', 65: '🌧️',
-    71: '🌨️', 73: '❄️', 75: '❄️', 77: '🌨️',
-    80: '🌦️', 81: '🌧️', 82: '🌧️',
-    85: '🌨️', 86: '🌨️',
-    95: '⛈️', 96: '⛈️', 99: '⛈️'
-  };
+  // NWS weather description to emoji
+  function weatherToIcon(desc) {
+    if (!desc) return '🌡️';
+    var d = desc.toLowerCase();
+    if (d.indexOf('snow') !== -1 || d.indexOf('blizzard') !== -1) return '❄️';
+    if (d.indexOf('thunder') !== -1 || d.indexOf('lightning') !== -1) return '⛈️';
+    if (d.indexOf('rain') !== -1 || d.indexOf('drizzle') !== -1 || d.indexOf('shower') !== -1) return '🌧️';
+    if (d.indexOf('fog') !== -1 || d.indexOf('mist') !== -1 || d.indexOf('haze') !== -1) return '🌫️';
+    if (d.indexOf('overcast') !== -1) return '☁️';
+    if (d.indexOf('mostly cloudy') !== -1 || d.indexOf('considerable') !== -1) return '☁️';
+    if (d.indexOf('partly') !== -1 || d.indexOf('scattered') !== -1) return '⛅';
+    if (d.indexOf('few clouds') !== -1 || d.indexOf('mostly clear') !== -1 || d.indexOf('mostly sunny') !== -1) return '🌤️';
+    if (d.indexOf('sunny') !== -1 || d.indexOf('clear') !== -1 || d.indexOf('fair') !== -1) return '☀️';
+    return '🌡️';
+  }
 
-  // Always fetch fresh data — Lakeview, OR: 42.1888° N, 120.3458° W
-  fetch('https://api.open-meteo.com/v1/forecast?latitude=42.1888&longitude=-120.3458&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America/Los_Angeles')
+  // Celsius to Fahrenheit
+  function cToF(c) { return Math.round(c * 9 / 5 + 32); }
+  // m/s to mph
+  function msToMph(ms) { return Math.round(ms * 2.237); }
+  // km/h to mph
+  function kmhToMph(kmh) { return Math.round(kmh * 0.6214); }
+
+  // Lakeview Airport station (KLKV) — actual observed conditions
+  fetch('https://api.weather.gov/stations/KLKV/observations/latest', {
+    headers: { 'Accept': 'application/geo+json', 'User-Agent': 'TourDeOutback/1.0 (sabrina@summitcapllc.com)' }
+  })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-      var temp = Math.round(data.current.temperature_2m);
-      var icon = weatherCodes[data.current.weather_code] || '🌡️';
-      var windSpeed = Math.round(data.current.wind_speed_10m);
-      var windDir = data.current.wind_direction_10m;
-      renderWeather(icon, temp, windSpeed, windDir);
-      sessionStorage.setItem('weatherData', JSON.stringify({
-        icon: icon, temp: temp, windSpeed: windSpeed, windDir: windDir, timestamp: Date.now()
-      }));
+      var p = data.properties;
+      var temp = p.temperature && p.temperature.value !== null ? cToF(p.temperature.value) : null;
+      var icon = weatherToIcon(p.textDescription);
+      var windSpeed = p.windSpeed && p.windSpeed.value !== null ? kmhToMph(p.windSpeed.value) : null;
+      var windDir = p.windDirection && p.windDirection.value !== null ? p.windDirection.value : null;
+      var windGusts = p.windGust && p.windGust.value !== null ? kmhToMph(p.windGust.value) : null;
+      if (temp !== null) {
+        renderWeather(icon, temp, windSpeed, windDir, windGusts);
+        sessionStorage.setItem('weatherData', JSON.stringify({
+          icon: icon, temp: temp, windSpeed: windSpeed, windDir: windDir, windGusts: windGusts, timestamp: Date.now()
+        }));
+      }
     })
     .catch(function() {
       if (!cached) widget.innerHTML = '';

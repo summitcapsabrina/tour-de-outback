@@ -152,26 +152,17 @@ h1, h2, h3, h4, h5, h6 {
    ============================================ */
 .weather-widget {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: 12px;
   font-family: var(--font-body);
   color: rgba(255, 255, 255, 0.5);
-  margin-left: 40px;
+  margin-left: 20px;
   white-space: nowrap;
   line-height: 1.2;
   flex-shrink: 0;
-  min-width: 65px;
-  min-height: 28px;
 }
 
-.weather-widget .weather-location {
-  font-size: 0.55rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.6;
-}
-
-.weather-widget .weather-bottom {
+.weather-widget .weather-main {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -189,10 +180,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .weather-widget .weather-wind {
-  font-size: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.weather-widget .wind-compass-svg {
+  width: 42px;
+  height: 42px;
+}
+
+.weather-widget .wind-gusts {
+  font-size: 0.45rem;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.3px;
 }
 
 /* ============================================
