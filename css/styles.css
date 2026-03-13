@@ -1790,6 +1790,40 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* --- Blog Article --- */
+.blog-back-link {
+  max-width: 760px;
+  margin: 0 auto 24px;
+}
+
+.blog-back-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--red);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.blog-back-link a:hover {
+  color: var(--charcoal);
+}
+
+.blog-featured-image {
+  max-width: 380px;
+  margin: 0 auto 36px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.blog-featured-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 .blog-article {
   max-width: 760px;
   margin: 0 auto;
@@ -1797,8 +1831,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .blog-meta {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   margin-bottom: 16px;
 }
 
