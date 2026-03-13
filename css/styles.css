@@ -864,7 +864,7 @@ h1, h2, h3, h4, h5, h6 {
   left: 0;
   right: 0;
   height: 700px;
-  border: 1px solid #ffffff;
+  border: 2px solid #ffffff;
   pointer-events: none;
   z-index: 10;
 }

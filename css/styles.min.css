@@ -713,7 +713,7 @@ top: 0;
 left: 0;
 right: 0;
 height: 700px;
-border: 1px solid #ffffff;
+border: 2px solid #ffffff;
 pointer-events: none;
 z-index: 10;
 }
