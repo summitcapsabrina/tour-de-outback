@@ -361,7 +361,7 @@ function initRouteSwitch() {
           iframe.style.width = '1px';
           iframe.style.minWidth = '100%';
           iframe.style.height = '700px';
-          iframe.style.border = '2px solid #ffffff';
+          iframe.style.border = 'none';
           iframe.setAttribute('scrolling', 'no');
         } else {
           iframe.style.width = '100%';
