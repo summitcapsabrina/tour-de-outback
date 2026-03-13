@@ -319,6 +319,54 @@ function initWeather() {
   });
 }
 
+// --- Route App Switcher ---
+function initRouteSwitch() {
+  var switcher = document.querySelector('.route-app-switcher');
+  if (!switcher) return;
+
+  var buttons = switcher.querySelectorAll('.route-app-btn');
+  var maps = document.querySelectorAll('.route-row-map[data-ridewithgps]');
+
+  function setApp(app) {
+    // Update button states
+    buttons.forEach(function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-app') === app);
+    });
+
+    // Update all route iframes
+    maps.forEach(function(mapDiv) {
+      var src = mapDiv.getAttribute('data-' + app);
+      var iframe = mapDiv.querySelector('iframe');
+      if (iframe && src) {
+        // Adjust iframe height based on app
+        if (app === 'ridewithgps') {
+          iframe.style.height = '700px';
+          mapDiv.style.maxHeight = '700px';
+        } else {
+          iframe.style.height = '1051px';
+          mapDiv.style.maxHeight = '720px';
+        }
+        iframe.src = src;
+      }
+    });
+
+    // Remember preference
+    try { sessionStorage.setItem('routeApp', app); } catch(e) {}
+  }
+
+  // Button click handlers
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setApp(btn.getAttribute('data-app'));
+    });
+  });
+
+  // Load default or remembered preference
+  var saved = null;
+  try { saved = sessionStorage.getItem('routeApp'); } catch(e) {}
+  setApp(saved || 'ridewithgps');
+}
+
 // --- Initialize Everything ---
 document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
@@ -329,4 +377,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initNewsletter();
   initRegisterTracking();
   initWeather();
+  initRouteSwitch();
 });

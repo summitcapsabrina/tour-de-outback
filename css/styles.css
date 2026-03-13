@@ -863,6 +863,57 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
 }
 
+/* --- Route App Switcher --- */
+.route-app-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 24px;
+  margin: 0 auto;
+  max-width: var(--max-width);
+}
+
+.route-app-label {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.route-app-buttons {
+  display: flex;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid var(--red);
+}
+
+.route-app-btn {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 20px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+
+.route-app-btn:hover {
+  background: rgba(204, 0, 0, 0.3);
+  color: #ffffff;
+}
+
+.route-app-btn.active {
+  background: var(--red);
+  color: #ffffff;
+}
+
 /* ============================================
    Schedule Grid
    ============================================ */
@@ -1770,6 +1821,15 @@ h1, h2, h3, h4, h5, h6 {
   .route-row-text p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 14px; }
   .route-row-text .btn { width: 100%; text-align: center; padding: 12px 24px; }
   .route-row-map { max-height: 700px; }
+
+  /* Route app switcher */
+  .route-app-switcher {
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px 16px;
+  }
+  .route-app-label { font-size: 0.85rem; }
+  .route-app-btn { font-size: 0.8rem; padding: 8px 16px; }
 
   /* Info split */
   .info-split .info-image { height: 220px; min-height: 220px; }
