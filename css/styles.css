@@ -1359,9 +1359,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .video-wrapper {
   position: relative;
-  padding-bottom: 56.25%;
-  height: 0;
+  width: 100%;
   max-width: 800px;
+  aspect-ratio: 16 / 9;
   margin: 0 auto;
   border-radius: 8px;
   overflow: hidden;
