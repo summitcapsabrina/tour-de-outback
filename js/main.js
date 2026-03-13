@@ -363,12 +363,14 @@ function initRouteSwitch() {
           iframe.style.height = '700px';
           iframe.style.border = 'none';
           iframe.setAttribute('scrolling', 'no');
+          mapDiv.classList.add('rwgps-active');
         } else {
           iframe.style.width = '100%';
           iframe.style.minWidth = '';
           iframe.style.height = '1051px';
           iframe.style.border = '';
           iframe.removeAttribute('scrolling');
+          mapDiv.classList.remove('rwgps-active');
         }
         iframe.src = src;
       }
