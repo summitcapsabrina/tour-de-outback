@@ -153,14 +153,8 @@ function initWeather() {
     var html = '<span class="weather-current" role="button" tabindex="0">' +
         '<span class="weather-main">' +
           '<span class="weather-icon">' + icon + '</span> ' +
-          '<span class="weather-temp">' + temp + '°F</span>' +
+          '<span class="weather-temp">' + temp + '°</span>' +
         '</span>';
-    if (windSpeed !== undefined && windSpeed !== null && windDir !== null) {
-      html += '<span class="weather-wind">' +
-        buildCompass(windDir, windSpeed) +
-        (windGusts ? '<span class="wind-gusts">Gusts ' + windGusts + ' mph</span>' : '') +
-      '</span>';
-    }
     html += '<span class="weather-arrow">▾</span></span>';
     // Preserve existing forecast dropdown if present
     var existing = widget.querySelector('.forecast-dropdown');
@@ -184,7 +178,7 @@ function initWeather() {
   }
 
   // NWS weather description to emoji
-  function weatherToIcon(desc) {
+  function weatherToIcon(desc, isNight) {
     if (!desc) return '🌡️';
     var d = desc.toLowerCase();
     if (d.indexOf('snow') !== -1 || d.indexOf('blizzard') !== -1) return '❄️';
@@ -193,9 +187,9 @@ function initWeather() {
     if (d.indexOf('fog') !== -1 || d.indexOf('mist') !== -1 || d.indexOf('haze') !== -1) return '🌫️';
     if (d.indexOf('overcast') !== -1) return '☁️';
     if (d.indexOf('mostly cloudy') !== -1 || d.indexOf('considerable') !== -1) return '☁️';
-    if (d.indexOf('partly') !== -1 || d.indexOf('scattered') !== -1) return '⛅';
-    if (d.indexOf('few clouds') !== -1 || d.indexOf('mostly clear') !== -1 || d.indexOf('mostly sunny') !== -1) return '🌤️';
-    if (d.indexOf('sunny') !== -1 || d.indexOf('clear') !== -1 || d.indexOf('fair') !== -1) return '☀️';
+    if (d.indexOf('partly') !== -1 || d.indexOf('scattered') !== -1) return isNight ? '☁️' : '⛅';
+    if (d.indexOf('few clouds') !== -1 || d.indexOf('mostly clear') !== -1 || d.indexOf('mostly sunny') !== -1) return isNight ? '🌙' : '🌤️';
+    if (d.indexOf('sunny') !== -1 || d.indexOf('clear') !== -1 || d.indexOf('fair') !== -1) return isNight ? '🌙' : '☀️';
     return '🌡️';
   }
 
@@ -204,6 +198,37 @@ function initWeather() {
   // km/h to mph
   function kmhToMph(kmh) { return Math.round(kmh * 0.6214); }
 
+  // Convert compass direction text (e.g., "SW") to degrees
+  function dirToDeg(dir) {
+    var map = { N:0, NNE:22, NE:45, ENE:67, E:90, ESE:112, SE:135, SSE:157, S:180, SSW:202, SW:225, WSW:247, W:270, WNW:292, NW:315, NNW:337 };
+    return map[dir] !== undefined ? map[dir] : 0;
+  }
+
+  // Parse first number from wind speed string like "10 to 15 mph"
+  function parseWindSpeed(str) {
+    var m = str.match(/(\d+)/);
+    return m ? m[1] : '';
+  }
+
+  // Build compass for forecast cards (dark background version)
+  function buildForecastCompass(windDirText, windSpeedStr) {
+    var deg = dirToDeg(windDirText);
+    var speed = parseWindSpeed(windSpeedStr);
+    return '<div class="forecast-compass">' +
+      '<svg class="wind-compass-svg forecast-compass-svg" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">' +
+      '<text x="25" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.7)" font-family="sans-serif">N</text>' +
+      '<text x="25" y="46" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">S</text>' +
+      '<text x="5" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">W</text>' +
+      '<text x="45" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">E</text>' +
+      '<g transform="rotate(' + deg + ' 25 25)">' +
+        '<polygon points="25,2 20,14 25,11 30,14" fill="#cc0000"/>' +
+      '</g>' +
+      '<text x="25" y="29" text-anchor="middle" font-size="13" font-weight="700" fill="rgba(255,255,255,0.9)" font-family="sans-serif">' + speed + '</text>' +
+    '</svg>' +
+    '<span class="forecast-compass-label">' + windSpeedStr + ' ' + windDirText + '</span>' +
+    '</div>';
+  }
+
   // Format NWS forecast periods into day cards (group day+night pairs)
   function buildForecast(periods) {
     var days = [];
@@ -211,12 +236,13 @@ function initWeather() {
     // If first period is tonight, start with it
     while (i < periods.length && days.length < 3) {
       var p = periods[i];
-      var day = { name: '', date: '', icon: '', high: null, low: null, precip: '', wind: '', desc: '' };
+      var day = { name: '', date: '', icon: '', high: null, low: null, precip: '', windSpeed: '', windDir: '', desc: '' };
       if (p.isDaytime) {
         day.name = p.name;
-        day.icon = weatherToIcon(p.shortForecast);
+        day.icon = weatherToIcon(p.shortForecast, false);
         day.high = p.temperature;
-        day.wind = p.windSpeed + ' ' + p.windDirection;
+        day.windSpeed = p.windSpeed;
+        day.windDir = p.windDirection;
         day.desc = p.detailedForecast;
         day.precip = p.probabilityOfPrecipitation && p.probabilityOfPrecipitation.value !== null ? p.probabilityOfPrecipitation.value + '% Precip.' : '';
         // Parse date from startTime
@@ -234,9 +260,10 @@ function initWeather() {
       } else {
         // Night-only period (e.g., "Tonight")
         day.name = p.name;
-        day.icon = weatherToIcon(p.shortForecast);
+        day.icon = weatherToIcon(p.shortForecast, true);
         day.low = p.temperature;
-        day.wind = p.windSpeed + ' ' + p.windDirection;
+        day.windSpeed = p.windSpeed;
+        day.windDir = p.windDirection;
         day.desc = p.detailedForecast;
         day.precip = p.probabilityOfPrecipitation && p.probabilityOfPrecipitation.value !== null ? p.probabilityOfPrecipitation.value + '% Precip.' : '';
         var dt2 = new Date(p.startTime);
@@ -260,7 +287,7 @@ function initWeather() {
           (d.low !== null ? '<span class="forecast-low">Low ' + d.low + '°F</span>' : '') +
         '</div>' +
         (d.precip ? '<div class="forecast-precip">' + d.precip + '</div>' : '') +
-        '<div class="forecast-wind">' + d.wind + '</div>' +
+        buildForecastCompass(d.windDir, d.windSpeed) +
         '<div class="forecast-desc">' + d.desc + '</div>' +
       '</div>';
     }
@@ -274,7 +301,9 @@ function initWeather() {
     .then(function(data) {
       var p = data.properties;
       var temp = p.temperature && p.temperature.value !== null ? cToF(p.temperature.value) : null;
-      var icon = weatherToIcon(p.textDescription);
+      var nowHour = new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Los_Angeles' });
+      var isNightNow = parseInt(nowHour, 10) >= 20 || parseInt(nowHour, 10) < 6;
+      var icon = weatherToIcon(p.textDescription, isNightNow);
       var windSpeed = p.windSpeed && p.windSpeed.value !== null ? kmhToMph(p.windSpeed.value) : null;
       var windDir = p.windDirection && p.windDirection.value !== null ? p.windDirection.value : null;
       var windGusts = p.windGust && p.windGust.value !== null ? kmhToMph(p.windGust.value) : null;

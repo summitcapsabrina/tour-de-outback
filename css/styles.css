@@ -170,14 +170,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .weather-widget .weather-icon {
-  font-size: 0.85rem;
+  font-size: 1.25rem;
   line-height: 1;
+  color: rgba(255, 255, 255, 1);
 }
 
 .weather-widget .weather-temp {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .weather-widget .weather-wind {
@@ -303,10 +304,22 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 4px;
 }
 
-.weather-widget .forecast-wind {
-  font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.4);
+.weather-widget .forecast-compass {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 8px;
+}
+
+.weather-widget .forecast-compass-svg {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 2px;
+}
+
+.weather-widget .forecast-compass-label {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .weather-widget .forecast-desc {
