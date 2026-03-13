@@ -854,6 +854,9 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
   max-height: 720px;
   background: #f0f0f0;
+  position: relative;
+  box-shadow: inset 0 0 0 3px #ffffff;
+  z-index: 1;
 }
 
 .route-row-map iframe {
