@@ -109,7 +109,7 @@
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
       <div class="weather-widget" id="weather-widget"></div>
-      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);if(Date.now()-d.timestamp<9e5){var w=document.getElementById('weather-widget');if(w)w.innerHTML='<span class="weather-location">Lake County</span><span class="weather-bottom"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>'}}}()</script>
+      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);var w=document.getElementById('weather-widget');if(w){var dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];var h='<span class="weather-location">Lake County</span><span class="weather-bottom"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>';if(d.windSpeed!==undefined)h+='<span class="weather-wind">'+dirs[Math.round(d.windDir/22.5)%16]+' '+d.windSpeed+' mph</span>';w.innerHTML=h}}}()</script>
     </div>
   </nav>
 

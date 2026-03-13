@@ -134,21 +134,27 @@ function initWeather() {
   var widget = document.getElementById('weather-widget');
   if (!widget) return;
 
-  function renderWeather(icon, temp) {
-    widget.innerHTML = '<span class="weather-location">Lake County</span>' +
-      '<span class="weather-bottom"><span class="weather-icon">' + icon + '</span> ' +
-      '<span class="weather-temp">' + temp + '°F</span></span>';
+  // Wind direction degrees to compass abbreviation
+  function degToCompass(deg) {
+    var dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+    return dirs[Math.round(deg / 22.5) % 16];
   }
 
-  // Check cache first — instant render on page navigation
+  function renderWeather(icon, temp, windSpeed, windDir) {
+    var html = '<span class="weather-location">Lake County</span>' +
+      '<span class="weather-bottom"><span class="weather-icon">' + icon + '</span> ' +
+      '<span class="weather-temp">' + temp + '°F</span></span>';
+    if (windSpeed !== undefined && windDir !== undefined) {
+      html += '<span class="weather-wind">' + degToCompass(windDir) + ' ' + windSpeed + ' mph</span>';
+    }
+    widget.innerHTML = html;
+  }
+
+  // Show cached data instantly while fresh fetch happens in background
   var cached = sessionStorage.getItem('weatherData');
   if (cached) {
     var c = JSON.parse(cached);
-    // Use cache if less than 15 minutes old
-    if (Date.now() - c.timestamp < 15 * 60 * 1000) {
-      renderWeather(c.icon, c.temp);
-      return;
-    }
+    renderWeather(c.icon, c.temp, c.windSpeed, c.windDir);
   }
 
   // WMO weather code to emoji
@@ -163,19 +169,21 @@ function initWeather() {
     95: '⛈️', 96: '⛈️', 99: '⛈️'
   };
 
-  // Lakeview, OR: 42.1888° N, 120.3458° W
-  fetch('https://api.open-meteo.com/v1/forecast?latitude=42.1888&longitude=-120.3458&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=America/Los_Angeles')
+  // Always fetch fresh data — Lakeview, OR: 42.1888° N, 120.3458° W
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=42.1888&longitude=-120.3458&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America/Los_Angeles')
     .then(function(res) { return res.json(); })
     .then(function(data) {
       var temp = Math.round(data.current.temperature_2m);
       var icon = weatherCodes[data.current.weather_code] || '🌡️';
-      renderWeather(icon, temp);
+      var windSpeed = Math.round(data.current.wind_speed_10m);
+      var windDir = data.current.wind_direction_10m;
+      renderWeather(icon, temp, windSpeed, windDir);
       sessionStorage.setItem('weatherData', JSON.stringify({
-        icon: icon, temp: temp, timestamp: Date.now()
+        icon: icon, temp: temp, windSpeed: windSpeed, windDir: windDir, timestamp: Date.now()
       }));
     })
     .catch(function() {
-      widget.innerHTML = '';
+      if (!cached) widget.innerHTML = '';
     });
 }
 
