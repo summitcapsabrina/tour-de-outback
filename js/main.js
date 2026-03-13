@@ -129,10 +129,12 @@ function initRegisterTracking() {
   });
 }
 
-// --- Weather Widget (Open-Meteo API — Lakeview, OR) ---
+// --- Weather Widget (NWS API — Lakeview, OR) ---
 function initWeather() {
   var widget = document.getElementById('weather-widget');
   if (!widget) return;
+
+  var nwsHeaders = { 'Accept': 'application/geo+json', 'User-Agent': 'TourDeOutback/1.0 (sabrina@summitcapllc.com)' };
 
   function buildCompass(windDir, windSpeed) {
     return '<svg class="wind-compass-svg" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">' +
@@ -148,17 +150,30 @@ function initWeather() {
   }
 
   function renderWeather(icon, temp, windSpeed, windDir, windGusts) {
-    var html = '<span class="weather-main">' +
-        '<span class="weather-icon">' + icon + '</span> ' +
-        '<span class="weather-temp">' + temp + '°F</span>' +
-      '</span>';
+    var html = '<span class="weather-current" role="button" tabindex="0">' +
+        '<span class="weather-main">' +
+          '<span class="weather-icon">' + icon + '</span> ' +
+          '<span class="weather-temp">' + temp + '°F</span>' +
+        '</span>';
     if (windSpeed !== undefined && windSpeed !== null && windDir !== null) {
       html += '<span class="weather-wind">' +
         buildCompass(windDir, windSpeed) +
         (windGusts ? '<span class="wind-gusts">Gusts ' + windGusts + ' mph</span>' : '') +
       '</span>';
     }
-    widget.innerHTML = html;
+    html += '<span class="weather-arrow">▾</span></span>';
+    // Preserve existing forecast dropdown if present
+    var existing = widget.querySelector('.forecast-dropdown');
+    var dd = existing ? existing.outerHTML : '<div class="forecast-dropdown"></div>';
+    widget.innerHTML = html + dd;
+    // Attach click toggle
+    var current = widget.querySelector('.weather-current');
+    if (current) {
+      current.addEventListener('click', function(e) {
+        e.stopPropagation();
+        widget.classList.toggle('forecast-open');
+      });
+    }
   }
 
   // Show cached data instantly while fresh fetch happens in background
@@ -186,15 +201,75 @@ function initWeather() {
 
   // Celsius to Fahrenheit
   function cToF(c) { return Math.round(c * 9 / 5 + 32); }
-  // m/s to mph
-  function msToMph(ms) { return Math.round(ms * 2.237); }
   // km/h to mph
   function kmhToMph(kmh) { return Math.round(kmh * 0.6214); }
 
+  // Format NWS forecast periods into day cards (group day+night pairs)
+  function buildForecast(periods) {
+    var days = [];
+    var i = 0;
+    // If first period is tonight, start with it
+    while (i < periods.length && days.length < 3) {
+      var p = periods[i];
+      var day = { name: '', date: '', icon: '', high: null, low: null, precip: '', wind: '', desc: '' };
+      if (p.isDaytime) {
+        day.name = p.name;
+        day.icon = weatherToIcon(p.shortForecast);
+        day.high = p.temperature;
+        day.wind = p.windSpeed + ' ' + p.windDirection;
+        day.desc = p.detailedForecast;
+        day.precip = p.probabilityOfPrecipitation && p.probabilityOfPrecipitation.value !== null ? p.probabilityOfPrecipitation.value + '% Precip.' : '';
+        // Parse date from startTime
+        var dt = new Date(p.startTime);
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        day.date = dayNames[dt.getDay()] + ' ' + months[dt.getMonth()] + ' ' + dt.getDate();
+        // Check for matching night
+        if (i + 1 < periods.length && !periods[i + 1].isDaytime) {
+          day.low = periods[i + 1].temperature;
+          i += 2;
+        } else {
+          i++;
+        }
+      } else {
+        // Night-only period (e.g., "Tonight")
+        day.name = p.name;
+        day.icon = weatherToIcon(p.shortForecast);
+        day.low = p.temperature;
+        day.wind = p.windSpeed + ' ' + p.windDirection;
+        day.desc = p.detailedForecast;
+        day.precip = p.probabilityOfPrecipitation && p.probabilityOfPrecipitation.value !== null ? p.probabilityOfPrecipitation.value + '% Precip.' : '';
+        var dt2 = new Date(p.startTime);
+        var months2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        var dayNames2 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        day.date = dayNames2[dt2.getDay()] + ' ' + months2[dt2.getMonth()] + ' ' + dt2.getDate();
+        i++;
+      }
+      days.push(day);
+    }
+
+    var html = '<div class="forecast-header">3-Day Forecast — Lakeview, OR</div><div class="forecast-cards">';
+    for (var j = 0; j < days.length; j++) {
+      var d = days[j];
+      html += '<div class="forecast-card">' +
+        '<div class="forecast-day">' + d.name + '</div>' +
+        '<div class="forecast-date">' + d.date + '</div>' +
+        '<div class="forecast-card-icon">' + d.icon + '</div>' +
+        '<div class="forecast-temps">' +
+          (d.high !== null ? '<span class="forecast-high">High ' + d.high + '°F</span>' : '') +
+          (d.low !== null ? '<span class="forecast-low">Low ' + d.low + '°F</span>' : '') +
+        '</div>' +
+        (d.precip ? '<div class="forecast-precip">' + d.precip + '</div>' : '') +
+        '<div class="forecast-wind">' + d.wind + '</div>' +
+        '<div class="forecast-desc">' + d.desc + '</div>' +
+      '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
   // Lakeview Airport station (KLKV) — actual observed conditions
-  fetch('https://api.weather.gov/stations/KLKV/observations/latest', {
-    headers: { 'Accept': 'application/geo+json', 'User-Agent': 'TourDeOutback/1.0 (sabrina@summitcapllc.com)' }
-  })
+  fetch('https://api.weather.gov/stations/KLKV/observations/latest', { headers: nwsHeaders })
     .then(function(res) { return res.json(); })
     .then(function(data) {
       var p = data.properties;
@@ -213,6 +288,35 @@ function initWeather() {
     .catch(function() {
       if (!cached) widget.innerHTML = '';
     });
+
+  // Fetch 3-day forecast from NWS
+  var cachedForecast = sessionStorage.getItem('weatherForecast');
+  if (cachedForecast) {
+    var cf = JSON.parse(cachedForecast);
+    var dd = widget.querySelector('.forecast-dropdown');
+    if (dd) dd.innerHTML = cf.html;
+  }
+
+  fetch('https://api.weather.gov/points/42.1888,-120.3458', { headers: nwsHeaders })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      return fetch(data.properties.forecast, { headers: nwsHeaders });
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      var html = buildForecast(data.properties.periods);
+      var dd = widget.querySelector('.forecast-dropdown');
+      if (dd) dd.innerHTML = html;
+      sessionStorage.setItem('weatherForecast', JSON.stringify({ html: html, timestamp: Date.now() }));
+    })
+    .catch(function() {});
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!widget.contains(e.target)) {
+      widget.classList.remove('forecast-open');
+    }
+  });
 }
 
 // --- Initialize Everything ---

@@ -151,6 +151,7 @@ h1, h2, h3, h4, h5, h6 {
    Weather Widget (inside navbar)
    ============================================ */
 .weather-widget {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -195,6 +196,124 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.45rem;
   color: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.3px;
+}
+
+.weather-widget .weather-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.weather-widget .weather-arrow {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin-left: -4px;
+  transition: transform 0.2s;
+}
+
+.weather-widget.forecast-open .weather-arrow {
+  transform: rotate(180deg);
+}
+
+.weather-widget .forecast-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: var(--charcoal);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  z-index: 1001;
+  white-space: normal;
+  min-width: 620px;
+}
+
+.weather-widget.forecast-open .forecast-dropdown {
+  display: block;
+}
+
+.weather-widget .forecast-header {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.weather-widget .forecast-cards {
+  display: flex;
+  gap: 16px;
+}
+
+.weather-widget .forecast-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+
+.weather-widget .forecast-day {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+}
+
+.weather-widget .forecast-date {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.weather-widget .forecast-card-icon {
+  font-size: 2rem;
+  margin-bottom: 6px;
+}
+
+.weather-widget .forecast-temps {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.weather-widget .forecast-high {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.weather-widget .forecast-low {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.weather-widget .forecast-precip {
+  font-size: 0.7rem;
+  color: var(--red);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.weather-widget .forecast-wind {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 8px;
+}
+
+.weather-widget .forecast-desc {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.4;
+  text-align: left;
 }
 
 /* ============================================
