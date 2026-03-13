@@ -704,6 +704,19 @@ padding: 10px 24px;
 overflow: hidden;
 max-height: 720px;
 background: #f0f0f0;
+position: relative;
+}
+.route-row-map::after {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+border: 3px solid #ffffff;
+border-radius: 1px;
+pointer-events: none;
+z-index: 10;
 }
 .route-row-map iframe {
 display: block;
