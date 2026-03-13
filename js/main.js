@@ -337,8 +337,23 @@ function initRouteSwitch() {
     maps.forEach(function(mapDiv) {
       var src = mapDiv.getAttribute('data-' + app);
       var iframe = mapDiv.querySelector('iframe');
-      if (iframe && src) {
-        // Adjust iframe height based on app
+      var placeholder = mapDiv.querySelector('.route-coming-soon');
+
+      if (src === 'coming-soon') {
+        // Show Coming Soon placeholder, hide iframe
+        if (iframe) iframe.style.display = 'none';
+        if (!placeholder) {
+          placeholder = document.createElement('div');
+          placeholder.className = 'route-coming-soon';
+          placeholder.innerHTML = '<span class="coming-soon-icon">🚴</span><span class="coming-soon-text">RideWithGPS Route Coming Soon</span>';
+          mapDiv.appendChild(placeholder);
+        }
+        placeholder.style.display = '';
+        mapDiv.style.maxHeight = '700px';
+      } else if (iframe && src) {
+        // Show iframe, hide placeholder
+        if (placeholder) placeholder.style.display = 'none';
+        iframe.style.display = '';
         if (app === 'ridewithgps') {
           iframe.style.height = '700px';
           mapDiv.style.maxHeight = '700px';
