@@ -135,6 +135,11 @@ function initWeather() {
   if (!widget) return;
 
   var nwsHeaders = { 'Accept': 'application/geo+json', 'User-Agent': 'TourDeOutback/1.0 (sabrina@summitcapllc.com)' };
+  var currentObsIcon = null; // syncs header icon to first forecast card
+  var currentObsTemp = null; // syncs header temp to first forecast card
+  var todayHigh = null; // today's forecast high for first card
+  var todayLow = null; // today's forecast low for first card
+  var obsHigh = null; // observed high from station (last 24h)
 
   function buildCompass(windDir, windSpeed) {
     return '<svg class="wind-compass-svg" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">' +
@@ -188,6 +193,7 @@ function initWeather() {
     if (d.indexOf('overcast') !== -1) return '☁️';
     if (d.indexOf('mostly cloudy') !== -1 || d.indexOf('considerable') !== -1) return '☁️';
     if (d.indexOf('partly') !== -1 || d.indexOf('scattered') !== -1) return isNight ? '☁️' : '⛅';
+    if (d.indexOf('cloudy') !== -1) return '☁️';
     if (d.indexOf('few clouds') !== -1 || d.indexOf('mostly clear') !== -1 || d.indexOf('mostly sunny') !== -1) return isNight ? '🌙' : '🌤️';
     if (d.indexOf('sunny') !== -1 || d.indexOf('clear') !== -1 || d.indexOf('fair') !== -1) return isNight ? '🌙' : '☀️';
     return '🌡️';
@@ -272,6 +278,11 @@ function initWeather() {
         day.date = dayNames2[dt2.getDay()] + ' ' + months2[dt2.getMonth()] + ' ' + dt2.getDate();
         i++;
       }
+      // Store today's high/low from the first card
+      if (days.length === 0) {
+        todayHigh = day.high;
+        todayLow = day.low;
+      }
       days.push(day);
     }
 
@@ -295,6 +306,33 @@ function initWeather() {
     return html;
   }
 
+  // Sync first forecast card with current observations
+  function syncFirstCard() {
+    var firstCard = widget.querySelector('.forecast-card');
+    if (!firstCard) return;
+    // Replace period name with "Now XX°F"
+    if (currentObsTemp !== null) {
+      var dayEl = firstCard.querySelector('.forecast-day');
+      if (dayEl) dayEl.innerHTML = 'Now ' + currentObsTemp + '°F';
+    }
+    // Sync icon
+    if (currentObsIcon) {
+      var iconEl = firstCard.querySelector('.forecast-card-icon');
+      if (iconEl) iconEl.textContent = currentObsIcon;
+    }
+    // Show today's forecast high/low below icon (only if we have forecast data)
+    var high = todayHigh !== null ? todayHigh : obsHigh;
+    if (high !== null || todayLow !== null) {
+      var tempsEl = firstCard.querySelector('.forecast-temps');
+      if (tempsEl) {
+        var html = '';
+        if (high !== null) html += '<span class="forecast-high">High ' + high + '°F</span>';
+        if (todayLow !== null) html += '<span class="forecast-low">Low ' + todayLow + '°F</span>';
+        tempsEl.innerHTML = html;
+      }
+    }
+  }
+
   // Lakeview Airport station (KLKV) — actual observed conditions
   fetch('https://api.weather.gov/stations/KLKV/observations/latest', { headers: nwsHeaders })
     .then(function(res) { return res.json(); })
@@ -304,11 +342,18 @@ function initWeather() {
       var nowHour = new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Los_Angeles' });
       var isNightNow = parseInt(nowHour, 10) >= 20 || parseInt(nowHour, 10) < 6;
       var icon = weatherToIcon(p.textDescription, isNightNow);
+      currentObsIcon = icon;
+      currentObsTemp = temp;
+      if (p.maxTemperatureLast24Hours && p.maxTemperatureLast24Hours.value !== null) {
+        obsHigh = cToF(p.maxTemperatureLast24Hours.value);
+      }
       var windSpeed = p.windSpeed && p.windSpeed.value !== null ? kmhToMph(p.windSpeed.value) : null;
       var windDir = p.windDirection && p.windDirection.value !== null ? p.windDirection.value : null;
       var windGusts = p.windGust && p.windGust.value !== null ? kmhToMph(p.windGust.value) : null;
       if (temp !== null) {
         renderWeather(icon, temp, windSpeed, windDir, windGusts);
+        // Sync first forecast card if forecast already rendered
+        syncFirstCard();
         sessionStorage.setItem('weatherData', JSON.stringify({
           icon: icon, temp: temp, windSpeed: windSpeed, windDir: windDir, windGusts: windGusts, timestamp: Date.now()
         }));
@@ -323,20 +368,59 @@ function initWeather() {
   if (cachedForecast) {
     var cf = JSON.parse(cachedForecast);
     var dd = widget.querySelector('.forecast-dropdown');
-    if (dd) dd.innerHTML = cf.html;
+    if (dd) {
+      dd.innerHTML = cf.html;
+      // Extract today's high/low from cached HTML so syncFirstCard has data
+      var firstCachedCard = dd.querySelector('.forecast-card');
+      if (firstCachedCard) {
+        var hEl = firstCachedCard.querySelector('.forecast-high');
+        var lEl = firstCachedCard.querySelector('.forecast-low');
+        if (hEl && todayHigh === null) { var hm = hEl.textContent.match(/(\d+)/); if (hm) todayHigh = parseInt(hm[1], 10); }
+        if (lEl && todayLow === null) { var lm = lEl.textContent.match(/(\d+)/); if (lm) todayLow = parseInt(lm[1], 10); }
+      }
+    }
   }
 
   fetch('https://api.weather.gov/points/42.1888,-120.3458', { headers: nwsHeaders })
     .then(function(res) { return res.json(); })
-    .then(function(data) {
-      return fetch(data.properties.forecast, { headers: nwsHeaders });
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      var html = buildForecast(data.properties.periods);
-      var dd = widget.querySelector('.forecast-dropdown');
-      if (dd) dd.innerHTML = html;
-      sessionStorage.setItem('weatherForecast', JSON.stringify({ html: html, timestamp: Date.now() }));
+    .then(function(pointsData) {
+      // Fetch regular forecast
+      fetch(pointsData.properties.forecast, { headers: nwsHeaders })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var html = buildForecast(data.properties.periods);
+          var dd = widget.querySelector('.forecast-dropdown');
+          if (dd) dd.innerHTML = html;
+          syncFirstCard();
+          sessionStorage.setItem('weatherForecast', JSON.stringify({ html: html, timestamp: Date.now() }));
+        })
+        .catch(function() {});
+      // Fetch grid data for today's explicit high/low
+      fetch(pointsData.properties.forecastGridData, { headers: nwsHeaders })
+        .then(function(res) { return res.json(); })
+        .then(function(gdata) {
+          var todayStr = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }).split(',')[0];
+          var todayDate = new Date(todayStr + ' 12:00:00');
+          var todayISO = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+          // Parse maxTemperature for today
+          var maxTemps = gdata.properties.maxTemperature.values;
+          for (var k = 0; k < maxTemps.length; k++) {
+            if (maxTemps[k].validTime.indexOf(todayISO) !== -1 && maxTemps[k].value !== null) {
+              todayHigh = cToF(maxTemps[k].value);
+              break;
+            }
+          }
+          // Parse minTemperature for today
+          var minTemps = gdata.properties.minTemperature.values;
+          for (var k = 0; k < minTemps.length; k++) {
+            if (minTemps[k].validTime.indexOf(todayISO) !== -1 && minTemps[k].value !== null) {
+              if (todayLow === null) todayLow = cToF(minTemps[k].value);
+              break;
+            }
+          }
+          syncFirstCard();
+        })
+        .catch(function() {});
     })
     .catch(function() {});
 
