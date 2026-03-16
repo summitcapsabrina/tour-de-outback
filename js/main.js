@@ -513,7 +513,7 @@ function initRouteSwitch() {
   // Load default or remembered preference
   var saved = null;
   try { saved = sessionStorage.getItem('routeApp'); } catch(e) {}
-  setApp(saved || 'ridewithgps');
+  setApp(saved || 'mapmyride');
 }
 
 // --- Initialize Everything ---
