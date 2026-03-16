@@ -371,15 +371,18 @@ function initRouteSwitch() {
       if (src === 'coming-soon') {
         // Show Coming Soon placeholder, hide iframe
         if (iframe) iframe.style.display = 'none';
+        var appNames = { ridewithgps: 'RideWithGPS', mapmyride: 'MapMyRide', komoot: 'Komoot' };
+        var appLabel = appNames[app] || app;
         if (!placeholder) {
           placeholder = document.createElement('div');
           placeholder.className = 'route-coming-soon';
-          placeholder.innerHTML = '<span class="coming-soon-icon">🚴</span><span class="coming-soon-text">RideWithGPS Route Coming Soon</span>';
           mapDiv.appendChild(placeholder);
         }
+        placeholder.innerHTML = '<span class="coming-soon-icon">🚴</span><span class="coming-soon-text">' + appLabel + ' Route Coming Soon</span>';
         placeholder.style.display = '';
         mapDiv.style.height = '720px';
         mapDiv.style.maxHeight = '720px';
+        mapDiv.classList.remove('rwgps-active');
       } else if (iframe && src) {
         // Show iframe, hide placeholder
         if (placeholder) placeholder.style.display = 'none';
@@ -393,6 +396,13 @@ function initRouteSwitch() {
           iframe.style.border = 'none';
           iframe.setAttribute('scrolling', 'no');
           mapDiv.classList.add('rwgps-active');
+        } else if (app === 'komoot') {
+          iframe.style.width = '100%';
+          iframe.style.minWidth = '';
+          iframe.style.height = '700px';
+          iframe.style.border = 'none';
+          iframe.setAttribute('scrolling', 'no');
+          mapDiv.classList.remove('rwgps-active');
         } else {
           iframe.style.width = '100%';
           iframe.style.minWidth = '';
