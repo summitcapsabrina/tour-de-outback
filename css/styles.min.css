@@ -1537,7 +1537,8 @@ h1, h2, h3, h4, h5, h6 {
   .route-app-switcher { padding: 20px 16px 10px; }
   .route-app-inner { padding: 20px 24px; }
   .route-app-label { font-size: 1rem; letter-spacing: 2px; }
-  .route-app-btn { font-size: 0.85rem; padding: 10px 20px; }
+  .route-app-buttons { flex-wrap: wrap; border-radius: 6px; }
+  .route-app-btn { font-size: 0.85rem; padding: 10px 20px; flex: 1 1 45%; }
   .route-coming-soon { height: 100%; }
   .route-coming-soon .coming-soon-text { font-size: 1rem; }
   .info-split .info-image { height: 220px; min-height: 220px; }
