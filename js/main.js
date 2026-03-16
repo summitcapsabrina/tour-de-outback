@@ -455,7 +455,7 @@ function initRouteSwitch() {
       if (src === 'coming-soon') {
         // Show Coming Soon placeholder, hide iframe
         if (iframe) iframe.style.display = 'none';
-        var appNames = { ridewithgps: 'RideWithGPS', mapmyride: 'MapMyRide', komoot: 'Komoot' };
+        var appNames = { ridewithgps: 'RideWithGPS', mapmyride: 'MapMyRide', komoot: 'Komoot', strava: 'Strava' };
         var appLabel = appNames[app] || app;
         if (!placeholder) {
           placeholder = document.createElement('div');
