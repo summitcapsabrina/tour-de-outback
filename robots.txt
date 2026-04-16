@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.tourdeoutback.org/sitemap.xml
+Sitemap: https://www.tourdeoregon.com/sitemap.xml
