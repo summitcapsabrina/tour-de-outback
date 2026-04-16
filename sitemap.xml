@@ -20,11 +20,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <!-- Shop page disabled temporarily
   <url>
     <loc>https://www.tourdeoregon.com/shop/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-  </url>
+  </url> -->
   <url>
     <loc>https://www.tourdeoregon.com/volunteer/</loc>
     <changefreq>monthly</changefreq>
