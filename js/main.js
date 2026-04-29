@@ -524,7 +524,6 @@ function initRouteSwitch() {
       if (e.ctrlKey) {
         e.preventDefault();
         overlay.style.pointerEvents = 'none';
-        setTimeout(function() { overlay.style.pointerEvents = ''; }, 1000);
       } else {
         var hint = overlay.querySelector('.scroll-guard-hint');
         if (hint) {
@@ -537,8 +536,25 @@ function initRouteSwitch() {
 
     overlay.addEventListener('click', function() {
       overlay.style.pointerEvents = 'none';
-      setTimeout(function() { overlay.style.pointerEvents = ''; }, 2000);
     });
+  });
+
+  // Re-enable all scroll guards when Ctrl is released
+  document.addEventListener('keyup', function(e) {
+    if (e.key === 'Control') {
+      var guards = document.querySelectorAll('.route-scroll-guard');
+      for (var i = 0; i < guards.length; i++) {
+        guards[i].style.pointerEvents = '';
+      }
+    }
+  });
+
+  // Also re-enable when window loses focus (e.g. user tabs away while holding Ctrl)
+  window.addEventListener('blur', function() {
+    var guards = document.querySelectorAll('.route-scroll-guard');
+    for (var i = 0; i < guards.length; i++) {
+      guards[i].style.pointerEvents = '';
+    }
   });
 
   // Button click handlers
