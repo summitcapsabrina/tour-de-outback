@@ -729,6 +729,34 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
   z-index: 10;
 }
+.rwgps-scroll-guard {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 700px;
+  z-index: 5;
+  cursor: default;
+}
+.scroll-guard-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.scroll-guard-hint.visible {
+  opacity: 1;
+}
 .route-row-map iframe {
   display: block;
   width: 100%;
