@@ -478,10 +478,6 @@ function initRouteSwitch() {
         iframe.style.display = '';
         mapDiv.style.height = '720px';
         mapDiv.style.maxHeight = '720px';
-        // Show/hide scroll guard overlay (active for all map apps)
-        var guard = mapDiv.querySelector('.route-scroll-guard');
-        if (guard) guard.style.display = (src && src !== 'coming-soon') ? '' : 'none';
-
         if (app === 'ridewithgps') {
           iframe.style.width = '1px';
           iframe.style.minWidth = '100%';
@@ -512,49 +508,16 @@ function initRouteSwitch() {
     try { sessionStorage.setItem('routeApp', app); } catch(e) {}
   }
 
-  // Scroll guard for all route iframes — block scroll unless Ctrl held
+  // Scroll guard — overlay blocks scroll-zoom on maps, clicks pass through
   maps.forEach(function(mapDiv) {
     var overlay = document.createElement('div');
     overlay.className = 'route-scroll-guard';
-    overlay.innerHTML = '<span class="scroll-guard-hint">Use Ctrl + scroll to zoom the map</span>';
     mapDiv.appendChild(overlay);
-
-    var hintTimeout;
-    overlay.addEventListener('wheel', function(e) {
-      if (e.ctrlKey) {
-        e.preventDefault();
-        overlay.style.pointerEvents = 'none';
-      } else {
-        var hint = overlay.querySelector('.scroll-guard-hint');
-        if (hint) {
-          hint.classList.add('visible');
-          clearTimeout(hintTimeout);
-          hintTimeout = setTimeout(function() { hint.classList.remove('visible'); }, 1500);
-        }
-      }
-    }, { passive: false });
-
-    overlay.addEventListener('click', function() {
+    // On click, briefly disable overlay so click reaches iframe (+/- buttons)
+    overlay.addEventListener('mousedown', function() {
       overlay.style.pointerEvents = 'none';
+      setTimeout(function() { overlay.style.pointerEvents = ''; }, 500);
     });
-  });
-
-  // Re-enable all scroll guards when Ctrl is released
-  document.addEventListener('keyup', function(e) {
-    if (e.key === 'Control') {
-      var guards = document.querySelectorAll('.route-scroll-guard');
-      for (var i = 0; i < guards.length; i++) {
-        guards[i].style.pointerEvents = '';
-      }
-    }
-  });
-
-  // Also re-enable when window loses focus (e.g. user tabs away while holding Ctrl)
-  window.addEventListener('blur', function() {
-    var guards = document.querySelectorAll('.route-scroll-guard');
-    for (var i = 0; i < guards.length; i++) {
-      guards[i].style.pointerEvents = '';
-    }
   });
 
   // Button click handlers
