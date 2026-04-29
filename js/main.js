@@ -478,9 +478,9 @@ function initRouteSwitch() {
         iframe.style.display = '';
         mapDiv.style.height = '720px';
         mapDiv.style.maxHeight = '720px';
-        // Show/hide scroll guard overlay
-        var guard = mapDiv.querySelector('.rwgps-scroll-guard');
-        if (guard) guard.style.display = (app === 'ridewithgps') ? '' : 'none';
+        // Show/hide scroll guard overlay (active for all map apps)
+        var guard = mapDiv.querySelector('.route-scroll-guard');
+        if (guard) guard.style.display = (src && src !== 'coming-soon') ? '' : 'none';
 
         if (app === 'ridewithgps') {
           iframe.style.width = '1px';
@@ -512,16 +512,16 @@ function initRouteSwitch() {
     try { sessionStorage.setItem('routeApp', app); } catch(e) {}
   }
 
-  // Scroll guard for RideWithGPS iframes — block scroll unless Ctrl/Cmd held
+  // Scroll guard for all route iframes — block scroll unless Ctrl held
   maps.forEach(function(mapDiv) {
     var overlay = document.createElement('div');
-    overlay.className = 'rwgps-scroll-guard';
+    overlay.className = 'route-scroll-guard';
     overlay.innerHTML = '<span class="scroll-guard-hint">Use Ctrl + scroll to zoom the map</span>';
     mapDiv.appendChild(overlay);
 
     var hintTimeout;
     overlay.addEventListener('wheel', function(e) {
-      if (e.ctrlKey || e.metaKey) {
+      if (e.ctrlKey) {
         e.preventDefault();
         overlay.style.pointerEvents = 'none';
         setTimeout(function() { overlay.style.pointerEvents = ''; }, 1000);
