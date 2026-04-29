@@ -508,18 +508,6 @@ function initRouteSwitch() {
     try { sessionStorage.setItem('routeApp', app); } catch(e) {}
   }
 
-  // Scroll guard — overlay blocks scroll-zoom on maps, clicks pass through
-  maps.forEach(function(mapDiv) {
-    var overlay = document.createElement('div');
-    overlay.className = 'route-scroll-guard';
-    mapDiv.appendChild(overlay);
-    // On click, briefly disable overlay so click reaches iframe (+/- buttons)
-    overlay.addEventListener('mousedown', function() {
-      overlay.style.pointerEvents = 'none';
-      setTimeout(function() { overlay.style.pointerEvents = ''; }, 500);
-    });
-  });
-
   // Button click handlers
   buttons.forEach(function(btn) {
     btn.addEventListener('click', function() {
