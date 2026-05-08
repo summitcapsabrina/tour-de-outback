@@ -492,6 +492,13 @@ function initRouteSwitch() {
           iframe.style.border = 'none';
           iframe.setAttribute('scrolling', 'no');
           mapDiv.classList.remove('rwgps-active');
+        } else if (app === 'strava') {
+          iframe.style.width = '100%';
+          iframe.style.minWidth = '';
+          iframe.style.height = '700px';
+          iframe.style.border = 'none';
+          iframe.setAttribute('scrolling', 'no');
+          mapDiv.classList.remove('rwgps-active');
         } else {
           iframe.style.width = '100%';
           iframe.style.minWidth = '';
