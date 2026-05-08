@@ -495,7 +495,7 @@ function initRouteSwitch() {
         } else if (app === 'strava') {
           iframe.style.width = '100%';
           iframe.style.minWidth = '';
-          iframe.style.height = '700px';
+          iframe.style.height = '590px';
           iframe.style.border = 'none';
           iframe.setAttribute('scrolling', 'no');
           mapDiv.classList.remove('rwgps-active');
