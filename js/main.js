@@ -445,69 +445,143 @@ function initRouteSwitch() {
   var buttons = switcher.querySelectorAll('.route-app-btn');
   var maps = document.querySelectorAll('.route-row-map[data-ridewithgps]');
 
+  var stravaScriptLoaded = false;
+
+  function loadStravaScript() {
+    if (stravaScriptLoaded) return;
+    stravaScriptLoaded = true;
+    var s = document.createElement('script');
+    s.src = 'https://strava-embeds.com/embed.js';
+    s.async = true;
+    document.body.appendChild(s);
+  }
+
+  function reprocessStravaEmbeds() {
+    // Strava's embed.js watches for new placeholder divs via MutationObserver,
+    // but if the script is already loaded we may need to re-trigger it
+    if (window.StravaEmbeds) {
+      // Re-run the embed processor if available
+      try { window.StravaEmbeds.process(); } catch(e) {}
+    } else {
+      // Reload the script to process new placeholders
+      var s = document.createElement('script');
+      s.src = 'https://strava-embeds.com/embed.js';
+      s.async = true;
+      document.body.appendChild(s);
+    }
+  }
+
   function setApp(app) {
     // Update button states
     buttons.forEach(function(btn) {
       btn.classList.toggle('active', btn.getAttribute('data-app') === app);
     });
 
-    // Update all route iframes
+    // Update all route maps
     maps.forEach(function(mapDiv) {
-      var src = mapDiv.getAttribute('data-' + app);
       var iframe = mapDiv.querySelector('iframe');
       var placeholder = mapDiv.querySelector('.route-coming-soon');
+      var stravaContainer = mapDiv.querySelector('.strava-native-embed');
+      var stravaId = mapDiv.getAttribute('data-strava-id');
+      var hasStrava = stravaId && stravaId.length > 0;
 
-      if (src === 'coming-soon') {
-        // Show Coming Soon placeholder, hide iframe
+      // Hide strava native embed when not using strava
+      if (app !== 'strava' && stravaContainer) {
+        stravaContainer.style.display = 'none';
+      }
+
+      if (app === 'strava') {
+        // Hide iframe and coming-soon placeholder
         if (iframe) iframe.style.display = 'none';
-        var appNames = { ridewithgps: 'RideWithGPS', mapmyride: 'MapMyRide', komoot: 'Komoot', strava: 'Strava' };
-        var appLabel = appNames[app] || app;
-        if (!placeholder) {
-          placeholder = document.createElement('div');
-          placeholder.className = 'route-coming-soon';
-          mapDiv.appendChild(placeholder);
-        }
-        placeholder.innerHTML = '<span class="coming-soon-icon">🚴</span><span class="coming-soon-text">' + appLabel + ' Route Coming Soon</span>';
-        placeholder.style.display = '';
-        mapDiv.style.height = '720px';
-        mapDiv.style.maxHeight = '720px';
-        mapDiv.classList.remove('rwgps-active');
-      } else if (iframe && src) {
-        // Show iframe, hide placeholder
         if (placeholder) placeholder.style.display = 'none';
-        iframe.style.display = '';
-        mapDiv.style.height = '720px';
-        mapDiv.style.maxHeight = '720px';
-        if (app === 'ridewithgps') {
-          iframe.style.width = '1px';
-          iframe.style.minWidth = '100%';
-          iframe.style.height = '700px';
-          iframe.style.border = 'none';
-          iframe.setAttribute('scrolling', 'no');
-          mapDiv.classList.add('rwgps-active');
-        } else if (app === 'komoot') {
-          iframe.style.width = '100%';
-          iframe.style.minWidth = '';
-          iframe.style.height = '700px';
-          iframe.style.border = 'none';
-          iframe.setAttribute('scrolling', 'no');
-          mapDiv.classList.remove('rwgps-active');
-        } else if (app === 'strava') {
-          iframe.style.width = '100%';
-          iframe.style.minWidth = '';
-          iframe.style.height = '660px';
-          iframe.style.border = 'none';
-          iframe.setAttribute('scrolling', 'no');
-          mapDiv.classList.remove('rwgps-active');
+        mapDiv.classList.remove('rwgps-active');
+
+        if (hasStrava) {
+          mapDiv.style.height = '';
+          mapDiv.style.maxHeight = '';
+
+          if (!stravaContainer) {
+            // Create native Strava embed
+            stravaContainer = document.createElement('div');
+            stravaContainer.className = 'strava-native-embed';
+            var embedDiv = document.createElement('div');
+            embedDiv.className = 'strava-embed-placeholder';
+            embedDiv.setAttribute('data-embed-type', 'route');
+            embedDiv.setAttribute('data-embed-id', stravaId);
+            embedDiv.setAttribute('data-full-width', 'true');
+            embedDiv.setAttribute('data-style', 'standard');
+            embedDiv.setAttribute('data-map-hash', mapDiv.getAttribute('data-strava-hash') || '');
+            embedDiv.setAttribute('data-club-id', '1896211');
+            embedDiv.setAttribute('data-from-embed', 'true');
+            embedDiv.setAttribute('data-token', mapDiv.getAttribute('data-strava-token') || '');
+            stravaContainer.appendChild(embedDiv);
+            mapDiv.appendChild(stravaContainer);
+            loadStravaScript();
+            // Give the script a moment then reprocess
+            setTimeout(reprocessStravaEmbeds, 300);
+          } else {
+            stravaContainer.style.display = '';
+          }
         } else {
-          iframe.style.width = '100%';
-          iframe.style.minWidth = '';
-          iframe.style.height = '1051px';
-          iframe.style.border = '';
-          iframe.removeAttribute('scrolling');
-          mapDiv.classList.remove('rwgps-active');
+          // No Strava route — show coming soon
+          mapDiv.style.height = '720px';
+          mapDiv.style.maxHeight = '720px';
+          if (!placeholder) {
+            placeholder = document.createElement('div');
+            placeholder.className = 'route-coming-soon';
+            mapDiv.appendChild(placeholder);
+          }
+          placeholder.innerHTML = '<span class="coming-soon-icon">🚴</span><span class="coming-soon-text">Strava Route Coming Soon</span>';
+          placeholder.style.display = '';
         }
-        iframe.src = src;
+      } else {
+        var src = mapDiv.getAttribute('data-' + app);
+
+        if (src === 'coming-soon' || !src) {
+          // Show Coming Soon placeholder, hide iframe
+          if (iframe) iframe.style.display = 'none';
+          var appNames = { ridewithgps: 'RideWithGPS', mapmyride: 'MapMyRide', komoot: 'Komoot', strava: 'Strava' };
+          var appLabel = appNames[app] || app;
+          if (!placeholder) {
+            placeholder = document.createElement('div');
+            placeholder.className = 'route-coming-soon';
+            mapDiv.appendChild(placeholder);
+          }
+          placeholder.innerHTML = '<span class="coming-soon-icon">🚴</span><span class="coming-soon-text">' + appLabel + ' Route Coming Soon</span>';
+          placeholder.style.display = '';
+          mapDiv.style.height = '720px';
+          mapDiv.style.maxHeight = '720px';
+          mapDiv.classList.remove('rwgps-active');
+        } else if (iframe && src) {
+          // Show iframe, hide placeholder
+          if (placeholder) placeholder.style.display = 'none';
+          iframe.style.display = '';
+          mapDiv.style.height = '720px';
+          mapDiv.style.maxHeight = '720px';
+          if (app === 'ridewithgps') {
+            iframe.style.width = '1px';
+            iframe.style.minWidth = '100%';
+            iframe.style.height = '700px';
+            iframe.style.border = 'none';
+            iframe.setAttribute('scrolling', 'no');
+            mapDiv.classList.add('rwgps-active');
+          } else if (app === 'komoot') {
+            iframe.style.width = '100%';
+            iframe.style.minWidth = '';
+            iframe.style.height = '700px';
+            iframe.style.border = 'none';
+            iframe.setAttribute('scrolling', 'no');
+            mapDiv.classList.remove('rwgps-active');
+          } else {
+            iframe.style.width = '100%';
+            iframe.style.minWidth = '';
+            iframe.style.height = '1051px';
+            iframe.style.border = '';
+            iframe.removeAttribute('scrolling');
+            mapDiv.classList.remove('rwgps-active');
+          }
+          iframe.src = src;
+        }
       }
     });
 
