@@ -486,8 +486,9 @@ function initRouteSwitch() {
       var hasStrava = stravaId && stravaId.length > 0;
 
       // Hide strava native embed when not using strava
-      if (app !== 'strava' && stravaContainer) {
-        stravaContainer.style.display = 'none';
+      if (app !== 'strava') {
+        if (stravaContainer) stravaContainer.style.display = 'none';
+        mapDiv.classList.remove('strava-active');
       }
 
       if (app === 'strava') {
@@ -499,6 +500,7 @@ function initRouteSwitch() {
         if (hasStrava) {
           mapDiv.style.height = '';
           mapDiv.style.maxHeight = '';
+          mapDiv.classList.add('strava-active');
 
           if (!stravaContainer) {
             // Create native Strava embed
