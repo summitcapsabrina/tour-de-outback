@@ -1892,6 +1892,7 @@ h1, h2, h3, h4, h5, h6 {
   .route-row-text p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 14px; }
   .route-row-text .btn { width: 100%; text-align: center; padding: 12px 24px; }
   .route-row-map { max-height: 700px; }
+  .route-row-map.strava-active { overflow: visible; max-height: none; height: auto; }
 
   /* Route app switcher */
   .route-app-switcher { padding: 20px 16px 10px; }
@@ -1950,6 +1951,7 @@ h1, h2, h3, h4, h5, h6 {
   .route-row-text .stat { font-size: 0.7rem; }
   .route-row-text p { font-size: 0.8rem; margin-bottom: 12px; }
   .route-row-map { max-height: 680px; }
+  .route-row-map.strava-active { overflow: visible; max-height: none; height: auto; }
 
   /* Gallery */
   .gallery-grid-full {
@@ -1977,6 +1979,7 @@ h1, h2, h3, h4, h5, h6 {
   .route-row-info { min-height: 200px; }
   .route-row-text h3 { font-size: 1.2rem; }
   .route-row-map { max-height: 660px; }
+  .route-row-map.strava-active { overflow: visible; max-height: none; height: auto; }
 }
 
 /* ============================================
