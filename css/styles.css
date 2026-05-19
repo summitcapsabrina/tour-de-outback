@@ -890,7 +890,9 @@ h1, h2, h3, h4, h5, h6 {
   height: auto !important;
 }
 
-.route-row-map iframe {
+/* Only the placeholder iframe (direct child) — used for RWGPS/MapMyRide/Komoot.
+   Strava's iframe is nested inside .strava-native-embed and sizes itself. */
+.route-row-map > iframe {
   display: block;
   width: 100%;
   height: 1051px;
