@@ -447,6 +447,32 @@ function initRouteSwitch() {
 
   var stravaScriptLoaded = false;
 
+  // Strava iframes post resize messages with the content's true height.
+  // Strava's own embed.js sometimes misses these on mobile due to async timing —
+  // listen ourselves and apply the height directly to the matching iframe.
+  window.addEventListener('message', function(e) {
+    if (!e.origin || e.origin.indexOf('strava') === -1) return;
+    var data = e.data;
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch (err) { return; }
+    }
+    if (!data || typeof data !== 'object') return;
+    var h = data.height
+         || data.iframeHeight
+         || data.contentHeight
+         || (data.payload && data.payload.height)
+         || (data.data && data.data.height);
+    if (typeof h === 'string') h = parseInt(h, 10);
+    if (!h || isNaN(h) || h < 100) return;
+    var iframes = document.querySelectorAll('.strava-native-embed iframe');
+    for (var i = 0; i < iframes.length; i++) {
+      if (iframes[i].contentWindow === e.source) {
+        iframes[i].style.setProperty('height', h + 'px', 'important');
+        return;
+      }
+    }
+  });
+
   function loadStravaScript() {
     if (stravaScriptLoaded) return;
     stravaScriptLoaded = true;
