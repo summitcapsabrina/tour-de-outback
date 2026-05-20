@@ -544,6 +544,17 @@ function initRouteSwitch() {
             embedDiv.setAttribute('data-token', mapDiv.getAttribute('data-strava-token') || '');
             stravaContainer.appendChild(embedDiv);
             mapDiv.appendChild(stravaContainer);
+            // Watch for Strava's embed.js to replace the placeholder with an iframe,
+            // then lock it: scrolling="no" stops the user from scrolling inside the
+            // iframe to reveal clipped content (which made the title/map/buttons drift).
+            var lockObserver = new MutationObserver(function() {
+              var f = stravaContainer.querySelector('iframe');
+              if (f) {
+                f.setAttribute('scrolling', 'no');
+                lockObserver.disconnect();
+              }
+            });
+            lockObserver.observe(stravaContainer, { childList: true, subtree: true });
             loadStravaScript();
             // Give the script a moment then reprocess
             setTimeout(reprocessStravaEmbeds, 300);
