@@ -1717,8 +1717,8 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: 1fr;
     gap: 32px;
   }
-  /* Keep logo stacked above the description, but right-align it on mobile. */
-  .footer-about {
+  /* Keep logo stacked above the description, but right-align the logo on mobile. */
+  .footer-about h3 {
     text-align: right;
   }
 }
