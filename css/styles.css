@@ -1899,7 +1899,7 @@ h1, h2, h3, h4, h5, h6 {
      on mobile in practice, so this is the fallback height. Per-route override:
      <div class="route-row-map" style="--strava-mobile-h: 720px;" ...>. The JS
      postMessage listener still wins if Strava ever does send a height. */
-  .route-row-map.strava-active iframe { height: var(--strava-mobile-h, 560px) !important; }
+  .route-row-map.strava-active iframe { height: var(--strava-mobile-h, 580px) !important; }
 
   /* Route app switcher */
   .route-app-switcher { padding: 20px 16px 10px; }
