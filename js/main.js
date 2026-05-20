@@ -452,23 +452,18 @@ function initRouteSwitch() {
 
   var stravaScriptLoaded = false;
 
-  // Strava iframes post resize messages with the content's true height.
-  // Strava's own embed.js sometimes misses these on mobile due to async timing —
-  // listen ourselves and apply the height directly to the matching iframe.
+  // Strava iframes post resize messages using a custom array protocol:
+  //   [prefix, "BROADCAST_IFRAME_HEIGHT", heightInPx]
+  // Strava's own embed.js handles this, but it sometimes misses on mobile
+  // (iframe stays at the initial 650px from the embed bootstrap). Listen
+  // ourselves and apply the height directly, with !important so we beat
+  // Strava's inline style and any CSS rule.
   window.addEventListener('message', function(e) {
-    if (!e.origin || e.origin.indexOf('strava') === -1) return;
-    var data = e.data;
-    if (typeof data === 'string') {
-      try { data = JSON.parse(data); } catch (err) { return; }
-    }
-    if (!data || typeof data !== 'object') return;
-    var h = data.height
-         || data.iframeHeight
-         || data.contentHeight
-         || (data.payload && data.payload.height)
-         || (data.data && data.data.height);
-    if (typeof h === 'string') h = parseInt(h, 10);
-    if (!h || isNaN(h) || h < 100) return;
+    var d = e.data;
+    if (!Array.isArray(d) || d.length < 3) return;
+    if (d[1] !== 'BROADCAST_IFRAME_HEIGHT') return;
+    var h = d[2];
+    if (typeof h !== 'number' || h < 100) return;
     var iframes = document.querySelectorAll('.strava-native-embed iframe');
     for (var i = 0; i < iframes.length; i++) {
       if (iframes[i].contentWindow === e.source) {
