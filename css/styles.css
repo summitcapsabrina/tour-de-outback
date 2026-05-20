@@ -1717,23 +1717,9 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: 1fr;
     gap: 32px;
   }
-  /* Put logo on the right of the description on mobile so they sit side-by-side
-     instead of stacked. */
-  .footer-about {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 20px;
-  }
+  /* Keep logo stacked above the description, but right-align it on mobile. */
   .footer-about h3 {
-    order: 2;
-    margin-bottom: 0;
-    flex-shrink: 0;
-  }
-  .footer-about p {
-    order: 1;
-    flex: 1;
-    margin: 0;
+    text-align: right;
   }
 }
 
