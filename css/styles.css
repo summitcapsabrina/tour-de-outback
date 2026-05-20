@@ -1894,10 +1894,12 @@ h1, h2, h3, h4, h5, h6 {
   .route-row-text p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 14px; }
   .route-row-text .btn { width: 100%; text-align: center; padding: 12px 24px; }
   .route-row-map { max-height: 700px; }
-  /* Strava initial iframe is 650px from their embed.js, which clips content on mobile.
-     The JS listener applies the true height inline (!important) when Strava posts
-     BROADCAST_IFRAME_HEIGHT — this rule is the fallback if that message never arrives. */
-  .route-row-map.strava-active iframe { height: 800px !important; }
+  /* Strava initial iframe is 650px from their embed.js (too short for mobile, clips the
+     'Send to device' / 'Join Strava Club' buttons). Strava doesn't post a resize message
+     on mobile in practice, so this is the fallback height. Per-route override:
+     <div class="route-row-map" style="--strava-mobile-h: 720px;" ...>. The JS
+     postMessage listener still wins if Strava ever does send a height. */
+  .route-row-map.strava-active iframe { height: var(--strava-mobile-h, 700px) !important; }
 
   /* Route app switcher */
   .route-app-switcher { padding: 20px 16px 10px; }
