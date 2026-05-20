@@ -1718,7 +1718,7 @@ h1, h2, h3, h4, h5, h6 {
     gap: 32px;
   }
   /* Keep logo stacked above the description, but right-align it on mobile. */
-  .footer-about h3 {
+  .footer-about {
     text-align: right;
   }
 }
