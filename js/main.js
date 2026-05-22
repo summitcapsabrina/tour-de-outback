@@ -646,23 +646,35 @@ function initRouteSwitch() {
 // EmailOctopus loader inside it runs in its normal document parse context —
 // dynamic injection caused 405s on submit because EO's renderer relies on
 // document.currentScript / document.write running during parsing.
+//
+// Dismissal is set the moment the popup opens, not on close, so it's strictly
+// once-per-browser regardless of whether the user clicks X, submits, or just
+// navigates away.
 function initNewsletterPopup() {
   var popup = document.getElementById('newsletter-popup');
   if (!popup) return;
 
   try {
-    if (localStorage.getItem('newsletterPopupDismissed')) return;
+    if (localStorage.getItem('newsletterPopupShown')) return;
   } catch (e) {}
 
   setTimeout(function() {
     popup.classList.add('open');
+    try { localStorage.setItem('newsletterPopupShown', '1'); } catch (e) {}
   }, 8000);
 
   var closeBtn = popup.querySelector('.newsletter-popup-close');
   if (closeBtn) {
     closeBtn.addEventListener('click', function() {
       popup.classList.remove('open');
-      try { localStorage.setItem('newsletterPopupDismissed', '1'); } catch (e) {}
+    });
+  }
+
+  // CTA variant: close popup smoothly when user clicks "Sign Me Up"
+  var cta = popup.querySelector('.newsletter-popup-cta');
+  if (cta) {
+    cta.addEventListener('click', function() {
+      popup.classList.remove('open');
     });
   }
 }

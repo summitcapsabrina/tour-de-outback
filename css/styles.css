@@ -2233,6 +2233,14 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.9rem;
 }
 
+.newsletter-popup-cta {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  padding: 12px 24px;
+  font-size: 0.9rem;
+}
+
 .newsletter-popup-close {
   position: absolute;
   top: 8px;

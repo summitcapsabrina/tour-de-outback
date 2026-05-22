@@ -247,7 +247,7 @@
   </section>
 
   <!-- Newsletter -->
-  <section class="newsletter-section">
+  <section class="newsletter-section" id="newsletter">
     <div class="container">
       <h2>Stay in the Loop</h2>
       <p>Sign up for updates on routes, registration, and event news.</p>
@@ -312,6 +312,14 @@
   </footer>
 
   <script src="js/main.min.js"></script>
+    <!-- Newsletter Slide-In Popup (teaser → scrolls to inline form on this page) -->
+  <div class="newsletter-popup" id="newsletter-popup" role="dialog" aria-label="Newsletter signup">
+    <button class="newsletter-popup-close" type="button" aria-label="Close">&times;</button>
+    <h3>Stay in the Loop</h3>
+    <p>Get updates on routes, registration, and event news.</p>
+    <a class="btn btn-primary newsletter-popup-cta" href="#newsletter">Sign Me Up</a>
+  </div>
+
   <!--Start of Tawk.to Script-->
   <script type="text/javascript">
   var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();

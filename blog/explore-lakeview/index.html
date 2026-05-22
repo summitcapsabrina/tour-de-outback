@@ -140,7 +140,7 @@
     </article>
 
     <!-- Newsletter -->
-    <section class="newsletter-section">
+    <section class="newsletter-section" id="newsletter">
       <div class="container">
         <h2>Never Miss a Post</h2>
         <p>Subscribe to get new blog posts, route updates, and event news delivered to your inbox.</p>
@@ -202,14 +202,12 @@
   s0.parentNode.insertBefore(s1,s0);
   })();
   </script>
-  <!-- Newsletter Slide-In Popup -->
+  <!-- Newsletter Slide-In Popup (teaser → scrolls to inline form on this page) -->
   <div class="newsletter-popup" id="newsletter-popup" role="dialog" aria-label="Newsletter signup">
     <button class="newsletter-popup-close" type="button" aria-label="Close">&times;</button>
     <h3>Stay in the Loop</h3>
     <p>Get updates on routes, registration, and event news.</p>
-    <div class="eo-form-wrapper">
-      <script async src="https://eomail5.com/form/7af0939a-1815-11f1-a0fc-21017c1a5f14.js" data-form="7af0939a-1815-11f1-a0fc-21017c1a5f14"></script>
-    </div>
+    <a class="btn btn-primary newsletter-popup-cta" href="#newsletter">Sign Me Up</a>
   </div>
 
 </body>
