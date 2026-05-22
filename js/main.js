@@ -641,6 +641,46 @@ function initRouteSwitch() {
   setApp(saved || 'ridewithgps');
 }
 
+// --- Newsletter Slide-In Popup (8s delay, once per browser) ---
+function initNewsletterPopup() {
+  try {
+    if (localStorage.getItem('newsletterPopupDismissed')) return;
+  } catch (e) {}
+
+  setTimeout(function() {
+    if (document.querySelector('.newsletter-popup')) return;
+
+    var popup = document.createElement('div');
+    popup.className = 'newsletter-popup';
+    popup.setAttribute('role', 'dialog');
+    popup.setAttribute('aria-label', 'Newsletter signup');
+    popup.innerHTML =
+      '<button class="newsletter-popup-close" type="button" aria-label="Close">&times;</button>' +
+      '<h3>Stay in the Loop</h3>' +
+      '<p>Get updates on routes, registration, and event news.</p>' +
+      '<div class="eo-form-wrapper"></div>';
+    document.body.appendChild(popup);
+
+    // EmailOctopus loader (innerHTML doesn't execute <script>, so create it directly)
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://eomail5.com/form/7af0939a-1815-11f1-a0fc-21017c1a5f14.js';
+    s.setAttribute('data-form', '7af0939a-1815-11f1-a0fc-21017c1a5f14');
+    popup.querySelector('.eo-form-wrapper').appendChild(s);
+
+    // Animate in next frame so the transition runs
+    requestAnimationFrame(function() {
+      popup.classList.add('open');
+    });
+
+    popup.querySelector('.newsletter-popup-close').addEventListener('click', function() {
+      popup.classList.remove('open');
+      try { localStorage.setItem('newsletterPopupDismissed', '1'); } catch (e) {}
+      setTimeout(function() { popup.remove(); }, 400);
+    });
+  }, 8000);
+}
+
 // --- Initialize Everything ---
 document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
@@ -652,4 +692,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initRegisterTracking();
   initWeather();
   initRouteSwitch();
+  initNewsletterPopup();
 });

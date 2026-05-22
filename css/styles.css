@@ -2187,3 +2187,82 @@ h1, h2, h3, h4, h5, h6 {
 .mt-4 { margin-top: 32px; }
 .mb-2 { margin-bottom: 16px; }
 .mb-4 { margin-bottom: 32px; }
+
+/* ============================================
+   Newsletter Slide-In Popup
+   ============================================ */
+.newsletter-popup {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 360px;
+  max-width: calc(100vw - 40px);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+  padding: 24px 24px 18px;
+  z-index: 9999;
+  transform: translateX(calc(-100% - 40px));
+  opacity: 0;
+  transition: transform 0.45s ease, opacity 0.45s ease;
+}
+
+.newsletter-popup.open {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.newsletter-popup h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--dark);
+  margin: 0 0 6px;
+}
+
+.newsletter-popup p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.72);
+  margin: 0 0 14px;
+}
+
+.newsletter-popup-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  padding: 6px 10px;
+  transition: color 0.2s ease;
+}
+
+.newsletter-popup-close:hover {
+  color: var(--red);
+}
+
+/* Mobile: bottom sheet sliding up. Sits above Tawk.to's bubble (Tawk.to remains visible). */
+@media (max-width: 768px) {
+  .newsletter-popup {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-width: 100%;
+    border-radius: 14px 14px 0 0;
+    padding: 22px 20px 16px;
+    transform: translateY(100%);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.22);
+  }
+  .newsletter-popup.open {
+    transform: translateY(0);
+  }
+  .newsletter-popup h3 { font-size: 1.15rem; }
+  .newsletter-popup p { font-size: 0.85rem; }
+}
