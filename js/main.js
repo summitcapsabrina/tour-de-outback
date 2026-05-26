@@ -186,10 +186,38 @@ function initWeather() {
     }
   }
 
-  // Show cached data instantly while fresh fetch happens in background
+  // Render the widget shell immediately (header placeholder + empty dropdown with
+  // a loading state) so the dropdown is never blank if the user clicks it before
+  // fresh data arrives.
+  function renderShell() {
+    var existing = widget.querySelector('.forecast-dropdown');
+    var ddHTML = existing
+      ? existing.outerHTML
+      : '<div class="forecast-dropdown"><div class="forecast-loading">Loading forecast…</div></div>';
+    widget.innerHTML =
+      '<span class="weather-current" role="button" tabindex="0">' +
+        '<span class="weather-main">' +
+          '<span class="weather-icon">🌤️</span> ' +
+          '<span class="weather-temp">--°</span>' +
+        '</span>' +
+        '<span class="weather-arrow">▾</span>' +
+      '</span>' + ddHTML;
+    var current = widget.querySelector('.weather-current');
+    if (current) {
+      current.addEventListener('click', function(e) {
+        e.stopPropagation();
+        widget.classList.toggle('forecast-open');
+      });
+    }
+  }
+  renderShell();
+
+  // Apply cached observation data instantly (no fetch wait)
   var cached = sessionStorage.getItem('weatherData');
   if (cached) {
     var c = JSON.parse(cached);
+    currentObsIcon = c.icon;
+    currentObsTemp = c.temp;
     renderWeather(c.icon, c.temp, c.windSpeed, c.windDir, c.windGusts);
   }
 
@@ -349,45 +377,15 @@ function initWeather() {
     }
   }
 
-  // Lakeview Airport station (KLKV) — actual observed conditions
-  fetch('https://api.weather.gov/stations/KLKV/observations/latest', { headers: nwsHeaders })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      var p = data.properties;
-      var temp = p.temperature && p.temperature.value !== null ? cToF(p.temperature.value) : null;
-      var nowHour = new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Los_Angeles' });
-      var isNightNow = parseInt(nowHour, 10) >= 20 || parseInt(nowHour, 10) < 6;
-      var icon = weatherToIcon(p.textDescription, isNightNow);
-      currentObsIcon = icon;
-      currentObsTemp = temp;
-      if (p.maxTemperatureLast24Hours && p.maxTemperatureLast24Hours.value !== null) {
-        obsHigh = cToF(p.maxTemperatureLast24Hours.value);
-      }
-      var windSpeed = p.windSpeed && p.windSpeed.value !== null ? kmhToMph(p.windSpeed.value) : null;
-      var windDir = p.windDirection && p.windDirection.value !== null ? p.windDirection.value : null;
-      var windGusts = p.windGust && p.windGust.value !== null ? kmhToMph(p.windGust.value) : null;
-      if (temp !== null) {
-        renderWeather(icon, temp, windSpeed, windDir, windGusts);
-        // Sync first forecast card if forecast already rendered
-        syncFirstCard();
-        sessionStorage.setItem('weatherData', JSON.stringify({
-          icon: icon, temp: temp, windSpeed: windSpeed, windDir: windDir, windGusts: windGusts, timestamp: Date.now()
-        }));
-      }
-    })
-    .catch(function() {
-      if (!cached) widget.innerHTML = '';
-    });
-
-  // Fetch 3-day forecast from NWS
+  // Apply cached forecast immediately — dropdown shell exists from renderShell(),
+  // so it's safe to populate even if obs fetch hasn't returned yet.
   var cachedForecast = sessionStorage.getItem('weatherForecast');
   if (cachedForecast) {
     var cf = JSON.parse(cachedForecast);
-    var dd = widget.querySelector('.forecast-dropdown');
-    if (dd) {
-      dd.innerHTML = cf.html;
-      // Extract today's high/low from cached HTML so syncFirstCard has data
-      var firstCachedCard = dd.querySelector('.forecast-card');
+    var dd0 = widget.querySelector('.forecast-dropdown');
+    if (dd0) {
+      dd0.innerHTML = cf.html;
+      var firstCachedCard = dd0.querySelector('.forecast-card');
       if (firstCachedCard) {
         var hEl = firstCachedCard.querySelector('.forecast-high');
         var lEl = firstCachedCard.querySelector('.forecast-low');
@@ -397,48 +395,91 @@ function initWeather() {
     }
   }
 
-  fetch('https://api.weather.gov/points/42.1888,-120.3458', { headers: nwsHeaders })
-    .then(function(res) { return res.json(); })
-    .then(function(pointsData) {
-      // Fetch regular forecast
-      fetch(pointsData.properties.forecast, { headers: nwsHeaders })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          var html = buildForecast(data.properties.periods);
-          var dd = widget.querySelector('.forecast-dropdown');
-          if (dd) dd.innerHTML = html;
+  // Fetch wrapper — called on init, hourly, and when the tab becomes visible
+  // again after >1h. Pulls observations, forecast, and grid data in parallel.
+  var lastFetch = 0;
+  function loadWeatherData() {
+    lastFetch = Date.now();
+
+    // Lakeview Airport station (KLKV) — actual observed conditions
+    fetch('https://api.weather.gov/stations/KLKV/observations/latest', { headers: nwsHeaders })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        var p = data.properties;
+        var temp = p.temperature && p.temperature.value !== null ? cToF(p.temperature.value) : null;
+        var nowHour = new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Los_Angeles' });
+        var isNightNow = parseInt(nowHour, 10) >= 20 || parseInt(nowHour, 10) < 6;
+        var icon = weatherToIcon(p.textDescription, isNightNow);
+        currentObsIcon = icon;
+        currentObsTemp = temp;
+        if (p.maxTemperatureLast24Hours && p.maxTemperatureLast24Hours.value !== null) {
+          obsHigh = cToF(p.maxTemperatureLast24Hours.value);
+        }
+        var windSpeed = p.windSpeed && p.windSpeed.value !== null ? kmhToMph(p.windSpeed.value) : null;
+        var windDir = p.windDirection && p.windDirection.value !== null ? p.windDirection.value : null;
+        var windGusts = p.windGust && p.windGust.value !== null ? kmhToMph(p.windGust.value) : null;
+        if (temp !== null) {
+          renderWeather(icon, temp, windSpeed, windDir, windGusts);
           syncFirstCard();
-          sessionStorage.setItem('weatherForecast', JSON.stringify({ html: html, timestamp: Date.now() }));
-        })
-        .catch(function() {});
-      // Fetch grid data for today's explicit high/low
-      fetch(pointsData.properties.forecastGridData, { headers: nwsHeaders })
-        .then(function(res) { return res.json(); })
-        .then(function(gdata) {
-          var todayStr = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }).split(',')[0];
-          var todayDate = new Date(todayStr + ' 12:00:00');
-          var todayISO = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
-          // Parse maxTemperature for today
-          var maxTemps = gdata.properties.maxTemperature.values;
-          for (var k = 0; k < maxTemps.length; k++) {
-            if (maxTemps[k].validTime.indexOf(todayISO) !== -1 && maxTemps[k].value !== null) {
-              todayHigh = cToF(maxTemps[k].value);
-              break;
+          sessionStorage.setItem('weatherData', JSON.stringify({
+            icon: icon, temp: temp, windSpeed: windSpeed, windDir: windDir, windGusts: windGusts, timestamp: Date.now()
+          }));
+        }
+      })
+      .catch(function() {});
+
+    // Forecast + grid (today's explicit high/low)
+    fetch('https://api.weather.gov/points/42.1888,-120.3458', { headers: nwsHeaders })
+      .then(function(res) { return res.json(); })
+      .then(function(pointsData) {
+        fetch(pointsData.properties.forecast, { headers: nwsHeaders })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            var html = buildForecast(data.properties.periods);
+            var dd = widget.querySelector('.forecast-dropdown');
+            if (dd) dd.innerHTML = html;
+            syncFirstCard();
+            sessionStorage.setItem('weatherForecast', JSON.stringify({ html: html, timestamp: Date.now() }));
+          })
+          .catch(function() {});
+        fetch(pointsData.properties.forecastGridData, { headers: nwsHeaders })
+          .then(function(res) { return res.json(); })
+          .then(function(gdata) {
+            var todayStr = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }).split(',')[0];
+            var todayDate = new Date(todayStr + ' 12:00:00');
+            var todayISO = todayDate.getFullYear() + '-' + String(todayDate.getMonth() + 1).padStart(2, '0') + '-' + String(todayDate.getDate()).padStart(2, '0');
+            var maxTemps = gdata.properties.maxTemperature.values;
+            for (var k = 0; k < maxTemps.length; k++) {
+              if (maxTemps[k].validTime.indexOf(todayISO) !== -1 && maxTemps[k].value !== null) {
+                todayHigh = cToF(maxTemps[k].value);
+                break;
+              }
             }
-          }
-          // Parse minTemperature for today
-          var minTemps = gdata.properties.minTemperature.values;
-          for (var k = 0; k < minTemps.length; k++) {
-            if (minTemps[k].validTime.indexOf(todayISO) !== -1 && minTemps[k].value !== null) {
-              if (todayLow === null) todayLow = cToF(minTemps[k].value);
-              break;
+            var minTemps = gdata.properties.minTemperature.values;
+            for (var k = 0; k < minTemps.length; k++) {
+              if (minTemps[k].validTime.indexOf(todayISO) !== -1 && minTemps[k].value !== null) {
+                if (todayLow === null) todayLow = cToF(minTemps[k].value);
+                break;
+              }
             }
-          }
-          syncFirstCard();
-        })
-        .catch(function() {});
-    })
-    .catch(function() {});
+            syncFirstCard();
+          })
+          .catch(function() {});
+      })
+      .catch(function() {});
+  }
+
+  // Initial fetch + hourly auto-refresh while tab is open
+  loadWeatherData();
+  setInterval(loadWeatherData, 60 * 60 * 1000);
+
+  // Refresh when the tab regains focus after >1 hour (browsers throttle setInterval
+  // in background tabs, so this catches users coming back to a long-open tab).
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && Date.now() - lastFetch > 60 * 60 * 1000) {
+      loadWeatherData();
+    }
+  });
 
   // Close dropdown when clicking outside
   document.addEventListener('click', function(e) {
