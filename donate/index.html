@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-959LC5LDBS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-959LC5LDBS');
+    gtag('config', 'G-NXSX5FCEL3');
+  </script>
+  <!-- Meta Pixel Code -->
+  <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js'); fbq('init', '2075249173025215'); fbq('track', 'PageView');</script>
+  <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2075249173025215&ev=PageView&noscript=1"/></noscript>
+  <!-- End Meta Pixel Code -->
+  <title>Donate | Oregon Tour de Outback</title>
+  <meta name="description" content="Support Lake County Search and Rescue. Every dollar you give helps fund the volunteer SAR teams that keep riders and the Lake County community safe.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.googletagmanager.com">
+  <link rel="preconnect" href="https://api.open-meteo.com">
+  <link rel="dns-prefetch" href="https://eomail5.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.min.css">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="canonical" href="https://www.tourdeoregon.com/donate/">
+  <link rel="preload" as="image" href="../images/sar-collage.jpg">
+
+  <style>
+    .donate-intro-section {
+      padding: 80px 0;
+    }
+    .donate-intro {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .donate-intro h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .donate-intro p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #555;
+      margin-bottom: 18px;
+    }
+
+    .donate-amounts-section {
+      padding: 60px 0;
+      background: #f5f5f5;
+    }
+    .donate-amounts-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .donate-amounts-wrap h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2rem;
+      color: #222;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .donate-amounts-wrap > p {
+      color: #555;
+      margin-bottom: 32px;
+      font-size: 1rem;
+    }
+    .donate-amount-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .donate-amount-btn {
+      display: block;
+      background: #fff;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 22px 12px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #222;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .donate-amount-btn:hover,
+    .donate-amount-btn.selected {
+      border-color: #cc0000;
+      background: #cc0000;
+      color: #fff;
+    }
+    .donate-custom-row {
+      display: flex;
+      gap: 12px;
+      max-width: 420px;
+      margin: 0 auto 32px;
+    }
+    .donate-custom-row .currency {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      border: 2px solid #ddd;
+      border-right: none;
+      border-radius: 8px 0 0 8px;
+      padding: 0 14px;
+      font-weight: 700;
+      color: #555;
+    }
+    .donate-custom-row input {
+      flex: 1;
+      padding: 14px 16px;
+      border: 2px solid #ddd;
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+    }
+    .donate-custom-row input:focus {
+      border-color: #cc0000;
+    }
+    .donate-cta-row {
+      text-align: center;
+    }
+    .donate-cta-row .btn {
+      padding: 18px 60px;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+
+    .donate-impact-section {
+      padding: 80px 0;
+    }
+    .donate-impact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .donate-impact-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 32px 28px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+    .donate-impact-card .impact-amount {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #cc0000;
+      margin-bottom: 8px;
+    }
+    .donate-impact-card h3 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.2rem;
+      color: #222;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .donate-impact-card p {
+      color: #555;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .donate-other-section {
+      padding: 60px 0 80px;
+      background: #222;
+      color: #fff;
+    }
+    .donate-other-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .donate-other-wrap h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .donate-other-wrap p {
+      color: rgba(255,255,255,0.8);
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 14px;
+    }
+    .donate-other-wrap a {
+      color: #cc0000;
+    }
+
+    @media (max-width: 768px) {
+      .donate-intro-section, .donate-impact-section { padding: 50px 0; }
+      .donate-intro h2 { font-size: 1.8rem; }
+      .donate-intro p { font-size: 1rem; }
+      .donate-amount-grid { grid-template-columns: repeat(2, 1fr); }
+      .donate-impact-grid { grid-template-columns: 1fr; }
+      .donate-cta-row .btn { padding: 16px 40px; width: 100%; }
+    }
+  </style>
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.tourdeoregon.com/donate/">
+  <meta property="og:title" content="Donate | Oregon Tour de Outback">
+  <meta property="og:description" content="Support Lake County Search and Rescue — the volunteer team keeping our riders and community safe.">
+  <meta property="og:image" content="https://www.tourdeoregon.com/images/sar-collage.jpg">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Donate | Oregon Tour de Outback">
+  <meta name="twitter:description" content="Support Lake County Search and Rescue.">
+  <meta name="twitter:image" content="https://www.tourdeoregon.com/images/sar-collage.jpg">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="nav-logo"><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" class="nav-logo-img"></a>
+      <div class="nav-toggle"><span></span><span></span><span></span></div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/routes/">Routes</a>
+        <a href="/schedule/">Schedule</a>
+        <a href="/about/">About</a>
+        <!-- <a href="/shop/">Shop</a> -->
+        <a href="/volunteer/">Volunteer</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
+      </div>
+      <div class="weather-widget" id="weather-widget"></div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero hero-page">
+    <div class="hero-bg" style="background-image: url('../images/sar-collage.jpg'); background-color: #2a2a2a;"></div>
+    <div class="hero-content">
+      <h1>Donate</h1>
+      <p class="tagline">Every dollar keeps riders &mdash; and our community &mdash; safe</p>
+    </div>
+  </section>
+
+  <!-- Intro -->
+  <section class="donate-intro-section">
+    <div class="container">
+      <div class="donate-intro">
+        <h2>Support Lake County Search and Rescue</h2>
+        <p>Oregon Tour de Outback exists to celebrate the wide-open beauty of Lake County &mdash; and to give back to the volunteers who keep this country safe. <strong>100% of every donation supports Lake County Search and Rescue</strong>, the all-volunteer team that responds to lost hikers, injured riders, and emergencies across nearly 8,300 square miles of high desert.</p>
+        <p>You don't need to ride to be part of this event. A donation, large or small, fuels training, gear, and the rapid response that saves lives.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Donation Amounts -->
+  <section class="donate-amounts-section">
+    <div class="container">
+      <div class="donate-amounts-wrap">
+        <h2>Make a Gift</h2>
+        <p>Choose an amount, or enter your own.</p>
+        <div class="donate-amount-grid">
+          <button type="button" class="donate-amount-btn" data-amount="25">$25</button>
+          <button type="button" class="donate-amount-btn" data-amount="50">$50</button>
+          <button type="button" class="donate-amount-btn" data-amount="100">$100</button>
+          <button type="button" class="donate-amount-btn" data-amount="250">$250</button>
+        </div>
+        <div class="donate-custom-row">
+          <span class="currency">$</span>
+          <input type="number" id="donate-custom-amount" placeholder="Custom amount" min="1" step="1">
+        </div>
+        <div class="donate-cta-row">
+          <!-- TODO: replace href with your donation processor URL once configured
+               (Qgiv, Donorbox, Stripe Payment Link, PayPal, Givebutter, etc.).
+               The selected amount is appended as ?amount=NN. -->
+          <a id="donate-button" href="#" class="btn btn-primary" target="_blank" rel="noopener">Donate Now</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Your Impact -->
+  <section class="donate-impact-section">
+    <div class="container">
+      <div class="section-heading" style="text-align:center; margin-bottom:48px;">
+        <h2>Your Impact</h2>
+      </div>
+      <div class="donate-impact-grid">
+        <div class="donate-impact-card">
+          <div class="impact-amount">$25</div>
+          <h3>Trail Safety</h3>
+          <p>Helps fund flares, water, and emergency rations carried by SAR teams responding to backcountry calls.</p>
+        </div>
+        <div class="donate-impact-card">
+          <div class="impact-amount">$100</div>
+          <h3>Volunteer Training</h3>
+          <p>Underwrites a full day of wilderness first-aid or rope-rescue training for a Lake County SAR volunteer.</p>
+        </div>
+        <div class="donate-impact-card">
+          <div class="impact-amount">$500</div>
+          <h3>Mission-Ready Gear</h3>
+          <p>Outfits a SAR volunteer with the radios, lights, and personal safety gear needed to respond on no notice.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Other Ways to Give -->
+  <section class="donate-other-section">
+    <div class="container">
+      <div class="donate-other-wrap">
+        <h2>Other Ways to Give</h2>
+        <p>Prefer to mail a check or explore corporate sponsorship? Reach out to us at <a href="mailto:info@tourdeoutback.org">info@tourdeoutback.org</a> and we'll get you connected with the right people at Lake County Search and Rescue and the Lake County Chamber of Commerce.</p>
+        <p>Oregon Tour de Outback is presented by the Lake County Chamber of Commerce. Donations may be tax-deductible to the extent allowed by law &mdash; please consult your tax advisor.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <h3><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" style="height: 40px;" loading="lazy"></h3>
+          <p>Great rides, great fun, for a great cause. Join us June 27, 2026 in Lakeview, Oregon for gravel and road cycling through the stunning Oregon outback.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/routes/">Routes</a></li>
+            <li><a href="/schedule/">Schedule</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/volunteer/">Volunteer</a></li>
+            <li><a href="/blog/">Blog</a></li>
+            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
+            <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
+          </ul>
+        </div>
+        <div class="footer-social">
+          <h4>Follow Us</h4>
+          <div class="social-icons">
+            <a href="https://www.facebook.com/oregontourdeoutback" target="_blank" aria-label="Facebook">f</a>
+            <a href="https://www.instagram.com/oregontourdeoutback/" target="_blank" aria-label="Instagram">ig</a>
+            <a href="https://www.youtube.com/@tourdeoutback" target="_blank" aria-label="YouTube">yt</a>
+            <a href="mailto:info@tourdeoutback.org" aria-label="Email">@</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        &copy; Oregon Tour de Outback. All rights reserved. | Presented by Lake County Chamber of Commerce
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/main.min.js"></script>
+  <script>
+    // --- Donate amount selection ---
+    (function () {
+      var buttons = document.querySelectorAll('.donate-amount-btn');
+      var customInput = document.getElementById('donate-custom-amount');
+      var donateBtn = document.getElementById('donate-button');
+      // TODO: set this to your real donation page URL.
+      // The selected amount is appended as ?amount=NN.
+      var DONATE_BASE_URL = '#';
+      var selected = null;
+
+      function syncButton(amount) {
+        if (DONATE_BASE_URL === '#' || !amount) {
+          donateBtn.setAttribute('href', '#');
+          return;
+        }
+        var sep = DONATE_BASE_URL.indexOf('?') === -1 ? '?' : '&';
+        donateBtn.setAttribute('href', DONATE_BASE_URL + sep + 'amount=' + encodeURIComponent(amount));
+      }
+
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          buttons.forEach(function (b) { b.classList.remove('selected'); });
+          btn.classList.add('selected');
+          customInput.value = '';
+          selected = btn.getAttribute('data-amount');
+          syncButton(selected);
+        });
+      });
+
+      customInput.addEventListener('input', function () {
+        buttons.forEach(function (b) { b.classList.remove('selected'); });
+        selected = customInput.value;
+        syncButton(selected);
+      });
+    })();
+  </script>
+  <!--Start of Tawk.to Script-->
+  <script type="text/javascript">
+  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+  (function(){
+  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+  s1.async=true;
+  s1.src='https://embed.tawk.to/69a3fa1d4ebd121c340a9c32/1jik8i17d';
+  s1.charset='UTF-8';
+  s1.setAttribute('crossorigin','*');
+  s0.parentNode.insertBefore(s1,s0);
+  })();
+  </script>
+  <!--End of Tawk.to Script-->
+</body>
+</html>
