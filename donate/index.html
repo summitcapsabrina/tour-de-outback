@@ -17,7 +17,7 @@
   <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2075249173025215&ev=PageView&noscript=1"/></noscript>
   <!-- End Meta Pixel Code -->
   <title>Donate | Oregon Tour de Outback</title>
-  <meta name="description" content="Support Lake County Search and Rescue. Every dollar you give helps fund the volunteer SAR teams that keep riders and the Lake County community safe.">
+  <meta name="description" content="Support Oregon Tour de Outback and our partner Lake County Search and Rescue. Donate by card, PayPal, Venmo, or Zelle.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://www.googletagmanager.com">
@@ -34,8 +34,28 @@
   <link rel="preload" as="image" href="../images/sar-collage.jpg">
 
   <style>
+    /* Shrink hero for the donate page */
+    .donate-page-hero { min-height: 18vh !important; }
+    .donate-page-hero .hero-content {
+      padding: 100px 24px 24px !important;
+    }
+    .donate-page-hero .hero-content h1 {
+      font-size: 2rem !important;
+      margin-bottom: 4px !important;
+    }
+    .donate-page-hero .hero-content .tagline {
+      font-size: 1.1rem !important;
+      margin-bottom: 0 !important;
+    }
+    @media (max-width: 768px) {
+      .donate-page-hero { min-height: 22vh !important; }
+      .donate-page-hero .hero-content { padding: 90px 20px 20px !important; }
+      .donate-page-hero .hero-content h1 { font-size: 1.6rem !important; }
+      .donate-page-hero .hero-content .tagline { font-size: 0.95rem !important; }
+    }
+
     .donate-intro-section {
-      padding: 80px 0;
+      padding: 60px 0;
     }
     .donate-intro {
       max-width: 760px;
@@ -58,33 +78,82 @@
       margin-bottom: 18px;
     }
 
-    .donate-amounts-section {
+    /* Custom donation form (Stripe + PayPal + Venmo + Zelle) */
+    .donate-form-section {
       padding: 60px 0;
       background: #f5f5f5;
     }
-    .donate-amounts-wrap {
-      max-width: 720px;
+    .donate-form-card {
+      max-width: 760px;
       margin: 0 auto;
-      text-align: center;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.08);
+      padding: 40px;
     }
-    .donate-amounts-wrap h2 {
+    .donate-form-card h2 {
       font-family: 'Oswald', sans-serif;
-      font-size: 2rem;
+      font-size: 1.8rem;
       color: #222;
-      margin-bottom: 12px;
+      margin: 0 0 6px;
       text-transform: uppercase;
       letter-spacing: 1px;
+      text-align: center;
     }
-    .donate-amounts-wrap > p {
+    .donate-form-card > p.donate-form-sub {
+      color: #777;
+      font-size: 0.95rem;
+      text-align: center;
+      margin: 0 0 28px;
+    }
+    .donate-step-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #888;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 28px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* Frequency toggle */
+    .donate-frequency {
+      display: flex;
+      background: #f0f0f0;
+      border-radius: 8px;
+      padding: 4px;
+      max-width: 320px;
+      margin: 0 auto 24px;
+    }
+    .donate-frequency-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 12px 16px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
       color: #555;
-      margin-bottom: 32px;
-      font-size: 1rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s ease;
     }
+    .donate-frequency-btn.selected {
+      background: #fff;
+      color: #cc0000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Preset amounts */
     .donate-amount-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
     }
     .donate-amount-btn {
       display: block;
@@ -97,22 +166,33 @@
       font-weight: 700;
       color: #222;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.15s ease;
       text-align: center;
     }
-    .donate-amount-btn:hover,
+    .donate-amount-btn:hover { border-color: #cc0000; color: #cc0000; }
     .donate-amount-btn.selected {
       border-color: #cc0000;
       background: #cc0000;
       color: #fff;
     }
-    .donate-custom-row {
+
+    /* Other amount */
+    .donate-other-row {
       display: flex;
-      gap: 12px;
-      max-width: 420px;
-      margin: 0 auto 32px;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
     }
-    .donate-custom-row .currency {
+    .donate-other-row label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+    }
+    .donate-other-row .currency {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -123,27 +203,176 @@
       padding: 0 14px;
       font-weight: 700;
       color: #555;
+      height: 50px;
     }
-    .donate-custom-row input {
+    .donate-other-row input {
       flex: 1;
-      padding: 14px 16px;
+      padding: 0 16px;
+      height: 50px;
       border: 2px solid #ddd;
       border-left: none;
       border-radius: 0 8px 8px 0;
       font-size: 1rem;
       font-family: inherit;
       outline: none;
+      min-width: 0;
     }
-    .donate-custom-row input:focus {
+    .donate-other-row input:focus { border-color: #cc0000; }
+
+    /* Cover fees */
+    .donate-fee-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: #f7f7f7;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 0.92rem;
+      color: #333;
+    }
+    .donate-fee-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #cc0000;
+      flex-shrink: 0;
+    }
+    .donate-fee-row label { flex: 1; cursor: pointer; line-height: 1.45; }
+
+    /* Donor info form */
+    .donor-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .donor-info-full { grid-column: 1 / -1; }
+    .donor-info-grid input {
+      width: 100%;
+      height: 46px;
+      padding: 0 14px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    .donor-info-grid input:focus { border-color: #cc0000; }
+
+    /* Payment method tabs */
+    .payment-method-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+    .payment-method-tab {
+      background: #fff;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 14px 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #555;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .payment-method-tab .pm-icon {
+      font-size: 1.3rem;
+    }
+    .payment-method-tab:hover { border-color: #cc0000; }
+    .payment-method-tab.selected {
       border-color: #cc0000;
+      background: #fff;
+      color: #cc0000;
+      box-shadow: 0 0 0 2px rgba(204,0,0,0.1);
     }
-    .donate-cta-row {
+
+    /* Payment panes */
+    .payment-pane { display: none; padding: 18px 0; }
+    .payment-pane.active { display: block; }
+    .payment-pane-placeholder {
+      min-height: 80px;
+      border: 1.5px dashed #d0d0d0;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-style: italic;
       text-align: center;
+      padding: 18px;
+      font-size: 0.92rem;
     }
-    .donate-cta-row .btn {
-      padding: 18px 60px;
+    .zelle-info {
+      background: #f7f7f7;
+      border-radius: 8px;
+      padding: 18px 20px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #333;
+    }
+    .zelle-info strong { color: #cc0000; }
+
+    /* Total + submit */
+    .donate-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-top: 1px solid #eee;
+      padding-top: 18px;
+      margin: 24px 0 20px;
+      font-family: 'Oswald', sans-serif;
+    }
+    .donate-total .label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .donate-total .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #cc0000;
+    }
+    .donate-total .freq-note {
+      font-size: 0.85rem;
+      color: #888;
+      margin-left: 6px;
+      font-family: 'Open Sans', sans-serif;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .donate-submit-row { text-align: center; }
+    .donate-submit-row .btn {
+      width: 100%;
+      padding: 18px 40px;
       font-size: 1.1rem;
       letter-spacing: 1px;
+    }
+    .donate-submit-row .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .donate-account-prompt {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #777;
+      margin-top: 14px;
+    }
+    .donate-account-prompt a { color: #cc0000; font-weight: 600; }
+
+    @media (max-width: 768px) {
+      .donate-form-card { padding: 28px 20px; }
+      .payment-method-tabs { grid-template-columns: repeat(2, 1fr); }
+      .donor-info-grid { grid-template-columns: 1fr; }
     }
 
     .donate-impact-section {
@@ -226,12 +455,12 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.tourdeoregon.com/donate/">
   <meta property="og:title" content="Donate | Oregon Tour de Outback">
-  <meta property="og:description" content="Support Lake County Search and Rescue — the volunteer team keeping our riders and community safe.">
+  <meta property="og:description" content="Support Oregon Tour de Outback and our partner Lake County Search and Rescue.">
   <meta property="og:image" content="https://www.tourdeoregon.com/images/sar-collage.jpg">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Donate | Oregon Tour de Outback">
-  <meta name="twitter:description" content="Support Lake County Search and Rescue.">
+  <meta name="twitter:description" content="Support Oregon Tour de Outback and our partner Lake County Search and Rescue.">
   <meta name="twitter:image" content="https://www.tourdeoregon.com/images/sar-collage.jpg">
 </head>
 <body>
@@ -256,8 +485,8 @@
     </div>
   </nav>
 
-  <!-- Hero -->
-  <section class="hero hero-page">
+  <!-- Hero (compact for donate page) -->
+  <section class="hero hero-page donate-page-hero">
     <div class="hero-bg" style="background-image: url('../images/sar-collage.jpg'); background-color: #2a2a2a;"></div>
     <div class="hero-content">
       <h1>Donate</h1>
@@ -269,36 +498,111 @@
   <section class="donate-intro-section">
     <div class="container">
       <div class="donate-intro">
-        <h2>Support Lake County Search and Rescue</h2>
-        <p>Oregon Tour de Outback exists to celebrate the wide-open beauty of Lake County &mdash; and to give back to the volunteers who keep this country safe. <strong>100% of every donation supports Lake County Search and Rescue</strong>, the all-volunteer team that responds to lost hikers, injured riders, and emergencies across nearly 8,300 square miles of high desert.</p>
-        <p>You don't need to ride to be part of this event. A donation, large or small, fuels training, gear, and the rapid response that saves lives.</p>
+        <h2>Support Oregon Tour de Outback</h2>
+        <p>Your gift supports Oregon Tour de Outback &mdash; and through the event, our long-time partners at Lake County Search and Rescue, the all-volunteer team that responds to lost hikers, injured riders, and emergencies across nearly 8,300 square miles of high desert.</p>
+        <p>You don't need to ride to be part of this event. A contribution, large or small, helps fund the rides, the riders' safety net, and the community partnerships that make this event possible.</p>
       </div>
     </div>
   </section>
 
-  <!-- Donation Amounts -->
-  <section class="donate-amounts-section">
+  <!-- Donation form -->
+  <section class="donate-form-section">
     <div class="container">
-      <div class="donate-amounts-wrap">
-        <h2>Make a Gift</h2>
-        <p>Choose an amount, or enter your own.</p>
+      <form id="donate-form" class="donate-form-card" novalidate>
+        <h2>Choose Your Gift</h2>
+        <p class="donate-form-sub">Select a gift frequency and amount below.</p>
+
+        <!-- Step 1: Frequency -->
+        <div class="donate-frequency" role="tablist" aria-label="Gift frequency">
+          <button type="button" class="donate-frequency-btn selected" data-frequency="one-time" role="tab" aria-selected="true">One Time</button>
+          <button type="button" class="donate-frequency-btn" data-frequency="monthly" role="tab" aria-selected="false">Monthly</button>
+        </div>
+
+        <!-- Step 2: Amount -->
         <div class="donate-amount-grid">
           <button type="button" class="donate-amount-btn" data-amount="25">$25</button>
           <button type="button" class="donate-amount-btn" data-amount="50">$50</button>
           <button type="button" class="donate-amount-btn" data-amount="100">$100</button>
           <button type="button" class="donate-amount-btn" data-amount="250">$250</button>
+          <button type="button" class="donate-amount-btn" data-amount="500">$500</button>
+          <button type="button" class="donate-amount-btn" data-amount="1000">$1,000</button>
         </div>
-        <div class="donate-custom-row">
+        <div class="donate-other-row">
+          <label for="donate-custom-amount">Other</label>
           <span class="currency">$</span>
-          <input type="number" id="donate-custom-amount" placeholder="Custom amount" min="1" step="1">
+          <input type="number" id="donate-custom-amount" placeholder="Other amount" min="1" step="1" inputmode="decimal">
         </div>
-        <div class="donate-cta-row">
-          <!-- TODO: replace href with your donation processor URL once configured
-               (Qgiv, Donorbox, Stripe Payment Link, PayPal, Givebutter, etc.).
-               The selected amount is appended as ?amount=NN. -->
-          <a id="donate-button" href="#" class="btn btn-primary" target="_blank" rel="noopener">Donate Now</a>
+
+        <!-- Cover fees -->
+        <div class="donate-fee-row">
+          <input type="checkbox" id="donate-cover-fee">
+          <label for="donate-cover-fee">Cover the transaction fee (about 3%) so the full amount supports Oregon Tour de Outback.</label>
         </div>
-      </div>
+
+        <!-- Step 3: Your Information -->
+        <div class="donate-step-label">Your Information</div>
+        <div class="donor-info-grid">
+          <input type="text" id="donor-first-name" placeholder="First name" autocomplete="given-name" required>
+          <input type="text" id="donor-last-name" placeholder="Last name" autocomplete="family-name" required>
+          <input type="email" id="donor-email" class="donor-info-full" placeholder="Email" autocomplete="email" required>
+          <input type="text" id="donor-address" class="donor-info-full" placeholder="Street address" autocomplete="street-address">
+          <input type="text" id="donor-city" placeholder="City" autocomplete="address-level2">
+          <input type="text" id="donor-state" placeholder="State" autocomplete="address-level1">
+          <input type="text" id="donor-zip" class="donor-info-full" placeholder="ZIP code" autocomplete="postal-code">
+        </div>
+
+        <!-- Step 4: Payment Method -->
+        <div class="donate-step-label">Payment Method</div>
+        <div class="payment-method-tabs" role="tablist" aria-label="Payment method">
+          <button type="button" class="payment-method-tab selected" data-method="card" role="tab" aria-selected="true">
+            <span class="pm-icon">💳</span> Card
+          </button>
+          <button type="button" class="payment-method-tab" data-method="paypal" role="tab" aria-selected="false">
+            <span class="pm-icon">🅿️</span> PayPal
+          </button>
+          <button type="button" class="payment-method-tab" data-method="venmo" role="tab" aria-selected="false">
+            <span class="pm-icon">📱</span> Venmo
+          </button>
+          <button type="button" class="payment-method-tab" data-method="zelle" role="tab" aria-selected="false">
+            <span class="pm-icon">🏦</span> Zelle
+          </button>
+        </div>
+
+        <!-- Payment panes -->
+        <div class="payment-pane active" data-pane="card">
+          <!-- Stripe Elements mounts here once Phase 1 ships -->
+          <div id="stripe-card-element" class="payment-pane-placeholder">
+            Stripe card form will mount here once Phase 1 is live.
+          </div>
+        </div>
+        <div class="payment-pane" data-pane="paypal">
+          <!-- PayPal Smart Buttons mount here -->
+          <div id="paypal-button-container" class="payment-pane-placeholder">
+            PayPal button will render here once Phase 2 is live.
+          </div>
+        </div>
+        <div class="payment-pane" data-pane="venmo">
+          <!-- Venmo button (via PayPal SDK) renders here -->
+          <div id="venmo-button-container" class="payment-pane-placeholder">
+            Venmo button will render here once Phase 2 is live (auto-shown on mobile US devices).
+          </div>
+        </div>
+        <div class="payment-pane" data-pane="zelle">
+          <div class="zelle-info">
+            Send your Zelle gift to <strong>info@tourdeoutback.org</strong> from your banking app. Please include your name in the memo so we can match your gift to your account and email you a receipt.
+          </div>
+        </div>
+
+        <!-- Total + Submit -->
+        <div class="donate-total">
+          <span class="label">Total</span>
+          <span><span class="value" id="donate-total-value">$0</span><span class="freq-note" id="donate-freq-note"></span></span>
+        </div>
+        <div class="donate-submit-row">
+          <button type="submit" id="donate-submit-btn" class="btn btn-primary" disabled>Donate</button>
+          <p class="donate-account-prompt">Already have an account? <a href="/account/">Sign in</a> to use your saved info.</p>
+        </div>
+      </form>
     </div>
   </section>
 
@@ -333,8 +637,8 @@
     <div class="container">
       <div class="donate-other-wrap">
         <h2>Other Ways to Give</h2>
-        <p>Prefer to mail a check or explore corporate sponsorship? Reach out to us at <a href="mailto:info@tourdeoutback.org">info@tourdeoutback.org</a> and we'll get you connected with the right people at Lake County Search and Rescue and the Lake County Chamber of Commerce.</p>
-        <p>Oregon Tour de Outback is presented by the Lake County Chamber of Commerce. Donations may be tax-deductible to the extent allowed by law &mdash; please consult your tax advisor.</p>
+        <p>Prefer to mail a check or explore corporate sponsorship? Reach out to us at <a href="mailto:info@tourdeoutback.org">info@tourdeoutback.org</a> and we'll connect you with the right people at the Lake County Chamber of Commerce.</p>
+        <p style="font-size: 0.85rem; opacity: 0.75; margin-top: 24px;">Oregon Tour de Outback is presented by the Lake County Chamber of Commerce, a 501(c)(6) organization. Contributions are <strong>not tax-deductible as charitable contributions</strong>, but may be deductible as ordinary and necessary business expenses. Please consult your tax advisor.</p>
       </div>
     </div>
   </section>
@@ -378,40 +682,155 @@
 
   <script src="../js/main.min.js"></script>
   <script>
-    // --- Donate amount selection ---
+    // --- Donation form: frequency, amount, fee, payment method, total ---
+    // Phase 1+ will wire in real Stripe / PayPal / Firebase calls. Right now
+    // this handles all UI state and validation; the submit button just logs
+    // the assembled donation payload.
     (function () {
-      var buttons = document.querySelectorAll('.donate-amount-btn');
-      var customInput = document.getElementById('donate-custom-amount');
-      var donateBtn = document.getElementById('donate-button');
-      // TODO: set this to your real donation page URL.
-      // The selected amount is appended as ?amount=NN.
-      var DONATE_BASE_URL = '#';
-      var selected = null;
+      var form = document.getElementById('donate-form');
+      if (!form) return;
 
-      function syncButton(amount) {
-        if (DONATE_BASE_URL === '#' || !amount) {
-          donateBtn.setAttribute('href', '#');
-          return;
-        }
-        var sep = DONATE_BASE_URL.indexOf('?') === -1 ? '?' : '&';
-        donateBtn.setAttribute('href', DONATE_BASE_URL + sep + 'amount=' + encodeURIComponent(amount));
+      var amountBtns = form.querySelectorAll('.donate-amount-btn');
+      var freqBtns = form.querySelectorAll('.donate-frequency-btn');
+      var methodTabs = form.querySelectorAll('.payment-method-tab');
+      var panes = form.querySelectorAll('.payment-pane');
+      var customInput = document.getElementById('donate-custom-amount');
+      var coverFeeBox = document.getElementById('donate-cover-fee');
+      var totalEl = document.getElementById('donate-total-value');
+      var freqNoteEl = document.getElementById('donate-freq-note');
+      var submitBtn = document.getElementById('donate-submit-btn');
+
+      var FEE_RATE = 0.029;  // Stripe / PayPal typical
+      var FEE_FLAT = 0.30;
+
+      var state = {
+        baseAmount: 0,
+        frequency: 'one-time',
+        method: 'card'
+      };
+
+      function effectiveAmount() {
+        if (!state.baseAmount || state.baseAmount <= 0) return 0;
+        if (!coverFeeBox.checked) return state.baseAmount;
+        // Gross-up so the org receives the full base amount after fees
+        return (state.baseAmount + FEE_FLAT) / (1 - FEE_RATE);
       }
 
-      buttons.forEach(function (btn) {
+      function fmtMoney(n) {
+        if (!n) return '$0';
+        var rounded = Math.round(n * 100) / 100;
+        if (rounded === Math.floor(rounded)) return '$' + rounded.toLocaleString('en-US');
+        return '$' + rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function donorInfoValid() {
+        var first = document.getElementById('donor-first-name').value.trim();
+        var last = document.getElementById('donor-last-name').value.trim();
+        var email = document.getElementById('donor-email').value.trim();
+        var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        return first && last && emailOk;
+      }
+
+      function render() {
+        var total = effectiveAmount();
+        totalEl.textContent = fmtMoney(total);
+        freqNoteEl.textContent = state.frequency === 'monthly' ? ' /month' : '';
+
+        // Zelle is manual — disable submit and tell the user
+        if (state.method === 'zelle') {
+          submitBtn.textContent = 'Send via Zelle (see above)';
+          submitBtn.disabled = true;
+          return;
+        }
+
+        var labelAmount = state.baseAmount > 0 ? ' ' + fmtMoney(total) : '';
+        submitBtn.textContent = state.frequency === 'monthly'
+          ? 'Donate' + labelAmount + ' / month'
+          : 'Donate' + labelAmount;
+        submitBtn.disabled = !(state.baseAmount > 0 && donorInfoValid());
+      }
+
+      // Amount buttons
+      amountBtns.forEach(function (btn) {
         btn.addEventListener('click', function () {
-          buttons.forEach(function (b) { b.classList.remove('selected'); });
+          amountBtns.forEach(function (b) { b.classList.remove('selected'); });
           btn.classList.add('selected');
           customInput.value = '';
-          selected = btn.getAttribute('data-amount');
-          syncButton(selected);
+          state.baseAmount = parseFloat(btn.getAttribute('data-amount')) || 0;
+          render();
         });
       });
 
       customInput.addEventListener('input', function () {
-        buttons.forEach(function (b) { b.classList.remove('selected'); });
-        selected = customInput.value;
-        syncButton(selected);
+        amountBtns.forEach(function (b) { b.classList.remove('selected'); });
+        state.baseAmount = parseFloat(customInput.value) || 0;
+        render();
       });
+
+      // Frequency
+      freqBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          freqBtns.forEach(function (b) {
+            b.classList.remove('selected');
+            b.setAttribute('aria-selected', 'false');
+          });
+          btn.classList.add('selected');
+          btn.setAttribute('aria-selected', 'true');
+          state.frequency = btn.getAttribute('data-frequency');
+          render();
+        });
+      });
+
+      // Fee toggle
+      coverFeeBox.addEventListener('change', render);
+
+      // Payment method tabs
+      methodTabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          methodTabs.forEach(function (t) {
+            t.classList.remove('selected');
+            t.setAttribute('aria-selected', 'false');
+          });
+          tab.classList.add('selected');
+          tab.setAttribute('aria-selected', 'true');
+          state.method = tab.getAttribute('data-method');
+          panes.forEach(function (p) {
+            p.classList.toggle('active', p.getAttribute('data-pane') === state.method);
+          });
+          render();
+        });
+      });
+
+      // Re-validate when donor info changes
+      ['donor-first-name', 'donor-last-name', 'donor-email'].forEach(function (id) {
+        document.getElementById(id).addEventListener('input', render);
+      });
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (submitBtn.disabled) return;
+        var payload = {
+          amount: effectiveAmount(),
+          baseAmount: state.baseAmount,
+          coverFee: coverFeeBox.checked,
+          frequency: state.frequency,
+          method: state.method,
+          donor: {
+            firstName: document.getElementById('donor-first-name').value.trim(),
+            lastName: document.getElementById('donor-last-name').value.trim(),
+            email: document.getElementById('donor-email').value.trim(),
+            address: document.getElementById('donor-address').value.trim(),
+            city: document.getElementById('donor-city').value.trim(),
+            state: document.getElementById('donor-state').value.trim(),
+            zip: document.getElementById('donor-zip').value.trim()
+          }
+        };
+        // Phase 1+: send `payload` to Firebase Functions → Stripe/PayPal API
+        console.log('Donation payload (TODO: send to backend):', payload);
+        alert('Phase 1 will wire this to Stripe. Payload logged to console.');
+      });
+
+      render();
     })();
   </script>
   <!--Start of Tawk.to Script-->
