@@ -20,10 +20,15 @@
       .fluid { width: 100% !important; max-width: 100% !important; }
       .stack-column { display: block !important; width: 100% !important; }
       .hero-text h1 { font-size: 30px !important; line-height: 36px !important; }
-      .content-pad { padding-left: 20px !important; padding-right: 20px !important; }
-      .price-cell { display: block !important; width: 100% !important; padding: 14px 8px !important; }
-      .price-arrow { display: none !important; }
-      .stat-box { display: block !important; width: 100% !important; margin-bottom: 8px !important; }
+      .content-pad { padding-left: 16px !important; padding-right: 16px !important; }
+      /* Keep price comparison side-by-side on mobile, just scale the numbers down */
+      .price-cell { padding: 18px 6px !important; }
+      .price-amount { font-size: 34px !important; line-height: 38px !important; }
+      .price-arrow { font-size: 18px !important; }
+      /* Keep stat boxes side-by-side too — scale text down so they fit */
+      .stat-box { padding: 12px 4px !important; }
+      .stat-value { font-size: 16px !important; line-height: 20px !important; }
+      .stat-label { font-size: 9px !important; letter-spacing: 0.5px !important; }
     }
   </style>
 </head>
@@ -82,14 +87,14 @@
         <tr>
           <td class="price-cell" width="42%" style="text-align:center;padding:24px 12px;background-color:#fff8e6;border:2px solid #cc0000;border-radius:10px;">
             <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#888;font-weight:700;">Today only</p>
-            <p style="margin:0;font-family:'Georgia',serif;font-size:46px;line-height:50px;font-weight:700;color:#cc0000;">$125</p>
+            <p class="price-amount" style="margin:0;font-family:'Georgia',serif;font-size:46px;line-height:50px;font-weight:700;color:#cc0000;">$125</p>
           </td>
           <td class="price-arrow" width="16%" style="text-align:center;vertical-align:middle;font-family:Arial,sans-serif;font-size:24px;font-weight:700;color:#bbb;">
             &rarr;
           </td>
           <td class="price-cell" width="42%" style="text-align:center;padding:24px 12px;background-color:#f7f7f7;border:2px solid #dddddd;border-radius:10px;">
             <p style="margin:0 0 6px;font-family:Arial,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#888;font-weight:700;">Starting June 1</p>
-            <p style="margin:0;font-family:'Georgia',serif;font-size:46px;line-height:50px;font-weight:700;color:#999;text-decoration:line-through;">$145</p>
+            <p class="price-amount" style="margin:0;font-family:'Georgia',serif;font-size:46px;line-height:50px;font-weight:700;color:#999;text-decoration:line-through;">$145</p>
           </td>
         </tr>
       </table>
@@ -103,7 +108,7 @@
         This is the last call. At <strong style="color:#cc0000;">midnight tonight</strong>, registration for Oregon Tour de Outback goes from $125 to $145. If you've been thinking about it, now's the moment.
       </p>
       <p style="margin:0;font-family:'Georgia',serif;font-size:17px;line-height:28px;color:#333333;">
-        Five routes &mdash; gravel and road, from a 36-mile rangeland loop to a full 105-mile century &mdash; all riding the wide-open Oregon Outback. Aid stations, support, and a small-town welcome on the back end. One date, one starting line, one ride to remember.
+        Five <strong>all-new routes</strong> &mdash; gravel and road, from a 36-mile rangeland loop to a full 105-mile century &mdash; rolling through the wide-open Oregon Outback. Plus a <strong>free Friday-night pizza feed</strong>, raffle drawing for checked-in riders, live music and a beer garden both Friday and Saturday, a <strong>free Saturday post-ride lunch</strong>, custom-designed swag, fully stocked aid stations, clean showers, and the kind of small-town hospitality you won't find anywhere else. One date, one starting line, one ride to remember.
       </p>
     </td>
   </tr>
@@ -144,18 +149,18 @@
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
         <tr>
           <td class="stat-box" width="33%" style="text-align:center;padding:14px 6px;border:1px solid #eaeaea;border-radius:8px;background-color:#fafafa;">
-            <p style="margin:0;font-family:'Georgia',serif;font-size:24px;font-weight:700;color:#cc0000;">5</p>
-            <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;">Routes</p>
+            <p class="stat-value" style="margin:0;font-family:'Georgia',serif;font-size:24px;font-weight:700;color:#cc0000;">5</p>
+            <p class="stat-label" style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;">Routes</p>
           </td>
           <td width="8" style="font-size:0;">&nbsp;</td>
           <td class="stat-box" width="33%" style="text-align:center;padding:14px 6px;border:1px solid #eaeaea;border-radius:8px;background-color:#fafafa;">
-            <p style="margin:0;font-family:'Georgia',serif;font-size:24px;font-weight:700;color:#cc0000;">36-105</p>
-            <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;">Miles</p>
+            <p class="stat-value" style="margin:0;font-family:'Georgia',serif;font-size:24px;font-weight:700;color:#cc0000;">36-105</p>
+            <p class="stat-label" style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;">Miles</p>
           </td>
           <td width="8" style="font-size:0;">&nbsp;</td>
           <td class="stat-box" width="33%" style="text-align:center;padding:14px 6px;border:1px solid #eaeaea;border-radius:8px;background-color:#fafafa;">
-            <p style="margin:0;font-family:'Georgia',serif;font-size:24px;font-weight:700;color:#cc0000;">June 27</p>
-            <p style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;">Race Day</p>
+            <p class="stat-value" style="margin:0;font-family:'Georgia',serif;font-size:24px;font-weight:700;color:#cc0000;">June 27</p>
+            <p class="stat-label" style="margin:4px 0 0;font-family:Arial,sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#888;">Race Day</p>
           </td>
         </tr>
       </table>

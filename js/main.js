@@ -4,7 +4,7 @@
 
 // --- Countdown Timer ---
 function initCountdown() {
-  const eventDate = new Date('2026-06-27T07:00:00-07:00').getTime();
+  const eventDate = new Date('2027-06-26T07:00:00-07:00').getTime();
   const daysEl = document.getElementById('countdown-days');
   const hoursEl = document.getElementById('countdown-hours');
   const minsEl = document.getElementById('countdown-mins');
