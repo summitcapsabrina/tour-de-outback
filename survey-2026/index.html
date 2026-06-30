@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Hidden page: do not index, do not follow links from search engines. -->
+  <meta name="robots" content="noindex, nofollow">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-959LC5LDBS"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-959LC5LDBS');
+    gtag('config', 'G-NXSX5FCEL3');
+  </script>
+  <title>Rider Survey | Oregon Tour de Outback 2026</title>
+  <meta name="description" content="Share your feedback from Tour de Outback 2026. Your input shapes the 2027 event.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.min.css">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preload" as="image" href="../images/hero-road.jpg">
+  <style>
+    .survey-section { padding: 60px 0 80px; }
+    .survey-intro {
+      max-width: 720px;
+      margin: 0 auto 40px;
+      text-align: center;
+      color: #fff;
+    }
+    .survey-intro h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.6rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .survey-intro p {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.92);
+      margin-bottom: 12px;
+    }
+    .survey-form {
+      max-width: 760px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 40px 44px;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    }
+    .survey-block {
+      padding: 22px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .survey-block:last-of-type {
+      border-bottom: none;
+    }
+    .survey-block .q-label {
+      display: block;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #222;
+      margin-bottom: 14px;
+      letter-spacing: 0.3px;
+    }
+    .survey-block .q-label .q-num {
+      display: inline-block;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #cc0000;
+      color: #fff;
+      text-align: center;
+      line-height: 26px;
+      font-size: 0.85rem;
+      margin-right: 10px;
+      font-family: 'Open Sans', sans-serif;
+    }
+    .q-label .q-optional {
+      color: #999;
+      font-weight: 400;
+      font-size: 0.85rem;
+      letter-spacing: 0;
+      margin-left: 6px;
+    }
+    .radio-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .radio-stack label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid #e5e5e5;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      color: #333;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .radio-stack label:hover {
+      border-color: #cc0000;
+      background: #fafafa;
+    }
+    .radio-stack input[type="radio"] {
+      accent-color: #cc0000;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .radio-stack input[type="radio"]:checked + span {
+      font-weight: 600;
+      color: #cc0000;
+    }
+    .text-input,
+    .text-area {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: 'Open Sans', sans-serif;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .text-input:focus,
+    .text-area:focus {
+      outline: none;
+      border-color: #cc0000;
+    }
+    .text-area {
+      min-height: 90px;
+      resize: vertical;
+    }
+    .comment-wrap {
+      margin-top: 12px;
+    }
+    .comment-wrap label {
+      display: block;
+      font-size: 0.85rem;
+      color: #777;
+      margin-bottom: 6px;
+      font-style: italic;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-submit {
+      text-align: center;
+      margin-top: 32px;
+    }
+    .form-submit .btn {
+      padding: 16px 56px;
+      font-size: 1.1rem;
+    }
+    .form-message {
+      display: none;
+      text-align: center;
+      padding: 18px;
+      margin-top: 18px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .form-message.success { display: block; background: #e8f5e9; color: #2e7d32; }
+    .form-message.error { display: block; background: #fce4ec; color: #c62828; }
+    .privacy-note {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 16px;
+      font-style: italic;
+    }
+    @media (max-width: 720px) {
+      .survey-form { padding: 28px 22px; }
+      .survey-intro h2 { font-size: 2rem; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="nav-logo"><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" class="nav-logo-img"></a>
+      <div class="nav-toggle"><span></span><span></span><span></span></div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/routes/">Routes</a>
+        <a href="/schedule/">Schedule</a>
+        <a href="/about/">About</a>
+        <a href="/volunteer/">Volunteer</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero hero-page">
+    <div class="hero-bg" style="background-image: url('../images/hero-road.jpg'); background-color: #4a6741;"></div>
+    <div class="hero-content">
+      <h1>Rider Survey</h1>
+      <p class="tagline">Tour de Outback 2026</p>
+    </div>
+  </section>
+
+  <div class="page-content">
+  <section class="survey-section">
+    <div class="container">
+
+      <div class="survey-intro">
+        <h2>How was the ride?</h2>
+        <p>Thank you for being part of Tour de Outback 2026. Your feedback genuinely shapes how we plan 2027 &mdash; the food, the aid stations, the routes, the website, all of it.</p>
+        <p>This takes about 3 minutes. Every response makes a difference.</p>
+      </div>
+
+      <form id="surveyForm" class="survey-form" action="https://formspree.io/f/meebleno" method="POST">
+
+        <!-- Optional contact -->
+        <div class="survey-block">
+          <span class="q-label">Your info <span class="q-optional">(optional &mdash; only if you'd like a follow-up)</span></span>
+          <div class="two-col">
+            <input class="text-input" type="text" name="name" placeholder="Name">
+            <input class="text-input" type="email" name="email" placeholder="Email">
+          </div>
+        </div>
+
+        <!-- 1. Route -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">1</span>What route did you ride?</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="route" value="Short Road Ride" required><span>Short Road Ride (40 mi)</span></label>
+            <label><input type="radio" name="route" value="Medium Road Ride"><span>Medium Road Ride (53 mi)</span></label>
+            <label><input type="radio" name="route" value="Long Road Ride"><span>Long Road Ride (105 mi)</span></label>
+            <label><input type="radio" name="route" value="Short Gravel Ride"><span>Short Gravel Ride (36 mi)</span></label>
+            <label><input type="radio" name="route" value="Long Gravel Ride"><span>Long Gravel Ride (48 mi)</span></label>
+          </div>
+        </div>
+
+        <!-- 2. Accommodations -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">2</span>What were your overnight accommodations?</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="accommodations" value="Camped at the Lake County Fairgrounds" required><span>Camped at the Lake County Fairgrounds</span></label>
+            <label><input type="radio" name="accommodations" value="Home, I'm a Lake County Local"><span>Home &mdash; I'm a Lake County local</span></label>
+            <label><input type="radio" name="accommodations" value="VRBO / AirBNB"><span>VRBO / Airbnb</span></label>
+            <label><input type="radio" name="accommodations" value="Hotel"><span>Hotel</span></label>
+            <label><input type="radio" name="accommodations" value="Other"><span>Other</span></label>
+          </div>
+        </div>
+
+        <!-- 3. Where they traveled from -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">3</span>Where did you travel from? <span class="q-optional">(city + state)</span></span>
+          <input class="text-input" type="text" name="travel_from" placeholder="e.g. Bend, OR">
+        </div>
+
+        <!-- 4. How they heard -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">4</span>How did you first hear about Tour de Outback?</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="discovered_via" value="Word of mouth / friend"><span>Word of mouth / from a friend</span></label>
+            <label><input type="radio" name="discovered_via" value="Instagram or Facebook"><span>Instagram or Facebook</span></label>
+            <label><input type="radio" name="discovered_via" value="BikeReg"><span>BikeReg</span></label>
+            <label><input type="radio" name="discovered_via" value="Our newsletter / email"><span>Our newsletter / email</span></label>
+            <label><input type="radio" name="discovered_via" value="Blog post or online article"><span>Blog post or online article</span></label>
+            <label><input type="radio" name="discovered_via" value="Partner site (Dirty Freehub, Strava club, etc.)"><span>Partner site (Dirty Freehub, Strava club, etc.)</span></label>
+            <label><input type="radio" name="discovered_via" value="Other"><span>Other</span></label>
+          </div>
+        </div>
+
+        <!-- 5. Aid Station Food -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">5</span>How did you feel about the Aid Station food?</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="aid_food_rating" value="Extremely Satisfied" required><span>Extremely Satisfied</span></label>
+            <label><input type="radio" name="aid_food_rating" value="Satisfied"><span>Satisfied</span></label>
+            <label><input type="radio" name="aid_food_rating" value="Indifferent"><span>Indifferent</span></label>
+            <label><input type="radio" name="aid_food_rating" value="Disappointed"><span>Disappointed</span></label>
+            <label><input type="radio" name="aid_food_rating" value="Extremely Disappointed"><span>Extremely Disappointed</span></label>
+          </div>
+          <div class="comment-wrap">
+            <label for="aid_food_comments">Comments (optional)</label>
+            <textarea class="text-area" id="aid_food_comments" name="aid_food_comments" placeholder="Anything we should know about the food?"></textarea>
+          </div>
+        </div>
+
+        <!-- 6. Aid Station Frequency -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">6</span>How did you feel about the frequency of the Aid Stations?</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="aid_frequency_rating" value="Extremely Satisfied" required><span>Extremely Satisfied</span></label>
+            <label><input type="radio" name="aid_frequency_rating" value="Satisfied"><span>Satisfied</span></label>
+            <label><input type="radio" name="aid_frequency_rating" value="Indifferent"><span>Indifferent</span></label>
+            <label><input type="radio" name="aid_frequency_rating" value="Disappointed"><span>Disappointed</span></label>
+            <label><input type="radio" name="aid_frequency_rating" value="Extremely Disappointed"><span>Extremely Disappointed</span></label>
+          </div>
+          <div class="comment-wrap">
+            <label for="aid_frequency_comments">Comments (optional)</label>
+            <textarea class="text-area" id="aid_frequency_comments" name="aid_frequency_comments" placeholder="More stations? Fewer? Different spacing?"></textarea>
+          </div>
+        </div>
+
+        <!-- 7. Website checkout -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">7</span>&ldquo;The website and checkout process were easy to navigate.&rdquo;</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="website_checkout" value="Strongly Agree" required><span>Strongly Agree</span></label>
+            <label><input type="radio" name="website_checkout" value="Agree"><span>Agree</span></label>
+            <label><input type="radio" name="website_checkout" value="Neither Agree nor Disagree"><span>Neither Agree nor Disagree</span></label>
+            <label><input type="radio" name="website_checkout" value="Disagree"><span>Disagree</span></label>
+            <label><input type="radio" name="website_checkout" value="Strongly Disagree"><span>Strongly Disagree</span></label>
+          </div>
+          <div class="comment-wrap">
+            <label for="website_checkout_comments">Comments (optional)</label>
+            <textarea class="text-area" id="website_checkout_comments" name="website_checkout_comments" placeholder="Anywhere it tripped you up?"></textarea>
+          </div>
+        </div>
+
+        <!-- 8. Website accuracy -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">8</span>&ldquo;The information on the website accurately depicted the ride.&rdquo;</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="website_accuracy" value="Strongly Agree" required><span>Strongly Agree</span></label>
+            <label><input type="radio" name="website_accuracy" value="Agree"><span>Agree</span></label>
+            <label><input type="radio" name="website_accuracy" value="Neither Agree nor Disagree"><span>Neither Agree nor Disagree</span></label>
+            <label><input type="radio" name="website_accuracy" value="Disagree"><span>Disagree</span></label>
+            <label><input type="radio" name="website_accuracy" value="Strongly Disagree"><span>Strongly Disagree</span></label>
+          </div>
+          <div class="comment-wrap">
+            <label for="website_accuracy_comments">Comments (optional)</label>
+            <textarea class="text-area" id="website_accuracy_comments" name="website_accuracy_comments" placeholder="Anything that surprised you on the day?"></textarea>
+          </div>
+        </div>
+
+        <!-- 9. Maps / Navigation -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">9</span>&ldquo;The maps and navigational directions were accurate and easy to use.&rdquo;</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="maps_nav" value="Strongly Agree" required><span>Strongly Agree</span></label>
+            <label><input type="radio" name="maps_nav" value="Agree"><span>Agree</span></label>
+            <label><input type="radio" name="maps_nav" value="Neither Agree nor Disagree"><span>Neither Agree nor Disagree</span></label>
+            <label><input type="radio" name="maps_nav" value="Disagree"><span>Disagree</span></label>
+            <label><input type="radio" name="maps_nav" value="Strongly Disagree"><span>Strongly Disagree</span></label>
+          </div>
+          <div class="comment-wrap">
+            <label for="maps_nav_comments">Comments (optional)</label>
+            <textarea class="text-area" id="maps_nav_comments" name="maps_nav_comments" placeholder="Confusing turns? Missing signage?"></textarea>
+          </div>
+        </div>
+
+        <!-- 10. Coming back? -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">10</span>&ldquo;I am planning on attending Tour de Outback 2027!&rdquo;</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="returning_2027" value="Strongly Agree" required><span>Strongly Agree</span></label>
+            <label><input type="radio" name="returning_2027" value="Agree"><span>Agree</span></label>
+            <label><input type="radio" name="returning_2027" value="Neither Agree nor Disagree"><span>Neither Agree nor Disagree</span></label>
+            <label><input type="radio" name="returning_2027" value="Disagree"><span>Disagree</span></label>
+            <label><input type="radio" name="returning_2027" value="Strongly Disagree"><span>Strongly Disagree</span></label>
+          </div>
+          <div class="comment-wrap">
+            <label for="returning_2027_comments">Comments (optional)</label>
+            <textarea class="text-area" id="returning_2027_comments" name="returning_2027_comments" placeholder="What would make 2027 a yes for you?"></textarea>
+          </div>
+        </div>
+
+        <!-- 11. Anything else -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">11</span>Anything else? <span class="q-optional">(open mic)</span></span>
+          <textarea class="text-area" name="open_feedback" placeholder="The best thing, the worst thing, the one thing we should change &mdash; we want to hear it." style="min-height:120px;"></textarea>
+        </div>
+
+        <input type="hidden" name="_subject" value="Tour de Outback 2026 — Rider Survey Response">
+
+        <div class="form-submit">
+          <button type="submit" class="btn btn-primary">Submit Survey</button>
+        </div>
+        <p class="privacy-note">Your responses go directly to the Tour de Outback team. We don't share or sell rider data.</p>
+        <div class="form-message" id="surveyMessage"></div>
+      </form>
+
+    </div>
+  </section>
+  </div><!-- /.page-content -->
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <h3><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" style="height: 40px;" loading="lazy"></h3>
+          <p>Great rides, great fun, for a great cause. Join us June 26, 2027 in Lakeview, Oregon for gravel and road cycling through the stunning Oregon outback.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/routes/">Routes</a></li>
+            <li><a href="/schedule/">Schedule</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/volunteer/">Volunteer</a></li>
+            <li><a href="/blog/">Blog</a></li>
+            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
+            <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
+          </ul>
+        </div>
+        <div class="footer-social">
+          <h4>Follow Us</h4>
+          <div class="social-icons">
+            <a href="https://www.facebook.com/oregontourdeoutback" target="_blank" aria-label="Facebook">f</a>
+            <a href="https://www.instagram.com/oregontourdeoutback/" target="_blank" aria-label="Instagram">ig</a>
+            <a href="https://www.youtube.com/@tourdeoutback" target="_blank" aria-label="YouTube">yt</a>
+            <a href="mailto:info@tourdeoutback.org" aria-label="Email">@</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        &copy; Oregon Tour de Outback. All rights reserved. | Presented by Lake County Chamber of Commerce
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/main.min.js"></script>
+
+  <!-- Survey form AJAX submit -->
+  <script>
+  (function(){
+    var form = document.getElementById('surveyForm');
+    var msg = document.getElementById('surveyMessage');
+    if (!form) return;
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      var orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+      msg.className = 'form-message';
+      msg.textContent = '';
+      var data = new FormData(form);
+      fetch(form.action, {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      }).then(function(res){
+        if (res.ok) {
+          form.reset();
+          msg.className = 'form-message success';
+          msg.textContent = 'Thanks! Your survey has been submitted. We truly appreciate your time.';
+          window.scrollTo({ top: msg.offsetTop - 100, behavior: 'smooth' });
+        } else {
+          msg.className = 'form-message error';
+          msg.textContent = 'Something went wrong. Please try again, or email info@tourdeoutback.org.';
+        }
+      }).catch(function(){
+        msg.className = 'form-message error';
+        msg.textContent = 'Network error. Please try again, or email info@tourdeoutback.org.';
+      }).finally(function(){
+        btn.disabled = false;
+        btn.textContent = orig;
+      });
+    });
+  })();
+  </script>
+
+</body>
+</html>
