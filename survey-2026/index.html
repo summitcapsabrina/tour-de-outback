@@ -32,18 +32,19 @@
       max-width: 720px;
       margin: 0 auto 40px;
       text-align: center;
-      color: #fff;
+      color: #222;
     }
     .survey-intro h2 {
       font-family: 'Oswald', sans-serif;
       font-size: 2.6rem;
       font-weight: 700;
       margin-bottom: 16px;
+      color: #222;
     }
     .survey-intro p {
       font-size: 1.15rem;
       line-height: 1.7;
-      color: rgba(255,255,255,0.92);
+      color: #222;
       margin-bottom: 12px;
     }
     .survey-form {
@@ -94,6 +95,14 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      max-width: 460px;
+    }
+    .narrow-input {
+      max-width: 460px;
+    }
+    .narrow-input textarea,
+    .narrow-input input {
+      width: 100%;
     }
     .radio-stack label {
       display: flex;
@@ -204,6 +213,8 @@
         <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
+      <div class="weather-widget" id="weather-widget"></div>
+      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);var w=document.getElementById('weather-widget');if(w){var h='<span class="weather-current" role="button" tabindex="0"><span class="weather-main"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>';if(d.windSpeed!==undefined&&d.windSpeed!==null&&d.windDir!==null){h+='<span class="weather-wind"><svg class="wind-compass-svg" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><text x="25" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.7)" font-family="sans-serif">N</text><text x="25" y="46" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">S</text><text x="5" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">W</text><text x="45" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">E</text><g transform="rotate('+d.windDir+' 25 25)"><polygon points="25,3 22,14 25,12 28,14" fill="#cc0000"/></g><text x="25" y="29" text-anchor="middle" font-size="13" font-weight="700" fill="rgba(255,255,255,0.9)" font-family="sans-serif">'+d.windSpeed+'</text></svg>';if(d.windGusts)h+='<span class="wind-gusts">Gusts '+d.windGusts+' mph</span>';h+='</span>'}h+='<span class="weather-arrow">▾</span></span><div class="forecast-dropdown"></div>';w.innerHTML=h}}}()</script>
     </div>
   </nav>
 
@@ -230,8 +241,8 @@
 
         <!-- Optional contact -->
         <div class="survey-block">
-          <span class="q-label">Your info <span class="q-optional">(optional &mdash; only if you'd like a follow-up)</span></span>
-          <div class="two-col">
+          <span class="q-label">Your info <span class="q-optional">(optional)</span></span>
+          <div class="two-col narrow-input">
             <input class="text-input" type="text" name="name" placeholder="Name">
             <input class="text-input" type="email" name="email" placeholder="Email">
           </div>
@@ -241,9 +252,9 @@
         <div class="survey-block">
           <span class="q-label"><span class="q-num">1</span>What route did you ride?</span>
           <div class="radio-stack">
-            <label><input type="radio" name="route" value="Short Road Ride" required><span>Short Road Ride (40 mi)</span></label>
-            <label><input type="radio" name="route" value="Medium Road Ride"><span>Medium Road Ride (53 mi)</span></label>
-            <label><input type="radio" name="route" value="Long Road Ride"><span>Long Road Ride (105 mi)</span></label>
+            <label><input type="radio" name="route" value="Short Road Ride" required><span>Short Road Ride (32 mi)</span></label>
+            <label><input type="radio" name="route" value="Medium Road Ride"><span>Medium Road Ride (45 mi)</span></label>
+            <label><input type="radio" name="route" value="Long Road Ride"><span>Long Road Ride (97 mi)</span></label>
             <label><input type="radio" name="route" value="Short Gravel Ride"><span>Short Gravel Ride (36 mi)</span></label>
             <label><input type="radio" name="route" value="Long Gravel Ride"><span>Long Gravel Ride (48 mi)</span></label>
           </div>
@@ -264,7 +275,9 @@
         <!-- 3. Where they traveled from -->
         <div class="survey-block">
           <span class="q-label"><span class="q-num">3</span>Where did you travel from? <span class="q-optional">(city + state)</span></span>
-          <input class="text-input" type="text" name="travel_from" placeholder="e.g. Bend, OR">
+          <div class="narrow-input">
+            <input class="text-input" type="text" name="travel_from" placeholder="e.g. Bend, OR">
+          </div>
         </div>
 
         <!-- 4. How they heard -->
@@ -291,7 +304,7 @@
             <label><input type="radio" name="aid_food_rating" value="Disappointed"><span>Disappointed</span></label>
             <label><input type="radio" name="aid_food_rating" value="Extremely Disappointed"><span>Extremely Disappointed</span></label>
           </div>
-          <div class="comment-wrap">
+          <div class="comment-wrap narrow-input">
             <label for="aid_food_comments">Comments (optional)</label>
             <textarea class="text-area" id="aid_food_comments" name="aid_food_comments" placeholder="Anything we should know about the food?"></textarea>
           </div>
@@ -307,7 +320,7 @@
             <label><input type="radio" name="aid_frequency_rating" value="Disappointed"><span>Disappointed</span></label>
             <label><input type="radio" name="aid_frequency_rating" value="Extremely Disappointed"><span>Extremely Disappointed</span></label>
           </div>
-          <div class="comment-wrap">
+          <div class="comment-wrap narrow-input">
             <label for="aid_frequency_comments">Comments (optional)</label>
             <textarea class="text-area" id="aid_frequency_comments" name="aid_frequency_comments" placeholder="More stations? Fewer? Different spacing?"></textarea>
           </div>
@@ -323,7 +336,7 @@
             <label><input type="radio" name="website_checkout" value="Disagree"><span>Disagree</span></label>
             <label><input type="radio" name="website_checkout" value="Strongly Disagree"><span>Strongly Disagree</span></label>
           </div>
-          <div class="comment-wrap">
+          <div class="comment-wrap narrow-input">
             <label for="website_checkout_comments">Comments (optional)</label>
             <textarea class="text-area" id="website_checkout_comments" name="website_checkout_comments" placeholder="Anywhere it tripped you up?"></textarea>
           </div>
@@ -339,7 +352,7 @@
             <label><input type="radio" name="website_accuracy" value="Disagree"><span>Disagree</span></label>
             <label><input type="radio" name="website_accuracy" value="Strongly Disagree"><span>Strongly Disagree</span></label>
           </div>
-          <div class="comment-wrap">
+          <div class="comment-wrap narrow-input">
             <label for="website_accuracy_comments">Comments (optional)</label>
             <textarea class="text-area" id="website_accuracy_comments" name="website_accuracy_comments" placeholder="Anything that surprised you on the day?"></textarea>
           </div>
@@ -355,7 +368,7 @@
             <label><input type="radio" name="maps_nav" value="Disagree"><span>Disagree</span></label>
             <label><input type="radio" name="maps_nav" value="Strongly Disagree"><span>Strongly Disagree</span></label>
           </div>
-          <div class="comment-wrap">
+          <div class="comment-wrap narrow-input">
             <label for="maps_nav_comments">Comments (optional)</label>
             <textarea class="text-area" id="maps_nav_comments" name="maps_nav_comments" placeholder="Confusing turns? Missing signage?"></textarea>
           </div>
@@ -371,7 +384,7 @@
             <label><input type="radio" name="returning_2027" value="Disagree"><span>Disagree</span></label>
             <label><input type="radio" name="returning_2027" value="Strongly Disagree"><span>Strongly Disagree</span></label>
           </div>
-          <div class="comment-wrap">
+          <div class="comment-wrap narrow-input">
             <label for="returning_2027_comments">Comments (optional)</label>
             <textarea class="text-area" id="returning_2027_comments" name="returning_2027_comments" placeholder="What would make 2027 a yes for you?"></textarea>
           </div>
@@ -380,7 +393,7 @@
         <!-- 11. Anything else -->
         <div class="survey-block">
           <span class="q-label"><span class="q-num">11</span>Anything else? <span class="q-optional">(open mic)</span></span>
-          <textarea class="text-area" name="open_feedback" placeholder="The best thing, the worst thing, the one thing we should change &mdash; we want to hear it." style="min-height:120px;"></textarea>
+          <div class="narrow-input"><textarea class="text-area" name="open_feedback" placeholder="The best thing, the worst thing, the one thing we should change &mdash; we want to hear it." style="min-height:120px;"></textarea></div>
         </div>
 
         <input type="hidden" name="_subject" value="Tour de Outback 2026 — Rider Survey Response">
