@@ -266,9 +266,9 @@
         <div class="survey-block">
           <span class="q-label"><span class="q-num">1</span>What route did you ride?</span>
           <div class="radio-stack">
-            <label><input type="radio" name="route" value="Short Road Ride" required><span>Short Road Ride (32 mi)</span></label>
-            <label><input type="radio" name="route" value="Medium Road Ride"><span>Medium Road Ride (45 mi)</span></label>
-            <label><input type="radio" name="route" value="Long Road Ride"><span>Long Road Ride (97 mi)</span></label>
+            <label><input type="radio" name="route" value="Short Road Ride" required><span>Short Road Ride (30 mi)</span></label>
+            <label><input type="radio" name="route" value="Medium Road Ride"><span>Medium Road Ride (42 mi)</span></label>
+            <label><input type="radio" name="route" value="Long Road Ride"><span>Long Road Ride (94 mi)</span></label>
             <label><input type="radio" name="route" value="Short Gravel Ride"><span>Short Gravel Ride (36 mi)</span></label>
             <label><input type="radio" name="route" value="Long Gravel Ride"><span>Long Gravel Ride (48 mi)</span></label>
           </div>
@@ -298,9 +298,23 @@
           </div>
         </div>
 
-        <!-- 4. How they heard -->
+        <!-- 4. Meet and greet / pizza party -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">4</span>How did you first hear about Tour de Outback?</span>
+          <span class="q-label"><span class="q-num">4</span>Did you attend the meet and greet / pizza party?</span>
+          <div class="radio-stack">
+            <label><input type="radio" name="meet_greet" value="Yes" required><span>Yes</span></label>
+            <label><input type="radio" name="meet_greet" value="No, I ate elsewhere on Friday"><span>No, I ate elsewhere on Friday</span></label>
+            <label><input type="radio" name="meet_greet" value="No, I arrived too late / on Saturday"><span>No, I arrived too late / on Saturday</span></label>
+          </div>
+          <div class="comment-wrap narrow-input">
+            <label for="meet_greet_comments">Comments (optional)</label>
+            <textarea class="text-area" id="meet_greet_comments" name="meet_greet_comments" placeholder="How was it? Anything we should add or change next year?"></textarea>
+          </div>
+        </div>
+
+        <!-- 5. How they heard -->
+        <div class="survey-block">
+          <span class="q-label"><span class="q-num">5</span>How did you first hear about Tour de Outback?</span>
           <div class="radio-stack">
             <label><input type="radio" name="discovered_via" value="Word of mouth / friend" required><span>Word of mouth / from a friend</span></label>
             <label><input type="radio" name="discovered_via" value="Instagram"><span>Instagram</span></label>
@@ -323,9 +337,9 @@
           </div>
         </div>
 
-        <!-- 5. Aid Station Food -->
+        <!-- 6. Aid Station Food -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">5</span>How did you feel about the Aid Station food?</span>
+          <span class="q-label"><span class="q-num">6</span>How did you feel about the Aid Station food?</span>
           <div class="radio-stack">
             <label><input type="radio" name="aid_food_rating" value="Extremely Satisfied" required><span>Extremely Satisfied</span></label>
             <label><input type="radio" name="aid_food_rating" value="Satisfied"><span>Satisfied</span></label>
@@ -339,9 +353,9 @@
           </div>
         </div>
 
-        <!-- 6. Aid Station Frequency -->
+        <!-- 7. Aid Station Frequency -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">6</span>How did you feel about the frequency of the Aid Stations?</span>
+          <span class="q-label"><span class="q-num">7</span>How did you feel about the frequency of the Aid Stations?</span>
           <div class="radio-stack">
             <label><input type="radio" name="aid_frequency_rating" value="Extremely Satisfied" required><span>Extremely Satisfied</span></label>
             <label><input type="radio" name="aid_frequency_rating" value="Satisfied"><span>Satisfied</span></label>
@@ -355,9 +369,9 @@
           </div>
         </div>
 
-        <!-- 7. Website checkout -->
+        <!-- 8. Website checkout -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">7</span>&ldquo;The website and checkout process were easy to navigate.&rdquo;</span>
+          <span class="q-label"><span class="q-num">8</span>&ldquo;The website and checkout process were easy to navigate.&rdquo;</span>
           <div class="radio-stack">
             <label><input type="radio" name="website_checkout" value="Strongly Agree" required><span>Strongly Agree</span></label>
             <label><input type="radio" name="website_checkout" value="Agree"><span>Agree</span></label>
@@ -371,9 +385,9 @@
           </div>
         </div>
 
-        <!-- 8. Website accuracy -->
+        <!-- 9. Website accuracy -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">8</span>&ldquo;The information on the website accurately depicted the ride.&rdquo;</span>
+          <span class="q-label"><span class="q-num">9</span>&ldquo;The information on the website accurately depicted the ride.&rdquo;</span>
           <div class="radio-stack">
             <label><input type="radio" name="website_accuracy" value="Strongly Agree" required><span>Strongly Agree</span></label>
             <label><input type="radio" name="website_accuracy" value="Agree"><span>Agree</span></label>
@@ -387,9 +401,9 @@
           </div>
         </div>
 
-        <!-- 9. Maps / Navigation -->
+        <!-- 10. Maps / Navigation -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">9</span>&ldquo;The maps and navigational directions were accurate and easy to use.&rdquo;</span>
+          <span class="q-label"><span class="q-num">10</span>&ldquo;The maps and navigational directions were accurate and easy to use.&rdquo;</span>
           <div class="radio-stack">
             <label><input type="radio" name="maps_nav" value="Strongly Agree" required><span>Strongly Agree</span></label>
             <label><input type="radio" name="maps_nav" value="Agree"><span>Agree</span></label>
@@ -403,9 +417,9 @@
           </div>
         </div>
 
-        <!-- 10. Coming back? -->
+        <!-- 11. Coming back? -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">10</span>&ldquo;I am planning on attending Tour de Outback 2027!&rdquo;</span>
+          <span class="q-label"><span class="q-num">11</span>&ldquo;I am planning on attending Tour de Outback 2027!&rdquo;</span>
           <div class="radio-stack">
             <label><input type="radio" name="returning_2027" value="Strongly Agree" required><span>Strongly Agree</span></label>
             <label><input type="radio" name="returning_2027" value="Agree"><span>Agree</span></label>
@@ -419,9 +433,9 @@
           </div>
         </div>
 
-        <!-- 11. Anything else -->
+        <!-- 12. Anything else -->
         <div class="survey-block">
-          <span class="q-label"><span class="q-num">11</span>Anything else? <span class="q-optional">(open mic)</span></span>
+          <span class="q-label"><span class="q-num">12</span>Anything else? <span class="q-optional">(open mic)</span></span>
           <div class="narrow-input"><textarea class="text-area" name="open_feedback" placeholder="The best thing, the worst thing, the one thing we should change &mdash; we want to hear it." style="min-height:120px;"></textarea></div>
         </div>
 
