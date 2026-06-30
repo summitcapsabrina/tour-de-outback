@@ -159,6 +159,20 @@
       margin-bottom: 6px;
       font-style: italic;
     }
+    .other-wrap {
+      display: none;
+      margin-top: 12px;
+    }
+    .other-wrap.show {
+      display: block;
+    }
+    .other-wrap label {
+      display: block;
+      font-size: 0.85rem;
+      color: #777;
+      margin-bottom: 6px;
+      font-style: italic;
+    }
     .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -270,6 +284,10 @@
             <label><input type="radio" name="accommodations" value="Hotel"><span>Hotel</span></label>
             <label><input type="radio" name="accommodations" value="Other"><span>Other</span></label>
           </div>
+          <div class="other-wrap narrow-input" data-other-for="accommodations">
+            <label for="accommodations_other">Please specify</label>
+            <input class="text-input" type="text" id="accommodations_other" name="accommodations_other" placeholder="Where did you stay?">
+          </div>
         </div>
 
         <!-- 3. Where they traveled from -->
@@ -285,16 +303,23 @@
           <span class="q-label"><span class="q-num">4</span>How did you first hear about Tour de Outback?</span>
           <div class="radio-stack">
             <label><input type="radio" name="discovered_via" value="Word of mouth / friend" required><span>Word of mouth / from a friend</span></label>
-            <label><input type="radio" name="discovered_via" value="Instagram or Facebook"><span>Instagram or Facebook</span></label>
+            <label><input type="radio" name="discovered_via" value="Instagram"><span>Instagram</span></label>
+            <label><input type="radio" name="discovered_via" value="Facebook"><span>Facebook</span></label>
+            <label><input type="radio" name="discovered_via" value="Google"><span>Google</span></label>
             <label><input type="radio" name="discovered_via" value="BikeReg"><span>BikeReg</span></label>
             <label><input type="radio" name="discovered_via" value="Our newsletter / email"><span>Our newsletter / email</span></label>
             <label><input type="radio" name="discovered_via" value="Blog post or online article"><span>Blog post or online article</span></label>
-            <label><input type="radio" name="discovered_via" value="Partner site (Dirty Freehub, Strava club, etc.)"><span>Partner site (Dirty Freehub, Strava club, etc.)</span></label>
+            <label><input type="radio" name="discovered_via" value="Dirty Freehub"><span>Dirty Freehub</span></label>
+            <label><input type="radio" name="discovered_via" value="Strava"><span>Strava</span></label>
             <label><input type="radio" name="discovered_via" value="Other"><span>Other</span></label>
+          </div>
+          <div class="other-wrap narrow-input" data-other-for="discovered_via">
+            <label for="discovered_via_other">Please tell us where</label>
+            <input class="text-input" type="text" id="discovered_via_other" name="discovered_via_other" placeholder="Where did you hear about us?">
           </div>
           <div class="comment-wrap narrow-input">
             <label for="discovered_via_comments">Comments (optional)</label>
-            <textarea class="text-area" id="discovered_via_comments" name="discovered_via_comments" placeholder="Where exactly did you hear about us?"></textarea>
+            <textarea class="text-area" id="discovered_via_comments" name="discovered_via_comments" placeholder="Anything else to add?"></textarea>
           </div>
         </div>
 
@@ -458,6 +483,22 @@
     var form = document.getElementById('surveyForm');
     var msg = document.getElementById('surveyMessage');
     if (!form) return;
+
+    // Show + require a write-in field when "Other" is selected in a radio group
+    Array.prototype.forEach.call(document.querySelectorAll('.other-wrap'), function(wrap){
+      var group = wrap.getAttribute('data-other-for');
+      var input = wrap.querySelector('input');
+      var radios = document.querySelectorAll('input[name="' + group + '"]');
+      function update(){
+        var checked = document.querySelector('input[name="' + group + '"]:checked');
+        var isOther = checked && checked.value === 'Other';
+        wrap.classList.toggle('show', isOther);
+        input.required = isOther;
+        if (!isOther) input.value = '';
+      }
+      Array.prototype.forEach.call(radios, function(r){ r.addEventListener('change', update); });
+      update();
+    });
     form.addEventListener('submit', function(e){
       e.preventDefault();
       var btn = form.querySelector('button[type="submit"]');
@@ -474,6 +515,11 @@
       }).then(function(res){
         if (res.ok) {
           form.reset();
+          Array.prototype.forEach.call(document.querySelectorAll('.other-wrap'), function(wrap){
+            wrap.classList.remove('show');
+            var i = wrap.querySelector('input');
+            if (i) i.required = false;
+          });
           msg.className = 'form-message success';
           msg.textContent = 'Thanks! Your survey has been submitted. We truly appreciate your time.';
           window.scrollTo({ top: msg.offsetTop - 100, behavior: 'smooth' });
