@@ -739,3 +739,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initRouteSwitch();
   initNewsletterPopup();
 });
+
+// --- Global auth widget: inject the Firebase Auth navbar dropdown (ES module) ---
+(function loadAuthWidget() {
+  var s = document.createElement('script');
+  s.type = 'module';
+  s.src = '/js/auth-widget.js';
+  (document.head || document.documentElement).appendChild(s);
+})();
