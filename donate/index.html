@@ -959,16 +959,19 @@
         var banner = document.createElement('div');
         banner.className = 'donate-thanks';
         banner.innerHTML =
-          '<span class="thanks-check">✓</span>' +
+          '<span class="thanks-check">&#10003;</span>' +
           '<div class="thanks-title">Thank you for your donation!</div>' +
           '<div class="thanks-sub">Your gift supports Lake County Search &amp; Rescue. A receipt will be emailed to you.</div>';
         form.parentNode.insertBefore(banner, form);
         form.style.display = 'none';
-        // Let the layout settle after the tall form collapses, then scroll the
-        // banner to the top of the viewport so it's unmistakable.
-        setTimeout(function () {
-          banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 80);
+        // The tall form just collapsed, so the banner is now above the viewport.
+        // Scroll to its absolute position (fired twice to catch layout settling).
+        function jumpToBanner() {
+          var y = banner.getBoundingClientRect().top + window.pageYOffset - 90;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+        }
+        jumpToBanner();
+        setTimeout(jumpToBanner, 180);
       }
 
       // --- Render reactive UI state ---
@@ -1126,10 +1129,11 @@
         var banner = document.createElement('div');
         banner.className = 'donate-thanks';
         banner.innerHTML =
-          '<span class="thanks-check">✓</span>' +
+          '<span class="thanks-check">&#10003;</span>' +
           '<div class="thanks-title">Thank you for your donation!</div>' +
           '<div class="thanks-sub">Your gift supports Lake County Search &amp; Rescue. A receipt will be emailed to you.</div>';
         form.parentNode.insertBefore(banner, form);
+        banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
       render();
