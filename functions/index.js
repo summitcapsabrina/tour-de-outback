@@ -85,7 +85,7 @@ async function getMonthlyPriceId(stripe, amountCents) {
 // returns: { clientSecret, mode: 'payment'|'subscription' }
 // ---------------------------------------------------------------------------
 exports.createDonation = onRequest(
-  { secrets: [STRIPE_SECRET_KEY], cors: ALLOWED_ORIGINS },
+  { secrets: [STRIPE_SECRET_KEY], cors: ALLOWED_ORIGINS, invoker: 'public' },
   async (req, res) => {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -165,7 +165,7 @@ exports.createDonation = onRequest(
 // POST /api/stripe-webhook  — records successful gifts to Firestore.
 // ---------------------------------------------------------------------------
 exports.stripeWebhook = onRequest(
-  { secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET] },
+  { secrets: [STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET], invoker: 'public' },
   async (req, res) => {
     const stripe = require('stripe')(STRIPE_SECRET_KEY.value());
     const signature = req.headers['stripe-signature'];
