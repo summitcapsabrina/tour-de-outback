@@ -964,7 +964,11 @@
           '<div class="thanks-sub">Your gift supports Lake County Search &amp; Rescue. A receipt will be emailed to you.</div>';
         form.parentNode.insertBefore(banner, form);
         form.style.display = 'none';
-        banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Let the layout settle after the tall form collapses, then scroll the
+        // banner to the top of the viewport so it's unmistakable.
+        setTimeout(function () {
+          banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
       }
 
       // --- Render reactive UI state ---
