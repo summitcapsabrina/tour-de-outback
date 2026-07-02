@@ -98,6 +98,56 @@ async function getMonthlyPriceId(stripe, amountCents, mode) {
   return priceId;
 }
 
+/** Verify a Firebase ID token from the "Authorization: Bearer" header.
+ *  Returns the decoded token ({uid, email, name}) or null if absent/invalid. */
+async function verifyAuthUser(req) {
+  const header = req.headers.authorization || '';
+  const match = header.match(/^Bearer (.+)$/);
+  if (!match) return null;
+  try {
+    return await admin.auth().verifyIdToken(match[1]);
+  } catch (e) {
+    logger.warn('ID token verification failed', e.message);
+    return null;
+  }
+}
+
+/** Get-or-create the Stripe customer for a Firebase user, cached per Stripe mode
+ *  in users/{uid}. Self-heals if the cached customer is missing in the account. */
+async function getOrCreateUserCustomer(stripe, authUser, email, name, mode) {
+  const userRef = db.doc(`users/${authUser.uid}`);
+  const snap = await userRef.get();
+  const data = snap.exists ? snap.data() : {};
+  const field = `stripeCustomer_${mode}`;
+  let customerId = data[field] || null;
+  if (customerId) {
+    try {
+      const c = await stripe.customers.retrieve(customerId);
+      if (c.deleted) customerId = null;
+    } catch (e) { if (e && e.code === 'resource_missing') customerId = null; else throw e; }
+  }
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      email: email || authUser.email || undefined,
+      name: name || authUser.name || undefined,
+      metadata: { firebaseUID: authUser.uid, source: 'tdo-account' },
+    });
+    customerId = customer.id;
+  }
+  await userRef.set({
+    [field]: customerId,
+    email: authUser.email || email || null,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+  return customerId;
+}
+
+/** Look up a signed-in user's Stripe customer id for the current mode (no create). */
+async function getUserCustomerId(authUser, mode) {
+  const snap = await db.doc(`users/${authUser.uid}`).get();
+  return snap.exists ? (snap.data()[`stripeCustomer_${mode}`] || null) : null;
+}
+
 // ---------------------------------------------------------------------------
 // POST /api/create-donation
 // body: { baseAmount, coverFee, frequency: 'one-time'|'monthly', email, name }
@@ -133,12 +183,20 @@ exports.createDonation = onRequest(
     };
 
     try {
+      // Tie the gift to the donor's persistent Stripe customer when signed in,
+      // so it appears in their account billing history.
+      const authUser = await verifyAuthUser(req);
+      const userCustomerId = authUser
+        ? await getOrCreateUserCustomer(stripe, authUser, email, name, stripeMode)
+        : null;
+
       if (!isMonthly) {
         const intent = await stripe.paymentIntents.create({
           amount: amountCents,
           currency: 'usd',
           description: 'Tour de Outback Donation',
           receipt_email: email || undefined,
+          customer: userCustomerId || undefined,
           automatic_payment_methods: { enabled: true },
           metadata: sharedMeta,
         });
@@ -149,18 +207,23 @@ exports.createDonation = onRequest(
       if (!email) {
         return res.status(400).json({ error: 'An email is required for monthly gifts (for your receipt).' });
       }
-      const customer = await stripe.customers.create({
-        email,
-        name: name || undefined,
-        metadata: { source: 'tdo-donation' },
-      });
+      // Signed-in donors reuse their persistent customer; guests get a new one.
+      let subCustomerId = userCustomerId;
+      if (!subCustomerId) {
+        const guest = await stripe.customers.create({
+          email,
+          name: name || undefined,
+          metadata: { source: 'tdo-donation' },
+        });
+        subCustomerId = guest.id;
+      }
       const priceId = await getMonthlyPriceId(stripe, amountCents, stripeMode);
       // This project's Stripe SDK pins API 2025-02-24.acacia, where the first-
       // payment client secret is on latest_invoice.payment_intent. (The newer
       // "Basil" API moved it to latest_invoice.confirmation_secret — kept as a
       // fallback so a future SDK bump keeps working.)
       const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
+        customer: subCustomerId,
         items: [{ price: priceId }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
@@ -180,6 +243,72 @@ exports.createDonation = onRequest(
     } catch (err) {
       logger.error('createDonation failed', err);
       return res.status(500).json({ error: 'Could not start the donation. Please try again.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/billing-history  — signed-in donor's payment history (from Stripe).
+// Auth: "Authorization: Bearer <Firebase ID token>". Returns { items: [...] }.
+// ---------------------------------------------------------------------------
+exports.getBillingHistory = onRequest(
+  { secrets: [STRIPE_SECRET_KEY], cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const authUser = await verifyAuthUser(req);
+    if (!authUser) return res.status(401).json({ error: 'Please sign in.' });
+
+    const secretKey = STRIPE_SECRET_KEY.value();
+    const stripe = require('stripe')(secretKey);
+    const mode = secretKey.indexOf('sk_live') === 0 ? 'live' : 'test';
+    try {
+      const customerId = await getUserCustomerId(authUser, mode);
+      if (!customerId) return res.json({ items: [] });
+      const charges = await stripe.charges.list({ customer: customerId, limit: 50 });
+      const items = charges.data.map(function (ch) {
+        const isMonthly = ch.metadata && ch.metadata.frequency === 'monthly';
+        return {
+          date: new Date(ch.created * 1000).toISOString().slice(0, 10),
+          description: ch.description || (isMonthly ? 'Monthly donation' : 'Donation'),
+          amount: '$' + (ch.amount / 100).toFixed(2),
+          status: ch.status,
+        };
+      });
+      return res.json({ items });
+    } catch (err) {
+      logger.error('getBillingHistory failed', err);
+      return res.status(500).json({ error: 'Could not load your history.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/portal-session  — Stripe Customer Portal link for the signed-in user.
+// Auth: "Authorization: Bearer <Firebase ID token>". Returns { url }.
+// ---------------------------------------------------------------------------
+exports.createPortalSession = onRequest(
+  { secrets: [STRIPE_SECRET_KEY], cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const authUser = await verifyAuthUser(req);
+    if (!authUser) return res.status(401).json({ error: 'Please sign in.' });
+
+    const secretKey = STRIPE_SECRET_KEY.value();
+    const stripe = require('stripe')(secretKey);
+    const mode = secretKey.indexOf('sk_live') === 0 ? 'live' : 'test';
+    try {
+      const customerId = await getUserCustomerId(authUser, mode);
+      if (!customerId) return res.status(400).json({ error: 'No billing account yet — make a donation first.' });
+      const origin = ALLOWED_ORIGINS.indexOf(req.headers.origin) !== -1
+        ? req.headers.origin : 'https://oregon-tour-de-outback.web.app';
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: origin + '/account/',
+      });
+      return res.json({ url: session.url });
+    } catch (err) {
+      logger.error('createPortalSession failed', err);
+      return res.status(500).json({ error: 'Could not open the billing portal.' });
     }
   }
 );

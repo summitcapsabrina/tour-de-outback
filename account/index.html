@@ -1,0 +1,281 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — Tour de Outback</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Open Sans', sans-serif; color: #222; background: #f5f5f5; line-height: 1.5; }
+  a { color: #cc0000; }
+  .acct-header { background: #222; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .acct-header img { height: 34px; }
+  .acct-header .acct-user { color: #fff; font-size: 0.9rem; display: flex; align-items: center; gap: 14px; }
+  .acct-header .acct-user[hidden] { display: none; }
+  .btn { display: inline-block; border: none; border-radius: 8px; padding: 12px 18px; font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; text-align: center; }
+  .btn-primary { background: #cc0000; color: #fff; }
+  .btn-primary:hover { background: #a80000; }
+  .btn-ghost { background: transparent; color: #fff; border: 1px solid #666; padding: 7px 12px; font-size: 0.85rem; }
+  .btn-block { display: block; width: 100%; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+  h1 { font-family: 'Oswald', sans-serif; font-size: 1.8rem; margin-bottom: 6px; }
+  h2 { font-family: 'Oswald', sans-serif; font-size: 1.25rem; margin-bottom: 14px; }
+  .muted { color: #666; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); padding: 26px 28px; margin-bottom: 22px; }
+  .card.soon { opacity: 0.6; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 12px 14px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; font-family: inherit; }
+  .field input:focus { outline: none; border-color: #cc0000; box-shadow: 0 0 0 2px rgba(204,0,0,0.15); }
+  .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: #3c4043; border: 1px solid #dadce0; font-weight: 600; }
+  .google-btn:hover { background: #f7f8f8; }
+  .google-btn svg { width: 18px; height: 18px; }
+  .divider { display: flex; align-items: center; gap: 12px; color: #999; font-size: 0.85rem; margin: 18px 0; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e0e0e0; }
+  .link-btn { background: none; border: none; color: #cc0000; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 0.9rem; padding: 0; text-decoration: underline; }
+  .msg { padding: 12px 14px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 14px; }
+  .msg.error { background: #fdecea; color: #b71c1c; }
+  .msg.info { background: #e8f0fe; color: #1a3a6b; }
+  .msg.ok { background: #e8f5e9; color: #2e7d32; }
+  .msg[hidden] { display: none; }
+  table.history { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  table.history th, table.history td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; }
+  table.history th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #888; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .pill.succeeded { background: #e8f5e9; color: #2e7d32; }
+  .pill.active { background: #e8f5e9; color: #2e7d32; }
+  .pill.other { background: #eee; color: #666; }
+  .spinner { width: 26px; height: 26px; border: 3px solid #ddd; border-top-color: #cc0000; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 40px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  [hidden] { display: none !important; }
+</style>
+
+<div class="acct-header">
+  <a href="/"><img src="/images/logo-white-red.png" alt="Tour de Outback"></a>
+  <div class="acct-user" id="acct-user" hidden>
+    <span id="acct-user-email"></span>
+    <button class="btn btn-ghost" id="signout-btn">Sign out</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- Loading -->
+  <div id="view-loading"><div class="spinner"></div></div>
+
+  <!-- Signed out: login -->
+  <div id="view-signed-out" hidden>
+    <h1>My Account</h1>
+    <p class="muted" style="margin-bottom:22px;">Sign in to view your giving history and manage recurring donations.</p>
+    <div class="card">
+      <div class="msg error" id="auth-error" hidden></div>
+      <div class="msg info" id="auth-info" hidden></div>
+
+      <button class="btn google-btn btn-block" id="google-btn">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="divider">or</div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="email" placeholder="you@example.com">
+      </div>
+      <div class="field" id="password-field">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="Your password">
+      </div>
+      <button class="btn btn-primary btn-block" id="email-submit">Sign in</button>
+
+      <p style="margin-top:14px; font-size:0.9rem;" class="muted">
+        <span id="mode-hint">New here?</span>
+        <button class="link-btn" id="toggle-mode">Create an account</button>
+      </p>
+      <p style="margin-top:8px; font-size:0.9rem;" class="muted">
+        Prefer no password? <button class="link-btn" id="emaillink-btn">Email me a sign-in link</button>
+      </p>
+      <p style="margin-top:8px; font-size:0.85rem;" class="muted" id="reset-row">
+        <button class="link-btn" id="reset-btn">Forgot password?</button>
+      </p>
+    </div>
+  </div>
+
+  <!-- Signed in: dashboard -->
+  <div id="view-signed-in" hidden>
+    <h1>Welcome<span id="welcome-name"></span></h1>
+    <p class="muted" style="margin-bottom:24px;">Manage your giving and account below.</p>
+
+    <div class="card">
+      <h2>Billing &amp; Donations</h2>
+      <div class="msg error" id="billing-error" hidden></div>
+      <div id="history-loading"><div class="spinner"></div></div>
+      <div id="history-empty" hidden><p class="muted">No donations on your account yet. When you give while signed in, your history appears here.</p></div>
+      <div id="history-wrap" hidden style="overflow-x:auto;">
+        <table class="history">
+          <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-primary" id="portal-btn" style="margin-top:18px;">Manage billing &amp; subscriptions</button>
+      <p class="muted" style="font-size:0.82rem; margin-top:10px;">Update your card, view receipts, or cancel a recurring gift in our secure billing portal.</p>
+    </div>
+
+    <div class="card soon">
+      <h2>Registrations</h2>
+      <p class="muted">Your event registration history will appear here. <em>Coming soon.</em></p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, API } from "/js/firebase-init.js";
+  import {
+    onAuthStateChanged, signOut,
+    GoogleAuthProvider, signInWithPopup,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    sendPasswordResetEmail,
+    sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink
+  } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+
+  const $ = function (id) { return document.getElementById(id); };
+  const show = function (id) { $(id).hidden = false; };
+  const hide = function (id) { $(id).hidden = true; };
+  function showMsg(id, text) { var el = $(id); el.textContent = text; el.hidden = false; }
+  function clearMsgs() { ['auth-error', 'auth-info', 'billing-error'].forEach(hide); }
+
+  var signupMode = false;
+
+  // ---- Email-link completion (if the user arrived via a sign-in link) ----
+  if (isSignInWithEmailLink(auth, window.location.href)) {
+    var stored = window.localStorage.getItem('emailForSignIn');
+    var email = stored || window.prompt('Please confirm your email to finish signing in:');
+    if (email) {
+      signInWithEmailLink(auth, email, window.location.href)
+        .then(function () {
+          window.localStorage.removeItem('emailForSignIn');
+          history.replaceState(null, '', '/account/');
+        })
+        .catch(function (e) { hide('view-loading'); show('view-signed-out'); showMsg('auth-error', friendly(e)); });
+    }
+  }
+
+  // ---- Auth state ----
+  onAuthStateChanged(auth, function (user) {
+    hide('view-loading');
+    if (user) {
+      hide('view-signed-out');
+      show('view-signed-in');
+      $('acct-user').hidden = false;
+      $('acct-user-email').textContent = user.email || '';
+      $('welcome-name').textContent = user.displayName ? (', ' + user.displayName.split(' ')[0]) : '';
+      loadHistory(user);
+    } else {
+      hide('view-signed-in');
+      show('view-signed-out');
+      $('acct-user').hidden = true;
+    }
+  });
+
+  // ---- Google ----
+  $('google-btn').addEventListener('click', function () {
+    clearMsgs();
+    signInWithPopup(auth, new GoogleAuthProvider())
+      .catch(function (e) { showMsg('auth-error', friendly(e)); });
+  });
+
+  // ---- Email + password (sign in / sign up toggle) ----
+  $('toggle-mode').addEventListener('click', function () {
+    signupMode = !signupMode;
+    $('email-submit').textContent = signupMode ? 'Create account' : 'Sign in';
+    $('mode-hint').textContent = signupMode ? 'Already have an account?' : 'New here?';
+    $('toggle-mode').textContent = signupMode ? 'Sign in instead' : 'Create an account';
+    $('reset-row').hidden = signupMode;
+    $('password').setAttribute('autocomplete', signupMode ? 'new-password' : 'current-password');
+    clearMsgs();
+  });
+
+  $('email-submit').addEventListener('click', function () {
+    clearMsgs();
+    var email = $('email').value.trim();
+    var pw = $('password').value;
+    if (!email || !pw) { showMsg('auth-error', 'Please enter your email and password.'); return; }
+    var fn = signupMode ? createUserWithEmailAndPassword : signInWithEmailAndPassword;
+    fn(auth, email, pw).catch(function (e) { showMsg('auth-error', friendly(e)); });
+  });
+
+  $('reset-btn').addEventListener('click', function () {
+    clearMsgs();
+    var email = $('email').value.trim();
+    if (!email) { showMsg('auth-error', 'Enter your email above first, then tap “Forgot password.”'); return; }
+    sendPasswordResetEmail(auth, email)
+      .then(function () { showMsg('auth-info', 'Password reset email sent to ' + email + '.'); })
+      .catch(function (e) { showMsg('auth-error', friendly(e)); });
+  });
+
+  // ---- Passwordless email link ----
+  $('emaillink-btn').addEventListener('click', function () {
+    clearMsgs();
+    var email = $('email').value.trim();
+    if (!email) { showMsg('auth-error', 'Enter your email above first, then tap the link option.'); return; }
+    var acs = { url: window.location.origin + '/account/', handleCodeInApp: true };
+    sendSignInLinkToEmail(auth, email, acs)
+      .then(function () {
+        window.localStorage.setItem('emailForSignIn', email);
+        showMsg('auth-info', 'Check your inbox — we emailed a sign-in link to ' + email + '.');
+      })
+      .catch(function (e) { showMsg('auth-error', friendly(e)); });
+  });
+
+  // ---- Sign out ----
+  $('signout-btn').addEventListener('click', function () { signOut(auth); });
+
+  // ---- Billing history ----
+  function loadHistory(user) {
+    show('history-loading'); hide('history-wrap'); hide('history-empty'); hide('billing-error');
+    user.getIdToken().then(function (token) {
+      return fetch(API.billingHistory, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        hide('history-loading');
+        if (!res.ok) { throw new Error((res.d && res.d.error) || 'Could not load your history.'); }
+        var items = (res.d && res.d.items) || [];
+        if (!items.length) { show('history-empty'); return; }
+        var rows = items.map(function (it) {
+          return '<tr><td>' + it.date + '</td><td>' + escapeHtml(it.description) + '</td><td>' + it.amount +
+            '</td><td><span class="pill ' + pillClass(it.status) + '">' + escapeHtml(it.status) + '</span></td></tr>';
+        }).join('');
+        $('history-body').innerHTML = rows;
+        show('history-wrap');
+      })
+      .catch(function (e) { hide('history-loading'); showMsg('billing-error', e.message || 'Could not load your history.'); });
+  }
+
+  // ---- Stripe Customer Portal ----
+  $('portal-btn').addEventListener('click', function () {
+    hide('billing-error');
+    var btn = $('portal-btn'); btn.disabled = true; btn.textContent = 'Opening…';
+    auth.currentUser.getIdToken().then(function (token) {
+      return fetch(API.portalSession, { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d && res.d.url) { window.location.href = res.d.url; return; }
+        throw new Error((res.d && res.d.error) || 'Could not open the billing portal.');
+      })
+      .catch(function (e) { showMsg('billing-error', e.message); btn.disabled = false; btn.textContent = 'Manage billing & subscriptions'; });
+  });
+
+  function pillClass(s) { s = (s || '').toLowerCase(); return (s === 'succeeded' || s === 'active' || s === 'paid') ? 'succeeded' : 'other'; }
+  function escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function friendly(e) {
+    var c = (e && e.code) || '';
+    if (c === 'auth/invalid-credential' || c === 'auth/wrong-password' || c === 'auth/user-not-found') return 'That email or password doesn’t match. Try again, or reset your password.';
+    if (c === 'auth/email-already-in-use') return 'An account with that email already exists — try signing in instead.';
+    if (c === 'auth/weak-password') return 'Please choose a password of at least 6 characters.';
+    if (c === 'auth/invalid-email') return 'That doesn’t look like a valid email address.';
+    if (c === 'auth/popup-closed-by-user') return 'Sign-in was cancelled.';
+    if (c === 'auth/unauthorized-domain') return 'This domain isn’t authorized for sign-in yet (Firebase Auth settings).';
+    return (e && e.message) || 'Something went wrong. Please try again.';
+  }
+</script>

@@ -4,6 +4,13 @@ rules_version = '2';
 // bypasses these rules. No client (browser) reads or writes are permitted.
 service cloud.firestore {
   match /databases/{database}/documents {
+    // A signed-in user may read their own account record. All writes go through
+    // Cloud Functions (Admin SDK), which bypass these rules.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    // Everything else is closed to clients (donation/price/config docs, etc.).
     match /{document=**} {
       allow read, write: if false;
     }

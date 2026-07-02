@@ -716,6 +716,8 @@
     <div class="container">
       <form id="donate-form" class="donate-form-card" novalidate>
 
+        <a class="donate-signin" href="/account/" id="donate-signin"><span class="signin-icon">&#8250;</span> <span id="donate-signin-text">Sign in</span></a>
+
         <h2>Choose Your Gift</h2>
 
         <div class="donate-frequency" role="tablist" aria-label="Gift frequency">
@@ -1093,9 +1095,14 @@
 
         elements.submit().then(function (r) {
           if (r.error) { throw r.error; }
+          // Attach the donation to the signed-in donor's account, if any.
+          return (window.tdoAuth && window.tdoAuth.getToken) ? window.tdoAuth.getToken() : Promise.resolve(null);
+        }).then(function (token) {
+          var headers = { 'Content-Type': 'application/json' };
+          if (token) { headers['Authorization'] = 'Bearer ' + token; }
           return fetch(CREATE_ENDPOINT, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({
               baseAmount: state.baseAmount,
               coverFee: coverFeeBox.checked,
@@ -1140,6 +1147,24 @@
 
       render();
     })();
+  </script>
+  <!-- Firebase auth bridge: link donations to a signed-in donor -->
+  <script type="module">
+    import { auth } from "/js/firebase-init.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+    var current = null;
+    window.tdoAuth = {
+      getToken: function () { return current ? current.getIdToken() : Promise.resolve(null); }
+    };
+    onAuthStateChanged(auth, function (user) {
+      current = user;
+      var label = document.getElementById('donate-signin-text');
+      if (label) {
+        label.textContent = user
+          ? (user.displayName ? user.displayName.split(' ')[0] : 'My Account')
+          : 'Sign in';
+      }
+    });
   </script>
   <!--Start of Tawk.to Script-->
   <script type="text/javascript">

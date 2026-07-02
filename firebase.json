@@ -20,6 +20,14 @@
         "function": { "functionId": "createDonation", "region": "us-central1" }
       },
       {
+        "source": "/api/billing-history",
+        "function": { "functionId": "getBillingHistory", "region": "us-central1" }
+      },
+      {
+        "source": "/api/portal-session",
+        "function": { "functionId": "createPortalSession", "region": "us-central1" }
+      },
+      {
         "source": "/api/stripe-webhook",
         "function": { "functionId": "stripeWebhook", "region": "us-central1" }
       }
