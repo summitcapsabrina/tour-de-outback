@@ -56,31 +56,46 @@ function chargeAmountCents(baseDollars, coverFee) {
   return Math.round((baseCents + FEE_FLAT_CENTS) / (1 - FEE_RATE));
 }
 
-/** Find-or-create a monthly Stripe Price for a given amount, cached in Firestore. */
-async function getMonthlyPriceId(stripe, amountCents) {
-  const cfgRef = db.doc('stripe_config/donation');
+/**
+ * Find-or-create a monthly Stripe Price for a given amount, cached in Firestore.
+ * The cache is keyed by Stripe mode (test/live) so those environments don't clash,
+ * and self-heals: if a cached product/price no longer exists in the current Stripe
+ * account (e.g. after swapping keys, or on the test->live cutover), it's recreated.
+ */
+async function getMonthlyPriceId(stripe, amountCents, mode) {
+  const cfgRef = db.doc(`stripe_config/donation_${mode}`);
   const cfgSnap = await cfgRef.get();
   let productId = cfgSnap.exists ? cfgSnap.data().productId : null;
+  if (productId) {
+    try { await stripe.products.retrieve(productId); }
+    catch (e) { if (e && e.code === 'resource_missing') productId = null; else throw e; }
+  }
   if (!productId) {
-    const product = await stripe.products.create({
-      name: 'Tour de Outback Monthly Donation',
-    });
+    const product = await stripe.products.create({ name: 'Tour de Outback Monthly Donation' });
     productId = product.id;
     await cfgRef.set({ productId }, { merge: true });
   }
 
-  const priceRef = db.doc(`stripe_prices/monthly_${amountCents}`);
+  const priceRef = db.doc(`stripe_prices/${mode}_monthly_${amountCents}`);
   const priceSnap = await priceRef.get();
-  if (priceSnap.exists) return priceSnap.data().priceId;
-
-  const price = await stripe.prices.create({
-    unit_amount: amountCents,
-    currency: 'usd',
-    recurring: { interval: 'month' },
-    product: productId,
-  });
-  await priceRef.set({ priceId: price.id, amountCents });
-  return price.id;
+  let priceId = priceSnap.exists ? priceSnap.data().priceId : null;
+  if (priceId) {
+    try {
+      const p = await stripe.prices.retrieve(priceId);
+      if (!p.active || p.unit_amount !== amountCents || p.product !== productId) priceId = null;
+    } catch (e) { if (e && e.code === 'resource_missing') priceId = null; else throw e; }
+  }
+  if (!priceId) {
+    const price = await stripe.prices.create({
+      unit_amount: amountCents,
+      currency: 'usd',
+      recurring: { interval: 'month' },
+      product: productId,
+    });
+    priceId = price.id;
+    await priceRef.set({ priceId, amountCents });
+  }
+  return priceId;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +110,9 @@ exports.createDonation = onRequest(
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const stripe = require('stripe')(STRIPE_SECRET_KEY.value());
+    const secretKey = STRIPE_SECRET_KEY.value();
+    const stripe = require('stripe')(secretKey);
+    const stripeMode = secretKey.indexOf('sk_live') === 0 ? 'live' : 'test';
     const body = req.body || {};
     const coverFee = body.coverFee !== false; // default true — matches the page
     const isMonthly = body.frequency === 'monthly';
@@ -137,7 +154,7 @@ exports.createDonation = onRequest(
         name: name || undefined,
         metadata: { source: 'tdo-donation' },
       });
-      const priceId = await getMonthlyPriceId(stripe, amountCents);
+      const priceId = await getMonthlyPriceId(stripe, amountCents, stripeMode);
       // This project's Stripe SDK pins API 2025-02-24.acacia, where the first-
       // payment client secret is on latest_invoice.payment_intent. (The newer
       // "Basil" API moved it to latest_invoice.confirmation_secret — kept as a
