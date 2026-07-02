@@ -747,3 +747,16 @@ document.addEventListener('DOMContentLoaded', () => {
   s.src = '/js/auth-widget.js';
   (document.head || document.documentElement).appendChild(s);
 })();
+
+// --- Footer legal links (Privacy Policy / Terms) on every page ---
+(function addFooterLegal() {
+  document.addEventListener('DOMContentLoaded', function () {
+    var fb = document.querySelector('.footer-bottom');
+    if (fb && !fb.querySelector('.footer-legal')) {
+      var span = document.createElement('span');
+      span.className = 'footer-legal';
+      span.innerHTML = ' | <a href="/privacy/" style="color:#bbb;text-decoration:underline">Privacy Policy</a> &middot; <a href="/terms/" style="color:#bbb;text-decoration:underline">Terms of Service</a>';
+      fb.appendChild(span);
+    }
+  });
+})();
