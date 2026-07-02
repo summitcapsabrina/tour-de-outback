@@ -760,3 +760,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 })();
+
+// --- Donate link in the navbar + footer on every page ---
+(function addDonateLinks() {
+  document.addEventListener('DOMContentLoaded', function () {
+    var navLinks = document.querySelector('.nav-links');
+    if (navLinks && !navLinks.querySelector('a[href="/donate/"]')) {
+      var a = document.createElement('a');
+      a.href = '/donate/';
+      a.textContent = 'Donate';
+      var reg = navLinks.querySelector('a.btn');
+      if (reg) { navLinks.insertBefore(a, reg); } else { navLinks.appendChild(a); }
+    }
+    var footUl = document.querySelector('.footer-links ul');
+    if (footUl && !footUl.querySelector('a[href="/donate/"]')) {
+      var li = document.createElement('li');
+      var fa = document.createElement('a');
+      fa.href = '/donate/';
+      fa.textContent = 'Donate';
+      li.appendChild(fa);
+      var regLi = Array.prototype.slice.call(footUl.querySelectorAll('li')).filter(function (l) {
+        var x = l.querySelector('a'); return x && /bikereg/.test(x.href);
+      })[0];
+      if (regLi) { footUl.insertBefore(li, regLi); } else { footUl.appendChild(li); }
+    }
+  });
+})();
