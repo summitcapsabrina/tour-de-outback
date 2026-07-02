@@ -716,7 +716,7 @@
     <div class="container">
       <form id="donate-form" class="donate-form-card" novalidate>
 
-        <a class="donate-signin" href="/account/" id="donate-signin"><span class="signin-icon">&#8250;</span> <span id="donate-signin-text">Sign in</span></a>
+        <div id="donate-auth-prompt" class="donate-auth-prompt"></div>
 
         <h2>Choose Your Gift</h2>
 
@@ -1125,7 +1125,14 @@
           });
         }).then(function (result) {
           if (result && result.error) { throw result.error; }
+          var isGuest = !(window.tdoAuth && window.tdoAuth.isSignedIn && window.tdoAuth.isSignedIn());
           showThanks(); // succeeded inline (no redirect needed — typical for cards)
+          if (isGuest && email && window.tdoAuth && window.tdoAuth.sendGuestLink) {
+            window.tdoAuth.sendGuestLink(email).then(function () {
+              var sub = document.querySelector('.donate-thanks .thanks-sub');
+              if (sub) { sub.innerHTML += '<br><span style="display:inline-block;margin-top:8px">We’ve emailed <strong>' + email.replace(/[<>&"]/g, '') + '</strong> a link to access your donation and create your account.</span>'; }
+            }).catch(function () {});
+          }
         }).catch(function (err) {
           showError((err && err.message) || 'Payment could not be completed. Please try again.');
           completeBtn.disabled = false;
@@ -1148,23 +1155,39 @@
       render();
     })();
   </script>
-  <!-- Firebase auth bridge: link donations to a signed-in donor -->
+  <!-- Firebase auth bridge: sign-in prompt + link donations to the donor -->
   <script type="module">
     import { auth } from "/js/firebase-init.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+    import { onAuthStateChanged, sendSignInLinkToEmail } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
     var current = null;
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
     window.tdoAuth = {
-      getToken: function () { return current ? current.getIdToken() : Promise.resolve(null); }
-    };
-    onAuthStateChanged(auth, function (user) {
-      current = user;
-      var label = document.getElementById('donate-signin-text');
-      if (label) {
-        label.textContent = user
-          ? (user.displayName ? user.displayName.split(' ')[0] : 'My Account')
-          : 'Sign in';
+      getToken: function () { return current ? current.getIdToken() : Promise.resolve(null); },
+      isSignedIn: function () { return !!current; },
+      sendGuestLink: function (email) {
+        var acs = { url: window.location.origin + '/account/', handleCodeInApp: true };
+        return sendSignInLinkToEmail(auth, email, acs).then(function () {
+          try { window.localStorage.setItem('emailForSignIn', email); } catch (e) {}
+        });
       }
-    });
+    };
+    function renderPrompt(user) {
+      var el = document.getElementById('donate-auth-prompt');
+      if (!el) return;
+      el.style.margin = '0 0 20px';
+      if (user) {
+        var nm = user.displayName ? esc(user.displayName.split(' ')[0]) : esc(user.email || 'your account');
+        el.innerHTML = '<div style="background:#e8f5e9;color:#2e7d32;border-radius:8px;padding:11px 14px;font-weight:600;font-size:0.9rem">&#10003; Signed in as ' + nm + ' — this gift will be saved to your account.</div>';
+      } else {
+        el.innerHTML = '<div style="background:#f5f5f5;border-radius:8px;padding:12px 14px;font-size:0.9rem;line-height:1.5">' +
+          '<strong>Save this donation to an account?</strong> ' +
+          '<button type="button" id="donate-signin-btn" style="background:#cc0000;color:#fff;border:none;border-radius:6px;padding:6px 13px;font-weight:600;cursor:pointer;font-family:inherit;margin-left:4px">Sign in</button>' +
+          '<div style="color:#666;font-size:0.85rem;margin-top:6px">Or continue as a guest — after you give, we&rsquo;ll email you a link to access your donation.</div></div>';
+        var b = document.getElementById('donate-signin-btn');
+        if (b) b.addEventListener('click', function () { if (window.tdoOpenAuth) window.tdoOpenAuth(); });
+      }
+    }
+    onAuthStateChanged(auth, function (user) { current = user; renderPrompt(user); });
   </script>
   <!--Start of Tawk.to Script-->
   <script type="text/javascript">

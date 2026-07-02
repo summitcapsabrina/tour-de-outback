@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Oregon Tour de Outback</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.min.css">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <style>
+    .admin-section { padding: 34px 0 70px; }
+    .admin-card { background: #fff; border-radius: 12px; box-shadow: 0 6px 28px rgba(0,0,0,0.10); overflow: hidden; }
+    .admin-tabs { display: flex; flex-wrap: wrap; gap: 2px; background: #222; padding: 8px 8px 0; }
+    .admin-tab { background: transparent; color: rgba(255,255,255,0.7); border: none; padding: 12px 18px; font-family: 'Oswald', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; border-radius: 8px 8px 0 0; }
+    .admin-tab:hover { color: #fff; }
+    .admin-tab.active { background: #fff; color: #cc0000; }
+    .admin-panel { padding: 28px 30px; display: none; }
+    .admin-panel.active { display: block; }
+    .admin-panel h2 { font-family: 'Oswald', sans-serif; font-size: 1.3rem; margin-bottom: 6px; }
+    .admin-panel .sub { color: #666; font-size: 0.92rem; margin-bottom: 20px; }
+    .soon-badge { display: inline-block; background: #f0f0f0; color: #888; border-radius: 20px; padding: 3px 12px; font-size: 0.78rem; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+    .adm-btn { display: inline-block; background: #cc0000; color: #fff; border: none; border-radius: 8px; padding: 11px 18px; font-weight: 600; font-size: 0.95rem; cursor: pointer; font-family: inherit; text-decoration: none; }
+    .adm-btn.dark { background: #222; }
+    table.adm { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    table.adm th, table.adm td { text-align: left; padding: 9px 8px; border-bottom: 1px solid #eee; white-space: nowrap; }
+    table.adm th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: #888; }
+    .prov { display: inline-block; background: #eef; color: #335; border-radius: 4px; padding: 1px 6px; font-size: 0.72rem; margin-right: 3px; }
+    .msg { padding: 12px 14px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 14px; display: none; }
+    .msg.show { display: block; } .msg.error { background: #fdecea; color: #b71c1c; }
+    .spinner { width: 26px; height: 26px; border: 3px solid #ddd; border-top-color: #cc0000; border-radius: 50%; animation: spin .8s linear infinite; margin: 30px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .admin-lead { color: #fff; font-size: 1.05rem; margin-bottom: 20px; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <a href="/" class="nav-logo"><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" class="nav-logo-img"></a>
+      <div class="nav-toggle"><span></span><span></span><span></span></div>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/routes/">Routes</a>
+        <a href="/schedule/">Schedule</a>
+        <a href="/about/">About</a>
+        <a href="/volunteer/">Volunteer</a>
+        <a href="/blog/">Blog</a>
+        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
+      </div>
+      <div class="weather-widget" id="weather-widget"></div>
+    </div>
+  </nav>
+
+  <section class="hero hero-page">
+    <div class="hero-bg" style="background-image: url('../images/gravel-barn.jpg'); background-color: #3a3a35;"></div>
+    <div class="hero-content">
+      <h1>Admin</h1>
+      <p class="tagline">Site management</p>
+    </div>
+  </section>
+
+  <div class="page-content">
+    <section class="admin-section">
+      <div class="container">
+        <div id="view-loading"><div class="spinner"></div></div>
+
+        <div id="view-denied" hidden>
+          <p class="admin-lead">This area is for site administrators.</p>
+          <div class="admin-card"><div class="admin-panel active">
+            <h2>Admins only</h2>
+            <p class="sub">Sign in with an administrator account to continue.</p>
+            <button class="adm-btn" id="open-signin">Sign in</button>
+          </div></div>
+        </div>
+
+        <div id="view-admin" hidden>
+          <p class="admin-lead" id="admin-welcome">Site administration</p>
+          <div class="admin-card">
+            <div class="admin-tabs" id="admin-tabs">
+              <button class="admin-tab active" data-tab="users">Users</button>
+              <button class="admin-tab" data-tab="surveys">Surveys</button>
+              <button class="admin-tab" data-tab="accounting">Accounting</button>
+              <button class="admin-tab" data-tab="analytics">Analytics</button>
+              <button class="admin-tab" data-tab="registration">Registration</button>
+              <button class="admin-tab" data-tab="chat">Chat</button>
+            </div>
+
+            <!-- Users -->
+            <div class="admin-panel active" data-panel="users">
+              <h2>Users</h2>
+              <p class="sub">People who have created an account on the site.</p>
+              <div class="msg error" id="users-error"></div>
+              <div id="users-loading"><div class="spinner"></div></div>
+              <div id="users-wrap" hidden style="overflow-x:auto;">
+                <p class="sub" id="users-count"></p>
+                <table class="adm">
+                  <thead><tr><th>Name</th><th>Email</th><th>Sign-in</th><th>Joined</th><th>Last seen</th></tr></thead>
+                  <tbody id="users-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Surveys -->
+            <div class="admin-panel" data-panel="surveys">
+              <h2>Surveys <span class="soon-badge">In progress</span></h2>
+              <p class="sub">Responses from the post-ride survey.</p>
+              <p>Survey response management is coming here. For now, the live survey is at <a href="/survey-2026/" target="_blank">/survey-2026/</a>.</p>
+            </div>
+
+            <!-- Accounting -->
+            <div class="admin-panel" data-panel="accounting">
+              <h2>Accounting</h2>
+              <p class="sub">Donations, payouts, and financial reporting.</p>
+              <p style="margin-bottom:16px;">Payments, payouts, refunds, and reports live in your Stripe dashboard. A summarized on-site view is coming here.</p>
+              <a class="adm-btn dark" href="https://dashboard.stripe.com/" target="_blank" rel="noopener">Open Stripe Dashboard</a>
+              <span class="soon-badge">On-site summary in progress</span>
+            </div>
+
+            <!-- Analytics -->
+            <div class="admin-panel" data-panel="analytics">
+              <h2>Analytics</h2>
+              <p class="sub">Traffic and engagement.</p>
+              <p style="margin-bottom:16px;">Site analytics are tracked in Google Analytics. An embedded dashboard is coming here.</p>
+              <a class="adm-btn dark" href="https://analytics.google.com/" target="_blank" rel="noopener">Open Google Analytics</a>
+              <span class="soon-badge">Embedded view in progress</span>
+            </div>
+
+            <!-- Registration -->
+            <div class="admin-panel" data-panel="registration">
+              <h2>Registration <span class="soon-badge">In progress</span></h2>
+              <p class="sub">Rider registrations for the event.</p>
+              <p>Registration is currently handled by BikeReg. Bringing registration data into this dashboard depends on BikeReg data access and is planned for a later phase.</p>
+            </div>
+
+            <!-- Chat -->
+            <div class="admin-panel" data-panel="chat">
+              <h2>Chat Inbox <span class="soon-badge">In progress</span></h2>
+              <p class="sub">Conversations from the on-site chat.</p>
+              <p>The in-house chat widget and its admin inbox are planned. Once built, visitor conversations will appear here.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <h3><img src="../images/logo-white-red.png" alt="Oregon Tour de Outback" style="height: 40px;" loading="lazy"></h3>
+          <p>Great rides, great fun, for a great cause. Join us June 26, 2027 in Lakeview, Oregon for gravel and road cycling through the stunning Oregon outback.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/routes/">Routes</a></li>
+            <li><a href="/schedule/">Schedule</a></li>
+            <li><a href="/about/">About</a></li>
+            <li><a href="/volunteer/">Volunteer</a></li>
+            <li><a href="/blog/">Blog</a></li>
+            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
+            <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
+          </ul>
+        </div>
+        <div class="footer-social">
+          <h4>Follow Us</h4>
+          <div class="social-icons">
+            <a href="https://www.facebook.com/oregontourdeoutback" target="_blank" aria-label="Facebook">f</a>
+            <a href="https://www.instagram.com/oregontourdeoutback/" target="_blank" aria-label="Instagram">ig</a>
+            <a href="https://www.youtube.com/@tourdeoutback" target="_blank" aria-label="YouTube">yt</a>
+            <a href="mailto:info@tourdeoutback.org" aria-label="Email">@</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        &copy; Oregon Tour de Outback. All rights reserved. | Presented by Lake County Chamber of Commerce
+      </div>
+    </div>
+  </footer>
+
+  <script src="../js/main.min.js"></script>
+  <script type="module">
+    import { auth, API, isAdminUser } from "/js/firebase-init.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+
+    var $ = function (id) { return document.getElementById(id); };
+    function show(id) { $(id).hidden = false; } function hide(id) { $(id).hidden = true; }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+    $('open-signin').addEventListener('click', function () { if (window.tdoOpenAuth) window.tdoOpenAuth(); });
+
+    // Tab switching
+    document.querySelectorAll('.admin-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.admin-tab').forEach(function (t) { t.classList.remove('active'); });
+        document.querySelectorAll('.admin-panel').forEach(function (p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        var panel = document.querySelector('.admin-panel[data-panel="' + tab.getAttribute('data-tab') + '"]');
+        if (panel) panel.classList.add('active');
+      });
+    });
+
+    var loadedUsers = false;
+    onAuthStateChanged(auth, function (user) {
+      hide('view-loading');
+      if (isAdminUser(user)) {
+        hide('view-denied'); show('view-admin');
+        $('admin-welcome').textContent = 'Signed in as ' + (user.email || 'admin');
+        if (!loadedUsers) { loadedUsers = true; loadUsers(user); }
+      } else {
+        hide('view-admin'); show('view-denied');
+      }
+    });
+
+    function loadUsers(user) {
+      show('users-loading'); hide('users-wrap'); $('users-error').classList.remove('show');
+      user.getIdToken().then(function (t) {
+        return fetch(API.adminUsers, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          hide('users-loading');
+          if (!res.ok) { throw new Error((res.d && res.d.error) || 'Could not load users.'); }
+          var users = (res.d && res.d.users) || [];
+          $('users-count').textContent = res.d.count + ' account' + (res.d.count === 1 ? '' : 's');
+          $('users-body').innerHTML = users.map(function (u) {
+            var provs = (u.providers || []).map(function (p) {
+              return '<span class="prov">' + esc(p.replace('.com', '').replace('password', 'email')) + '</span>';
+            }).join('');
+            return '<tr><td>' + esc(u.name || '—') + '</td><td>' + esc(u.email || '—') + '</td><td>' + (provs || '—') +
+              '</td><td>' + esc(u.created || '—') + '</td><td>' + esc(u.lastSignIn || '—') + '</td></tr>';
+          }).join('');
+          show('users-wrap');
+        })
+        .catch(function (e) { hide('users-loading'); var el = $('users-error'); el.textContent = e.message; el.classList.add('show'); });
+    }
+  </script>
+</body>
+</html>

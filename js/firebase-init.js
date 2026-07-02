@@ -19,9 +19,18 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
+// Admin emails (UI gating only; the Cloud Functions enforce this server-side).
+// Keep in sync with ADMIN_EMAILS in functions/index.js.
+export const ADMIN_EMAILS = ['info@tourdeoutback.org'];
+export function isAdminUser(user) {
+  return !!(user && user.email && user.emailVerified &&
+    ADMIN_EMAILS.indexOf(user.email.toLowerCase()) !== -1);
+}
+
 // Backend endpoints (served same-origin via Firebase Hosting rewrites).
 export const API = {
   createDonation: "/api/create-donation",
   billingHistory: "/api/billing-history",
-  portalSession: "/api/portal-session"
+  portalSession: "/api/portal-session",
+  adminUsers: "/api/admin-users"
 };

@@ -1,7 +1,7 @@
 // Global navbar auth widget: an avatar button (to the right of the weather
 // widget) that opens a dropdown — a compact login menu when signed out, or a
 // small account menu when signed in. Loaded on every page via main.js.
-import { auth } from "/js/firebase-init.js";
+import { auth, isAdminUser } from "/js/firebase-init.js";
 import {
   onAuthStateChanged, signOut,
   GoogleAuthProvider, signInWithPopup,
@@ -76,6 +76,8 @@ import {
   function openMenu() { menu.classList.add('open'); avatarBtn.setAttribute('aria-expanded', 'true'); }
   function closeMenu() { menu.classList.remove('open'); avatarBtn.setAttribute('aria-expanded', 'false'); }
   function toggleMenu() { menu.classList.contains('open') ? closeMenu() : openMenu(); }
+  // Let other page scripts open the sign-in dropdown (e.g. an "account" page button).
+  window.tdoOpenAuth = function () { openMenu(); avatarBtn.scrollIntoView({ block: 'nearest' }); };
 
   avatarBtn.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); });
   document.addEventListener('click', function (e) { if (!root.contains(e.target)) closeMenu(); });
@@ -149,6 +151,7 @@ import {
       '<div class="nm">' + esc(user.displayName || 'Your account') + '</div>' +
       '<div class="em">' + esc(user.email || '') + '</div></div></div>' +
       '<a class="tdo-btn tdo-btn-primary" href="/account/">My Account</a>' +
+      (isAdminUser(user) ? '<a class="tdo-btn" style="background:#222;color:#fff" href="/admin/">Admin</a>' : '') +
       '<button class="tdo-btn" style="background:#f0f0f0;color:#333" id="tdo-signout">Sign out</button>';
     menu.querySelector('#tdo-signout').addEventListener('click', function () {
       signOut(auth).then(closeMenu);

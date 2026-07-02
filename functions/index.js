@@ -127,6 +127,18 @@ async function getOrCreateUserCustomer(stripe, authUser, email, name, mode) {
     } catch (e) { if (e && e.code === 'resource_missing') customerId = null; else throw e; }
   }
   if (!customerId) {
+    // Adopt an existing customer under this email (e.g. a prior guest donation),
+    // so past guest gifts appear in the account after the donor signs in.
+    const lookupEmail = authUser.email || email;
+    if (lookupEmail) {
+      const existing = await stripe.customers.list({ email: lookupEmail, limit: 1 });
+      if (existing.data && existing.data.length) {
+        customerId = existing.data[0].id;
+        try { await stripe.customers.update(customerId, { metadata: { firebaseUID: authUser.uid } }); } catch (e) {}
+      }
+    }
+  }
+  if (!customerId) {
     const customer = await stripe.customers.create({
       email: email || authUser.email || undefined,
       name: name || authUser.name || undefined,
@@ -146,6 +158,34 @@ async function getOrCreateUserCustomer(stripe, authUser, email, name, mode) {
 async function getUserCustomerId(authUser, mode) {
   const snap = await db.doc(`users/${authUser.uid}`).get();
   return snap.exists ? (snap.data()[`stripeCustomer_${mode}`] || null) : null;
+}
+
+/** Find (by email) or create a Stripe customer for a GUEST donation, so the gift
+ *  can be adopted later when the donor signs in with the same email. */
+async function findOrCreateCustomerByEmail(stripe, email, name) {
+  if (email) {
+    const existing = await stripe.customers.list({ email: email, limit: 1 });
+    if (existing.data && existing.data.length) return existing.data[0].id;
+  }
+  const customer = await stripe.customers.create({
+    email: email || undefined,
+    name: name || undefined,
+    metadata: { source: 'tdo-donation-guest' },
+  });
+  return customer.id;
+}
+
+// Emails allowed to use admin endpoints (keep in sync with js/auth-widget.js).
+const ADMIN_EMAILS = ['info@tourdeoutback.org'];
+
+/** Verify the caller is a signed-in admin (verified email on the allowlist). */
+async function verifyAdmin(req) {
+  const user = await verifyAuthUser(req);
+  if (user && user.email && user.email_verified &&
+      ADMIN_EMAILS.indexOf(String(user.email).toLowerCase()) !== -1) {
+    return user;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,12 +223,16 @@ exports.createDonation = onRequest(
     };
 
     try {
-      // Tie the gift to the donor's persistent Stripe customer when signed in,
-      // so it appears in their account billing history.
+      // Tie the gift to the donor's Stripe customer: their persistent one when
+      // signed in, or an email-keyed one for guests (adopted on later sign-in),
+      // so it appears in the account's billing history.
       const authUser = await verifyAuthUser(req);
-      const userCustomerId = authUser
-        ? await getOrCreateUserCustomer(stripe, authUser, email, name, stripeMode)
-        : null;
+      let userCustomerId = null;
+      if (authUser) {
+        userCustomerId = await getOrCreateUserCustomer(stripe, authUser, email, name, stripeMode);
+      } else if (email) {
+        userCustomerId = await findOrCreateCustomerByEmail(stripe, email, name);
+      }
 
       if (!isMonthly) {
         const intent = await stripe.paymentIntents.create({
@@ -309,6 +353,36 @@ exports.createPortalSession = onRequest(
     } catch (err) {
       logger.error('createPortalSession failed', err);
       return res.status(500).json({ error: 'Could not open the billing portal.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-users  — list site accounts (admins only).
+// Auth: "Authorization: Bearer <Firebase ID token>". Returns { users, count }.
+// ---------------------------------------------------------------------------
+exports.adminListUsers = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const result = await admin.auth().listUsers(500);
+      const users = result.users.map(function (u) {
+        return {
+          uid: u.uid,
+          email: u.email || null,
+          name: u.displayName || null,
+          providers: (u.providerData || []).map(function (p) { return p.providerId; }),
+          created: (u.metadata && u.metadata.creationTime) ? new Date(u.metadata.creationTime).toISOString().slice(0, 10) : null,
+          lastSignIn: (u.metadata && u.metadata.lastSignInTime) ? new Date(u.metadata.lastSignInTime).toISOString().slice(0, 10) : null,
+        };
+      }).sort(function (a, b) { return (b.lastSignIn || '').localeCompare(a.lastSignIn || ''); });
+      return res.json({ users: users, count: users.length });
+    } catch (err) {
+      logger.error('adminListUsers failed', err);
+      return res.status(500).json({ error: 'Could not load users.' });
     }
   }
 );
