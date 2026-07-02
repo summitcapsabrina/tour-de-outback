@@ -431,16 +431,38 @@
       text-align: center;
     }
     .donate-error.show { display: block; }
-    /* Thank-you banner shown on payment-success redirect (?thanks=1) */
+    /* Thank-you banner shown on successful payment */
     .donate-thanks {
       max-width: 580px;
       margin: 0 auto 20px;
       background: #e8f5e9;
       color: #2e7d32;
-      border-radius: 8px;
-      padding: 16px 18px;
+      border: 2px solid #66bb6a;
+      border-radius: 12px;
+      padding: 28px 24px;
       text-align: center;
-      font-weight: 600;
+    }
+    .donate-thanks .thanks-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #66bb6a;
+      color: #fff;
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+    }
+    .donate-thanks .thanks-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .donate-thanks .thanks-sub {
+      font-size: 0.95rem;
+      color: #388e3c;
+      font-weight: 500;
     }
 
     /* "or" divider */
@@ -936,7 +958,10 @@
       function showThanks() {
         var banner = document.createElement('div');
         banner.className = 'donate-thanks';
-        banner.textContent = 'Thank you for your donation! A receipt is on its way to your email.';
+        banner.innerHTML =
+          '<span class="thanks-check">✓</span>' +
+          '<div class="thanks-title">Thank you for your donation!</div>' +
+          '<div class="thanks-sub">Your gift supports Lake County Search &amp; Rescue. A receipt will be emailed to you.</div>';
         form.parentNode.insertBefore(banner, form);
         form.style.display = 'none';
         banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1096,7 +1121,10 @@
       if (/[?&]thanks=1/.test(location.search)) {
         var banner = document.createElement('div');
         banner.className = 'donate-thanks';
-        banner.textContent = 'Thank you for your donation! A receipt is on its way to your email.';
+        banner.innerHTML =
+          '<span class="thanks-check">✓</span>' +
+          '<div class="thanks-title">Thank you for your donation!</div>' +
+          '<div class="thanks-sub">Your gift supports Lake County Search &amp; Rescue. A receipt will be emailed to you.</div>';
         form.parentNode.insertBefore(banner, form);
       }
 
