@@ -431,7 +431,7 @@
       text-align: center;
     }
     .donate-error.show { display: block; }
-    /* Thank-you banner shown after returning from Square (?thanks=1) */
+    /* Thank-you banner shown on payment-success redirect (?thanks=1) */
     .donate-thanks {
       max-width: 580px;
       margin: 0 auto 20px;
@@ -687,7 +687,7 @@
   </section>
 
 
-  <!-- Donation form (Square hosted checkout) -->
+  <!-- Donation form (in-house payments — Firebase backend, in progress) -->
   <section class="donate-form-section">
     <div class="container">
       <form id="donate-form" class="donate-form-card" novalidate>
@@ -697,7 +697,7 @@
         <div class="donate-frequency" role="tablist" aria-label="Gift frequency">
           <button type="button" class="donate-frequency-btn selected" data-frequency="one-time" role="tab" aria-selected="true">One Time</button>
           <button type="button" class="donate-frequency-btn" data-frequency="monthly" role="tab" aria-selected="false">
-            <span class="freq-heart" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.3C.6 8.9 1.9 5.5 5 4.6c2-.6 3.9.2 5 1.9 1.1-1.7 3-2.5 5-1.9 3.1.9 4.4 4.3 3 7.1C19.5 16.1 12 21 12 21z"/></svg></span> Monthly
+            <span class="freq-heart" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span> Monthly
           </button>
         </div>
 
@@ -728,7 +728,7 @@
           <span class="donate-fee-info" title="Card processors charge ~2.9% + $0.30. Covering this means the full base amount supports the event.">?</span>
         </div>
 
-        <!-- Primary action: Square hosted checkout (card, Apple/Google Pay, Cash App) -->
+        <!-- Primary action: submit donation to the in-house payment backend -->
         <button type="button" class="donate-pay-btn donate-give-btn" id="donate-btn" disabled>Donate</button>
 
         <div class="donate-error" id="donate-error" role="alert"></div>
@@ -804,17 +804,15 @@
 
   <script src="../js/main.min.js"></script>
   <script>
-    // --- Donation form: single step → Square hosted checkout ---
-    // Amount + frequency + fee-cover are chosen here; the "Donate" button asks
-    // our Vercel function for a Square checkout URL and redirects to it. Square
-    // collects the donor's name, email, and card on its own secure page.
+    // --- Donation form: amount + frequency + fee-cover selection ---
+    // The payment backend is being rebuilt in-house on Firebase (Cloud Functions
+    // + Firestore). Until that's wired up, the "Donate" button is inert and shows
+    // a short note. This page is not yet linked in the site nav.
     (function () {
       var form = document.getElementById('donate-form');
       if (!form) return;
 
       // ==== Config ====
-      // Update this endpoint if the Vercel project moves accounts.
-      var CHECKOUT_ENDPOINT = 'https://tour-de-outback.vercel.app/api/create-checkout';
       // Alternate one-time links. Leave '' to hide that button until a handle is set.
       var PAYPAL_ME = '';   // e.g. 'https://www.paypal.me/YourHandle'
       var VENMO_URL = '';   // e.g. 'https://venmo.com/u/YourHandle'
@@ -941,34 +939,14 @@
 
       coverFeeBox.addEventListener('change', render);
 
-      // --- Donate → Square hosted checkout ---
+      // --- Donate → payment backend (in-house on Firebase — not yet wired) ---
       donateBtn.addEventListener('click', function () {
         if (donateBtn.disabled) return;
         clearError();
-        donateBtn.disabled = true;
-        donateBtn.textContent = 'Redirecting…';
-        fetch(CHECKOUT_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            baseAmount: state.baseAmount,
-            coverFee: coverFeeBox.checked,
-            frequency: state.frequency
-          })
-        })
-          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
-          .then(function (res) {
-            if (res.ok && res.d && res.d.url) { window.location.href = res.d.url; return; }
-            showError((res.d && res.d.error) || 'Something went wrong. Please try again.');
-            render();
-          })
-          .catch(function () {
-            showError('Network error. Please try again, or email info@tourdeoutback.org.');
-            render();
-          });
+        showError('Online giving is being set up. In the meantime, please email info@tourdeoutback.org to donate — thank you!');
       });
 
-      // --- Thank-you banner when Square redirects back ---
+      // --- Thank-you banner on ?thanks=1 (payment-success redirect) ---
       if (/[?&]thanks=1/.test(location.search)) {
         var banner = document.createElement('div');
         banner.className = 'donate-thanks';

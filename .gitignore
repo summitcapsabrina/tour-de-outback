@@ -3,8 +3,5 @@
 .env.local
 .env.*.local
 
-# Vercel
-.vercel
-
 # OS
 .DS_Store
