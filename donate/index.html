@@ -203,6 +203,36 @@
     .donate-frequency-btn .freq-icon {
       font-size: 1rem;
     }
+    /* Heart on the Monthly tab — beats while Monthly is selected */
+    .donate-frequency-btn .freq-heart {
+      display: inline-flex;
+      width: 16px;
+      height: 16px;
+      color: inherit;
+      transform-origin: center;
+      will-change: transform;
+    }
+    .donate-frequency-btn .freq-heart svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+      display: block;
+    }
+    .donate-frequency-btn[data-frequency="monthly"].selected .freq-heart {
+      animation: donateHeartBeat 1.3s ease-in-out infinite;
+    }
+    @keyframes donateHeartBeat {
+      0%, 100% { transform: scale(1); }
+      12% { transform: scale(1.3); }
+      24% { transform: scale(1); }
+      36% { transform: scale(1.18); }
+      50% { transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .donate-frequency-btn[data-frequency="monthly"].selected .freq-heart {
+        animation: none;
+      }
+    }
 
     /* Preset amounts: 4-column grid */
     .donate-amount-grid {
@@ -385,6 +415,32 @@
       background: #cc0000;
       color: #fff;
       text-transform: uppercase;
+    }
+    /* PayPal/Venmo are now <a> link-buttons */
+    a.donate-pay-btn { text-decoration: none; }
+    .donate-pay-btn.is-disabled { opacity: 0.55; pointer-events: none; }
+    /* Inline error under the Donate button */
+    .donate-error {
+      display: none;
+      background: #fce4ec;
+      color: #c62828;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    .donate-error.show { display: block; }
+    /* Thank-you banner shown after returning from Square (?thanks=1) */
+    .donate-thanks {
+      max-width: 580px;
+      margin: 0 auto 20px;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 8px;
+      padding: 16px 18px;
+      text-align: center;
+      font-weight: 600;
     }
 
     /* "or" divider */
@@ -631,114 +687,67 @@
   </section>
 
 
-  <!-- Donation form (3-step wizard, Qgiv-style) -->
+  <!-- Donation form (Square hosted checkout) -->
   <section class="donate-form-section">
     <div class="container">
       <form id="donate-form" class="donate-form-card" novalidate>
-        <a href="/account/" class="donate-signin">
-          <span class="signin-icon">&#x2713;</span> Sign In
-        </a>
 
-        <!-- Step indicator -->
-        <div class="donate-steps" aria-label="Donation progress">
-          <span class="donate-step-dot active" data-step-dot="1"></span>
-          <span class="donate-step-line" data-step-line="2"></span>
-          <span class="donate-step-dot" data-step-dot="2"></span>
-          <span class="donate-step-line" data-step-line="3"></span>
-          <span class="donate-step-dot" data-step-dot="3"></span>
+        <h2>Choose Your Gift</h2>
+
+        <div class="donate-frequency" role="tablist" aria-label="Gift frequency">
+          <button type="button" class="donate-frequency-btn selected" data-frequency="one-time" role="tab" aria-selected="true">One Time</button>
+          <button type="button" class="donate-frequency-btn" data-frequency="monthly" role="tab" aria-selected="false">
+            <span class="freq-heart" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.9-10-9.3C.6 8.9 1.9 5.5 5 4.6c2-.6 3.9.2 5 1.9 1.1-1.7 3-2.5 5-1.9 3.1.9 4.4 4.3 3 7.1C19.5 16.1 12 21 12 21z"/></svg></span> Monthly
+          </button>
         </div>
 
-        <!-- ========== STEP 1: Choose Your Gift ========== -->
-        <div class="donate-step-pane active" data-step="1">
-          <h2>Choose Your Gift</h2>
-
-          <div class="donate-frequency" role="tablist" aria-label="Gift frequency">
-            <button type="button" class="donate-frequency-btn selected" data-frequency="one-time" role="tab" aria-selected="true">One Time</button>
-            <button type="button" class="donate-frequency-btn" data-frequency="monthly" role="tab" aria-selected="false">
-              <span class="freq-icon">&#x1F4C5;</span> Monthly
-            </button>
-          </div>
-
-          <div class="donate-amount-grid">
-            <button type="button" class="donate-amount-btn" data-amount="50">$50</button>
-            <button type="button" class="donate-amount-btn" data-amount="100">$100</button>
-            <button type="button" class="donate-amount-btn" data-amount="250">$250</button>
-            <button type="button" class="donate-amount-btn" data-amount="500">$500</button>
-            <button type="button" class="donate-amount-btn" data-amount="1000">$1,000</button>
-            <button type="button" class="donate-amount-btn donate-other-btn" id="donate-other-btn">Other</button>
-            <div class="donate-other-input-wrap" id="donate-other-wrap">
-              <div class="currency-input">
-                <span class="currency">$</span>
-                <input type="number" id="donate-custom-amount" placeholder="Enter amount" min="1" step="1" inputmode="decimal">
-              </div>
+        <div class="donate-amount-grid">
+          <button type="button" class="donate-amount-btn" data-amount="50">$50</button>
+          <button type="button" class="donate-amount-btn" data-amount="100">$100</button>
+          <button type="button" class="donate-amount-btn" data-amount="250">$250</button>
+          <button type="button" class="donate-amount-btn" data-amount="500">$500</button>
+          <button type="button" class="donate-amount-btn" data-amount="1000">$1,000</button>
+          <button type="button" class="donate-amount-btn donate-other-btn" id="donate-other-btn">Other</button>
+          <div class="donate-other-input-wrap" id="donate-other-wrap">
+            <div class="currency-input">
+              <span class="currency">$</span>
+              <input type="number" id="donate-custom-amount" placeholder="Enter amount" min="1" step="1" inputmode="decimal">
             </div>
           </div>
-
-          <!-- Monthly upsell banner (only shown when One Time is selected) -->
-          <div class="donate-monthly-upsell" id="monthly-upsell">
-            <span class="upsell-icon">&#x2728;</span> Multiply your impact. Make it Monthly!
-          </div>
-
-          <!-- Cover fees -->
-          <div class="donate-fee-row">
-            <input type="checkbox" id="donate-cover-fee" checked>
-            <label for="donate-cover-fee">Add a little extra to help with fees</label>
-            <span class="donate-fee-info" title="Card processors charge ~2.9% + $0.30. Covering this means the full base amount supports the event.">?</span>
-          </div>
-
-          <!-- Payment method buttons: styled text wordmarks at brand colors -->
-          <button type="button" class="donate-pay-btn donate-paypal-btn" id="paypal-btn" aria-label="Donate with PayPal">
-            <span class="pp-pay">Pay</span><span class="pp-pal">Pal</span>
-          </button>
-          <button type="button" class="donate-pay-btn donate-venmo-btn" id="venmo-btn" aria-label="Donate with Venmo">
-            venmo
-          </button>
-
-          <div class="donate-or">or</div>
-
-          <button type="button" class="donate-pay-btn donate-give-btn" id="give-btn" disabled>Give</button>
-
-          <div class="donate-card-icons" aria-hidden="true">
-            <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/visa.svg" alt="Visa" loading="lazy">
-            <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/mastercard.svg" alt="Mastercard" loading="lazy">
-            <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/amex.svg" alt="American Express" loading="lazy">
-            <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/discover.svg" alt="Discover" loading="lazy">
-            <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/paypal.svg" alt="PayPal" loading="lazy">
-          </div>
         </div>
 
-        <!-- ========== STEP 2: Your Information ========== -->
-        <div class="donate-step-pane" data-step="2">
-          <h2>Your Information</h2>
-          <div class="donor-info-grid">
-            <input type="text" id="donor-first-name" placeholder="First name" autocomplete="given-name" required>
-            <input type="text" id="donor-last-name" placeholder="Last name" autocomplete="family-name" required>
-            <input type="email" id="donor-email" class="donor-info-full" placeholder="Email" autocomplete="email" required>
-            <input type="text" id="donor-address" class="donor-info-full" placeholder="Street address" autocomplete="street-address">
-            <input type="text" id="donor-city" placeholder="City" autocomplete="address-level2">
-            <input type="text" id="donor-state" placeholder="State" autocomplete="address-level1">
-            <input type="text" id="donor-zip" class="donor-info-full" placeholder="ZIP code" autocomplete="postal-code">
-          </div>
-          <div class="donate-step-nav">
-            <button type="button" class="donate-back-btn" data-back-to="1">Back</button>
-            <button type="button" class="donate-pay-btn donate-give-btn" id="info-continue-btn">Continue</button>
-          </div>
+        <!-- Monthly upsell banner (only shown when One Time is selected) -->
+        <div class="donate-monthly-upsell" id="monthly-upsell">
+          <span class="upsell-icon">&#x2728;</span> Multiply your impact. Make it Monthly!
         </div>
 
-        <!-- ========== STEP 3: Payment Details ========== -->
-        <div class="donate-step-pane" data-step="3">
-          <h2>Payment Details</h2>
-          <div class="donate-total-line">
-            <span class="total-amount" id="donate-total-value">$0</span><span class="total-freq" id="donate-freq-note"></span>
-          </div>
-          <!-- Stripe Elements mounts here once Phase 1 wires it up -->
-          <div id="stripe-card-element" class="donate-pane-placeholder">
-            Stripe card form will mount here once Phase 1 is live.
-          </div>
-          <div class="donate-step-nav">
-            <button type="button" class="donate-back-btn" data-back-to="2">Back</button>
-            <button type="submit" id="donate-submit-btn" class="donate-pay-btn donate-give-btn">Complete Donation</button>
-          </div>
+        <!-- Cover fees -->
+        <div class="donate-fee-row">
+          <input type="checkbox" id="donate-cover-fee" checked>
+          <label for="donate-cover-fee"><span id="donate-fee-label-text">Add a little extra to help cover processing fees</span></label>
+          <span class="donate-fee-info" title="Card processors charge ~2.9% + $0.30. Covering this means the full base amount supports the event.">?</span>
+        </div>
+
+        <!-- Primary action: Square hosted checkout (card, Apple/Google Pay, Cash App) -->
+        <button type="button" class="donate-pay-btn donate-give-btn" id="donate-btn" disabled>Donate</button>
+
+        <div class="donate-error" id="donate-error" role="alert"></div>
+
+        <!-- Alternate ways to give (one-time only) -->
+        <div class="donate-or" id="alt-or">or give with</div>
+
+        <a class="donate-pay-btn donate-paypal-btn" id="paypal-btn" href="#" target="_blank" rel="noopener" aria-label="Donate with PayPal">
+          <span class="pp-pay">Pay</span><span class="pp-pal">Pal</span>
+        </a>
+        <a class="donate-pay-btn donate-venmo-btn" id="venmo-btn" href="#" target="_blank" rel="noopener" aria-label="Donate with Venmo">
+          venmo
+        </a>
+
+        <div class="donate-card-icons" aria-hidden="true">
+          <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/visa.svg" alt="Visa" loading="lazy">
+          <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/mastercard.svg" alt="Mastercard" loading="lazy">
+          <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/amex.svg" alt="American Express" loading="lazy">
+          <img src="https://cdn.jsdelivr.net/gh/aaronfagan/svg-credit-card-payment-icons@main/flat/discover.svg" alt="Discover" loading="lazy">
         </div>
       </form>
     </div>
@@ -795,25 +804,26 @@
 
   <script src="../js/main.min.js"></script>
   <script>
-    // --- Donation form: 3-step wizard + Stripe/PayPal/Venmo state ---
-    // Phase 1+ will wire real Stripe / PayPal / Firebase calls. Right now this
-    // handles all UI state and validation; submit and PayPal/Venmo buttons log
-    // their assembled donation payload to the console.
+    // --- Donation form: single step → Square hosted checkout ---
+    // Amount + frequency + fee-cover are chosen here; the "Donate" button asks
+    // our Vercel function for a Square checkout URL and redirects to it. Square
+    // collects the donor's name, email, and card on its own secure page.
     (function () {
       var form = document.getElementById('donate-form');
       if (!form) return;
 
+      // ==== Config ====
+      // Update this endpoint if the Vercel project moves accounts.
+      var CHECKOUT_ENDPOINT = 'https://tour-de-outback.vercel.app/api/create-checkout';
+      // Alternate one-time links. Leave '' to hide that button until a handle is set.
+      var PAYPAL_ME = '';   // e.g. 'https://www.paypal.me/YourHandle'
+      var VENMO_URL = '';   // e.g. 'https://venmo.com/u/YourHandle'
+
       var FEE_RATE = 0.029;
       var FEE_FLAT = 0.30;
 
-      var state = {
-        baseAmount: 0,
-        frequency: 'one-time',
-        currentStep: 1,
-        method: null  // 'card' | 'paypal' | 'venmo'
-      };
+      var state = { baseAmount: 0, frequency: 'one-time' };
 
-      // Elements
       var freqBtns = form.querySelectorAll('.donate-frequency-btn');
       var amountBtns = form.querySelectorAll('.donate-amount-btn');
       var otherBtn = document.getElementById('donate-other-btn');
@@ -821,17 +831,12 @@
       var customInput = document.getElementById('donate-custom-amount');
       var coverFeeBox = document.getElementById('donate-cover-fee');
       var monthlyUpsell = document.getElementById('monthly-upsell');
+      var donateBtn = document.getElementById('donate-btn');
       var paypalBtn = document.getElementById('paypal-btn');
       var venmoBtn = document.getElementById('venmo-btn');
-      var giveBtn = document.getElementById('give-btn');
-      var infoContinueBtn = document.getElementById('info-continue-btn');
-      var submitBtn = document.getElementById('donate-submit-btn');
-      var stepDots = form.querySelectorAll('.donate-step-dot');
-      var stepLines = form.querySelectorAll('.donate-step-line');
-      var stepPanes = form.querySelectorAll('.donate-step-pane');
-      var backBtns = form.querySelectorAll('.donate-back-btn');
-      var totalEl = document.getElementById('donate-total-value');
-      var freqNoteEl = document.getElementById('donate-freq-note');
+      var altOr = document.getElementById('alt-or');
+      var feeLabelText = document.getElementById('donate-fee-label-text');
+      var errorEl = document.getElementById('donate-error');
 
       // --- Helpers ---
       function effectiveAmount() {
@@ -839,59 +844,56 @@
         if (!coverFeeBox.checked) return state.baseAmount;
         return (state.baseAmount + FEE_FLAT) / (1 - FEE_RATE);
       }
+      function feeAmount() {
+        if (!state.baseAmount || state.baseAmount <= 0) return 0;
+        return (state.baseAmount + FEE_FLAT) / (1 - FEE_RATE) - state.baseAmount;
+      }
       function fmtMoney(n) {
         if (!n) return '$0';
         var rounded = Math.round(n * 100) / 100;
         if (rounded === Math.floor(rounded)) return '$' + rounded.toLocaleString('en-US');
         return '$' + rounded.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
-      function donorInfoValid() {
-        var first = document.getElementById('donor-first-name').value.trim();
-        var last = document.getElementById('donor-last-name').value.trim();
-        var email = document.getElementById('donor-email').value.trim();
-        var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        return first && last && emailOk;
-      }
-
-      // --- Step navigation ---
-      function goToStep(n) {
-        state.currentStep = n;
-        stepPanes.forEach(function (p) {
-          p.classList.toggle('active', parseInt(p.getAttribute('data-step'), 10) === n);
-        });
-        stepDots.forEach(function (d) {
-          var num = parseInt(d.getAttribute('data-step-dot'), 10);
-          d.classList.toggle('active', num === n);
-          d.classList.toggle('completed', num < n);
-        });
-        stepLines.forEach(function (l) {
-          var num = parseInt(l.getAttribute('data-step-line'), 10);
-          l.classList.toggle('completed', num <= n);
-        });
-        // Scroll the card into view on step change
-        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        render();
-      }
+      function showError(msg) { errorEl.textContent = msg; errorEl.classList.add('show'); }
+      function clearError() { errorEl.textContent = ''; errorEl.classList.remove('show'); }
 
       // --- Render reactive UI state ---
       function render() {
-        // Monthly upsell visibility: only on One Time + step 1
-        monthlyUpsell.style.display = (state.frequency === 'one-time' && state.currentStep === 1) ? '' : 'none';
+        monthlyUpsell.style.display = (state.frequency === 'one-time') ? '' : 'none';
 
-        // Give button enabled only when an amount is selected
         var hasAmount = state.baseAmount > 0;
-        giveBtn.disabled = !hasAmount;
-        paypalBtn.disabled = !hasAmount;
-        venmoBtn.disabled = !hasAmount;
+        donateBtn.disabled = !hasAmount;
+        donateBtn.textContent = hasAmount
+          ? 'Donate ' + fmtMoney(effectiveAmount()) + (state.frequency === 'monthly' ? ' / month' : '')
+          : 'Donate';
 
-        // Continue (step 2) enabled only with valid donor info
-        if (infoContinueBtn) infoContinueBtn.disabled = !donorInfoValid();
-
-        // Step 3 total display
-        if (totalEl) {
-          totalEl.textContent = fmtMoney(effectiveAmount());
-          freqNoteEl.textContent = state.frequency === 'monthly' ? ' /month' : '';
+        if (feeLabelText) {
+          var fee = feeAmount();
+          feeLabelText.textContent = fee > 0
+            ? 'Add ' + fmtMoney(fee) + ' to help cover processing fees'
+            : 'Add a little extra to help cover processing fees';
         }
+
+        // PayPal/Venmo: one-time only (those links can't do recurring), and only
+        // when a handle is configured. PayPal.me can prefill the amount.
+        var showAlt = false;
+        if (paypalBtn) {
+          if (PAYPAL_ME && state.frequency === 'one-time') {
+            paypalBtn.style.display = '';
+            paypalBtn.classList.toggle('is-disabled', !hasAmount);
+            paypalBtn.href = hasAmount ? (PAYPAL_ME.replace(/\/+$/, '') + '/' + Math.round(state.baseAmount)) : PAYPAL_ME;
+            showAlt = true;
+          } else { paypalBtn.style.display = 'none'; }
+        }
+        if (venmoBtn) {
+          if (VENMO_URL && state.frequency === 'one-time') {
+            venmoBtn.style.display = '';
+            venmoBtn.classList.toggle('is-disabled', !hasAmount);
+            venmoBtn.href = VENMO_URL;
+            showAlt = true;
+          } else { venmoBtn.style.display = 'none'; }
+        }
+        if (altOr) altOr.style.display = showAlt ? '' : 'none';
       }
 
       // --- Frequency tabs ---
@@ -907,7 +909,6 @@
           render();
         });
       });
-      // Monthly upsell click = switch to Monthly
       monthlyUpsell.addEventListener('click', function () {
         var monthly = form.querySelector('.donate-frequency-btn[data-frequency="monthly"]');
         if (monthly) monthly.click();
@@ -925,7 +926,6 @@
           render();
         });
       });
-      // "Other" toggles input field
       otherBtn.addEventListener('click', function () {
         amountBtns.forEach(function (b) { b.classList.remove('selected'); });
         otherBtn.classList.add('selected');
@@ -939,73 +939,42 @@
         render();
       });
 
-      // --- Cover fees ---
       coverFeeBox.addEventListener('change', render);
 
-      // --- PayPal / Venmo: go straight to PayPal flow (Phase 2 will wire SDK) ---
-      paypalBtn.addEventListener('click', function () {
-        if (paypalBtn.disabled) return;
-        state.method = 'paypal';
-        logPayload();
-        alert('Phase 2 will open the PayPal flow. Payload logged to console.');
-      });
-      venmoBtn.addEventListener('click', function () {
-        if (venmoBtn.disabled) return;
-        state.method = 'venmo';
-        logPayload();
-        alert('Phase 2 will open the Venmo flow (via PayPal SDK). Payload logged to console.');
+      // --- Donate → Square hosted checkout ---
+      donateBtn.addEventListener('click', function () {
+        if (donateBtn.disabled) return;
+        clearError();
+        donateBtn.disabled = true;
+        donateBtn.textContent = 'Redirecting…';
+        fetch(CHECKOUT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            baseAmount: state.baseAmount,
+            coverFee: coverFeeBox.checked,
+            frequency: state.frequency
+          })
+        })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (res.ok && res.d && res.d.url) { window.location.href = res.d.url; return; }
+            showError((res.d && res.d.error) || 'Something went wrong. Please try again.');
+            render();
+          })
+          .catch(function () {
+            showError('Network error. Please try again, or email info@tourdeoutback.org.');
+            render();
+          });
       });
 
-      // --- Card flow: Give → step 2 → step 3 → submit ---
-      giveBtn.addEventListener('click', function () {
-        if (giveBtn.disabled) return;
-        state.method = 'card';
-        goToStep(2);
-      });
-      if (infoContinueBtn) {
-        infoContinueBtn.addEventListener('click', function () {
-          if (infoContinueBtn.disabled) return;
-          goToStep(3);
-        });
+      // --- Thank-you banner when Square redirects back ---
+      if (/[?&]thanks=1/.test(location.search)) {
+        var banner = document.createElement('div');
+        banner.className = 'donate-thanks';
+        banner.textContent = 'Thank you for your donation! A receipt is on its way to your email.';
+        form.parentNode.insertBefore(banner, form);
       }
-      backBtns.forEach(function (b) {
-        b.addEventListener('click', function () {
-          goToStep(parseInt(b.getAttribute('data-back-to'), 10));
-        });
-      });
-
-      // Re-validate donor info on input
-      ['donor-first-name', 'donor-last-name', 'donor-email'].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) el.addEventListener('input', render);
-      });
-
-      // --- Submit (step 3, card) ---
-      function logPayload() {
-        var payload = {
-          amount: effectiveAmount(),
-          baseAmount: state.baseAmount,
-          coverFee: coverFeeBox.checked,
-          frequency: state.frequency,
-          method: state.method,
-          donor: {
-            firstName: (document.getElementById('donor-first-name')||{}).value || '',
-            lastName: (document.getElementById('donor-last-name')||{}).value || '',
-            email: (document.getElementById('donor-email')||{}).value || '',
-            address: (document.getElementById('donor-address')||{}).value || '',
-            city: (document.getElementById('donor-city')||{}).value || '',
-            state: (document.getElementById('donor-state')||{}).value || '',
-            zip: (document.getElementById('donor-zip')||{}).value || ''
-          }
-        };
-        console.log('Donation payload (TODO: send to backend):', payload);
-      }
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        logPayload();
-        alert('Phase 1 will charge the card via Stripe. Payload logged to console.');
-      });
 
       render();
     })();
