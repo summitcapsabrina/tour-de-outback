@@ -134,21 +134,26 @@ exports.createDonation = onRequest(
         metadata: { source: 'tdo-donation' },
       });
       const priceId = await getMonthlyPriceId(stripe, amountCents);
+      // Current Stripe API surfaces the first-payment client secret on the
+      // invoice's `confirmation_secret` (the old `latest_invoice.payment_intent`
+      // path was removed in the 2025 "Basil" API version).
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
         items: [{ price: priceId }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
-        expand: ['latest_invoice.payment_intent'],
+        billing_mode: { type: 'flexible' },
+        expand: ['latest_invoice.confirmation_secret'],
         metadata: sharedMeta,
       });
 
-      const pi = subscription.latest_invoice && subscription.latest_invoice.payment_intent;
-      if (!pi || !pi.client_secret) {
-        logger.error('No payment_intent on subscription invoice', { sub: subscription.id });
+      const invoice = subscription.latest_invoice;
+      const clientSecret = invoice && invoice.confirmation_secret && invoice.confirmation_secret.client_secret;
+      if (!clientSecret) {
+        logger.error('No confirmation_secret on subscription invoice', { sub: subscription.id });
         return res.status(500).json({ error: 'Could not start the monthly gift. Please try again.' });
       }
-      return res.json({ clientSecret: pi.client_secret, mode: 'subscription' });
+      return res.json({ clientSecret: clientSecret, mode: 'subscription' });
     } catch (err) {
       logger.error('createDonation failed', err);
       return res.status(500).json({ error: 'Could not start the donation. Please try again.' });
