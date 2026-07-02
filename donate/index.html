@@ -733,6 +733,33 @@
 
         <div class="donate-error" id="donate-error" role="alert"></div>
 
+        <!-- Stripe Payment Element panel — revealed after clicking Donate -->
+        <style>
+          .donate-pay-panel { margin-top: 18px; text-align: left; }
+          .donate-pay-panel[hidden] { display: none; }
+          .donate-field { margin-bottom: 14px; }
+          .donate-field label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: #222; }
+          .donate-field label .hint { font-weight: 400; opacity: 0.6; }
+          .donate-field label .req { color: #cc0000; }
+          .donate-field input { width: 100%; padding: 12px 14px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+          .donate-field input:focus { outline: none; border-color: #cc0000; box-shadow: 0 0 0 2px rgba(204,0,0,0.15); }
+          #stripe-payment-element { margin: 16px 0; }
+          .donate-back-btn { display: block; margin: 12px auto 0; background: none; border: none; color: #666; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
+        </style>
+        <div class="donate-pay-panel" id="donate-pay-panel" hidden>
+          <div class="donate-field">
+            <label for="donor-email">Email <span class="req">*</span> <span class="hint">(for your receipt)</span></label>
+            <input type="email" id="donor-email" autocomplete="email" placeholder="you@example.com" required>
+          </div>
+          <div class="donate-field">
+            <label for="donor-name">Name <span class="hint">(optional)</span></label>
+            <input type="text" id="donor-name" autocomplete="name" placeholder="Your name">
+          </div>
+          <div id="stripe-payment-element"><!-- Stripe Payment Element mounts here --></div>
+          <button type="button" class="donate-pay-btn donate-give-btn" id="donate-complete-btn">Complete donation</button>
+          <button type="button" class="donate-back-btn" id="donate-back-btn">&larr; Back to amount</button>
+        </div>
+
         <!-- Alternate ways to give (one-time only) -->
         <div class="donate-or" id="alt-or">or give with</div>
 
@@ -803,6 +830,7 @@
   </footer>
 
   <script src="../js/main.min.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
   <script>
     // --- Donation form: amount + frequency + fee-cover selection ---
     // The payment backend is being rebuilt in-house on Firebase (Cloud Functions
@@ -813,6 +841,12 @@
       if (!form) return;
 
       // ==== Config ====
+      // Stripe publishable key (safe to expose). TEST key for now — swap to the
+      // live pk_live_... key when going live.
+      var STRIPE_PK = 'pk_test_51TobF7LSAZr0YajE4tXwUWYT2gncx5Do8V1oJli5TSZGpMzBx4gNYBMCfYBy0EWGkjMeSCPkyivBwc6w23Hdh6TQ00aJJ4YlQJ';
+      // Payment backend — served same-origin via a Firebase Hosting rewrite.
+      var CREATE_ENDPOINT = '/api/create-donation';
+
       // Alternate one-time links. Leave '' to hide that button until a handle is set.
       var PAYPAL_ME = '';   // e.g. 'https://www.paypal.me/YourHandle'
       var VENMO_URL = '';   // e.g. 'https://venmo.com/u/YourHandle'
@@ -835,6 +869,17 @@
       var altOr = document.getElementById('alt-or');
       var feeLabelText = document.getElementById('donate-fee-label-text');
       var errorEl = document.getElementById('donate-error');
+      var payPanel = document.getElementById('donate-pay-panel');
+      var donorEmail = document.getElementById('donor-email');
+      var donorName = document.getElementById('donor-name');
+      var completeBtn = document.getElementById('donate-complete-btn');
+      var backBtn = document.getElementById('donate-back-btn');
+
+      // Stripe (deferred Payment Element — created when the panel opens).
+      var stripe = (typeof Stripe !== 'undefined') ? Stripe(STRIPE_PK) : null;
+      var elements = null;         // Stripe Elements group
+      var paymentElement = null;   // the mounted Payment Element
+      var panelMode = null;        // 'payment' | 'subscription' the element was built for
 
       // --- Helpers ---
       function effectiveAmount() {
@@ -854,6 +899,48 @@
       }
       function showError(msg) { errorEl.textContent = msg; errorEl.classList.add('show'); }
       function clearError() { errorEl.textContent = ''; errorEl.classList.remove('show'); }
+      function amountCents() { return Math.max(0, Math.round(effectiveAmount() * 100)); }
+
+      // --- Stripe Payment Element panel ---
+      function openPayPanel() {
+        if (!stripe) {
+          showError('The payment form failed to load. Please refresh, or email info@tourdeoutback.org to donate.');
+          return;
+        }
+        if (amountCents() < 100) { showError('Please choose a donation amount of at least $1.'); return; }
+        clearError();
+        panelMode = (state.frequency === 'monthly') ? 'subscription' : 'payment';
+        if (paymentElement) { try { paymentElement.unmount(); } catch (e) {} paymentElement = null; }
+        elements = stripe.elements({
+          mode: panelMode,
+          amount: amountCents(),
+          currency: 'usd',
+          appearance: { theme: 'stripe', variables: { colorPrimary: '#cc0000' } }
+        });
+        paymentElement = elements.create('payment');
+        paymentElement.mount('#stripe-payment-element');
+        payPanel.hidden = false;
+        donateBtn.style.display = 'none';
+        payPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      function closePayPanel() {
+        if (paymentElement) { try { paymentElement.unmount(); } catch (e) {} paymentElement = null; }
+        elements = null;
+        panelMode = null;
+        payPanel.hidden = true;
+        donateBtn.style.display = '';
+        completeBtn.disabled = false;
+        completeBtn.textContent = 'Complete donation';
+        clearError();
+      }
+      function showThanks() {
+        var banner = document.createElement('div');
+        banner.className = 'donate-thanks';
+        banner.textContent = 'Thank you for your donation! A receipt is on its way to your email.';
+        form.parentNode.insertBefore(banner, form);
+        form.style.display = 'none';
+        banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
 
       // --- Render reactive UI state ---
       function render() {
@@ -892,6 +979,16 @@
           } else { venmoBtn.style.display = 'none'; }
         }
         if (altOr) altOr.style.display = showAlt ? '' : 'none';
+
+        // Keep an open Payment Element in sync with amount/frequency changes.
+        if (payPanel && !payPanel.hidden) {
+          var wantMode = (state.frequency === 'monthly') ? 'subscription' : 'payment';
+          if (wantMode !== panelMode) {
+            openPayPanel(); // frequency changed → rebuild the element for the new mode
+          } else if (elements && amountCents() >= 100) {
+            try { elements.update({ amount: amountCents() }); } catch (e) {}
+          }
+        }
       }
 
       // --- Frequency tabs ---
@@ -939,11 +1036,60 @@
 
       coverFeeBox.addEventListener('change', render);
 
-      // --- Donate → payment backend (in-house on Firebase — not yet wired) ---
+      // --- Donate → reveal Stripe Payment Element ---
       donateBtn.addEventListener('click', function () {
         if (donateBtn.disabled) return;
+        openPayPanel();
+      });
+      backBtn.addEventListener('click', closePayPanel);
+
+      // --- Complete donation → create intent server-side, then confirm on-page ---
+      completeBtn.addEventListener('click', function () {
         clearError();
-        showError('Online giving is being set up. In the meantime, please email info@tourdeoutback.org to donate — thank you!');
+        var email = (donorEmail.value || '').trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+          showError('Please enter a valid email so we can send your receipt.');
+          donorEmail.focus();
+          return;
+        }
+        if (!elements) { showError('Please choose an amount first.'); return; }
+
+        completeBtn.disabled = true;
+        completeBtn.textContent = 'Processing…';
+
+        elements.submit().then(function (r) {
+          if (r.error) { throw r.error; }
+          return fetch(CREATE_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              baseAmount: state.baseAmount,
+              coverFee: coverFeeBox.checked,
+              frequency: state.frequency,
+              email: email,
+              name: (donorName.value || '').trim()
+            })
+          });
+        }).then(function (resp) {
+          return resp.json().then(function (d) { return { ok: resp.ok, d: d }; });
+        }).then(function (res) {
+          if (!res.ok || !res.d || !res.d.clientSecret) {
+            throw new Error((res.d && res.d.error) || 'Could not start the donation. Please try again.');
+          }
+          return stripe.confirmPayment({
+            elements: elements,
+            clientSecret: res.d.clientSecret,
+            confirmParams: { return_url: location.origin + location.pathname + '?thanks=1' },
+            redirect: 'if_required'
+          });
+        }).then(function (result) {
+          if (result && result.error) { throw result.error; }
+          showThanks(); // succeeded inline (no redirect needed — typical for cards)
+        }).catch(function (err) {
+          showError((err && err.message) || 'Payment could not be completed. Please try again.');
+          completeBtn.disabled = false;
+          completeBtn.textContent = 'Complete donation';
+        });
       });
 
       // --- Thank-you banner on ?thanks=1 (payment-success redirect) ---

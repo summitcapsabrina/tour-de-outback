@@ -1,0 +1,46 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "functions/**",
+      "Email Blasts/**",
+      "Volunteer Forms/**",
+      "*.csv",
+      "CLAUDE.md",
+      "README*"
+    ],
+    "cleanUrls": false,
+    "trailingSlash": true,
+    "rewrites": [
+      {
+        "source": "/api/create-donation",
+        "function": { "functionId": "createDonation", "region": "us-central1" }
+      },
+      {
+        "source": "/api/stripe-webhook",
+        "function": { "functionId": "stripeWebhook", "region": "us-central1" }
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs22",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}

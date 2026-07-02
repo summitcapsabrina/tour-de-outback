@@ -2,6 +2,13 @@
 .env
 .env.local
 .env.*.local
+.runtimeconfig.json
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+functions/node_modules/
 
 # OS
 .DS_Store
