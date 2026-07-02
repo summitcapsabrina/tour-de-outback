@@ -12,6 +12,10 @@
  * "In-house": the browser renders Stripe's Payment Element on our own page and
  * calls create-donation for a client secret. We never see raw card data; Stripe
  * tokenizes it in the Element. The donor never leaves the site.
+ *
+ * Deployed to us-central1. Both endpoints are public (invoker: 'public') so the
+ * Firebase Hosting /api/** rewrites can reach them from the browser. (Requires
+ * Domain Restricted Sharing to be relaxed on this project for allUsers.)
  */
 
 const { onRequest } = require('firebase-functions/v2/https');
@@ -134,23 +138,25 @@ exports.createDonation = onRequest(
         metadata: { source: 'tdo-donation' },
       });
       const priceId = await getMonthlyPriceId(stripe, amountCents);
-      // Current Stripe API surfaces the first-payment client secret on the
-      // invoice's `confirmation_secret` (the old `latest_invoice.payment_intent`
-      // path was removed in the 2025 "Basil" API version).
+      // This project's Stripe SDK pins API 2025-02-24.acacia, where the first-
+      // payment client secret is on latest_invoice.payment_intent. (The newer
+      // "Basil" API moved it to latest_invoice.confirmation_secret — kept as a
+      // fallback so a future SDK bump keeps working.)
       const subscription = await stripe.subscriptions.create({
         customer: customer.id,
         items: [{ price: priceId }],
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
-        billing_mode: { type: 'flexible' },
-        expand: ['latest_invoice.confirmation_secret'],
+        expand: ['latest_invoice.payment_intent'],
         metadata: sharedMeta,
       });
 
-      const invoice = subscription.latest_invoice;
-      const clientSecret = invoice && invoice.confirmation_secret && invoice.confirmation_secret.client_secret;
+      const invoice = subscription.latest_invoice || {};
+      const clientSecret =
+        (invoice.payment_intent && invoice.payment_intent.client_secret) ||
+        (invoice.confirmation_secret && invoice.confirmation_secret.client_secret);
       if (!clientSecret) {
-        logger.error('No confirmation_secret on subscription invoice', { sub: subscription.id });
+        logger.error('No client secret on subscription invoice', { sub: subscription.id });
         return res.status(500).json({ error: 'Could not start the monthly gift. Please try again.' });
       }
       return res.json({ clientSecret: clientSecret, mode: 'subscription' });
