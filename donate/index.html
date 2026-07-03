@@ -969,6 +969,7 @@
         expressElement = eceElements.create('expressCheckout', { emailRequired: true });
         expressElement.on('ready', function (ev) {
           var m = ev && ev.availablePaymentMethods;
+          try { console.log('[tdo] express wallets available:', JSON.stringify(m)); } catch (e) {}
           var hasAny = m && Object.keys(m).some(function (k) { return m[k]; });
           if (exWrap) exWrap.style.display = hasAny ? '' : 'none';
         });
