@@ -867,9 +867,8 @@
       if (!form) return;
 
       // ==== Config ====
-      // Stripe publishable key (safe to expose). TEST key for now — swap to the
-      // live pk_live_... key when going live.
-      var STRIPE_PK = 'pk_test_51TobF1LqsEUuDiGMPf8KYVIO8raHKg7qnwTihAPvs9wRU4ee3h8uKi4XLYcMIDjW1qc5WXIWvIpWKUMapamM1xS700Z3PvMzX8';
+      // Stripe publishable key (safe to expose). LIVE key — Oregon Tour de Outback account.
+      var STRIPE_PK = 'pk_live_51TobF1LqsEUuDiGMV0CXMCIgh4RGv5gXUVn6JkVgdxOPhYUH6nuvwt4GKByLm0EL6ojhaO7ZhNnVUsAiUiIGj4TC00B1eG2aTt';
       // Payment backend — served same-origin via a Firebase Hosting rewrite.
       var CREATE_ENDPOINT = '/api/create-donation';
 
