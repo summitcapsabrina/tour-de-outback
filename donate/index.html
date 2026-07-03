@@ -942,7 +942,12 @@
           currency: 'usd',
           appearance: { theme: 'stripe', variables: { colorPrimary: '#cc0000' } }
         });
-        paymentElement = elements.create('payment');
+        // Card first, then the wallets, in this order; anything else collapses
+        // under a "More" button. (Methods only appear if activated in Stripe.)
+        paymentElement = elements.create('payment', {
+          layout: { type: 'accordion', visibleAccordionItemsCount: 6 },
+          paymentMethodOrder: ['card', 'apple_pay', 'google_pay', 'amazon_pay', 'paypal', 'link']
+        });
         paymentElement.mount('#stripe-payment-element');
         payPanel.hidden = false;
         donateBtn.style.display = 'none';
