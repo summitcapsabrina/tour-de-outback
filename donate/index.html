@@ -770,9 +770,16 @@
           .donate-field input { width: 100%; padding: 12px 14px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
           .donate-field input:focus { outline: none; border-color: #cc0000; box-shadow: 0 0 0 2px rgba(204,0,0,0.15); }
           #stripe-payment-element { margin: 16px 0; }
+          #express-checkout-element { margin-bottom: 4px; }
+          .donate-express-or { display: flex; align-items: center; gap: 12px; color: #999; font-size: 0.85rem; margin: 16px 0; }
+          .donate-express-or::before, .donate-express-or::after { content: ""; flex: 1; height: 1px; background: #e0e0e0; }
           .donate-back-btn { display: block; margin: 12px auto 0; background: none; border: none; color: #666; font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
         </style>
         <div class="donate-pay-panel" id="donate-pay-panel" hidden>
+          <div id="express-wrap" style="display:none;">
+            <div id="express-checkout-element"></div>
+            <div class="donate-express-or">or pay another way</div>
+          </div>
           <div class="donate-field">
             <label for="donor-email">Email <span class="req">*</span> <span class="hint">(for your receipt)</span></label>
             <input type="email" id="donor-email" autocomplete="email" placeholder="you@example.com" required>
@@ -902,9 +909,11 @@
 
       // Stripe (deferred Payment Element — created when the panel opens).
       var stripe = (typeof Stripe !== 'undefined') ? Stripe(STRIPE_PK) : null;
-      var elements = null;         // Stripe Elements group
+      var elements = null;         // Payment Element (card) Elements group
       var paymentElement = null;   // the mounted Payment Element
-      var panelMode = null;        // 'payment' | 'subscription' the element was built for
+      var eceElements = null;      // Express Checkout Element's own Elements group
+      var expressElement = null;   // the mounted Express Checkout Element
+      var panelMode = null;        // 'payment' | 'subscription' the elements were built for
 
       // --- Helpers ---
       function effectiveAmount() {
@@ -935,27 +944,46 @@
         if (amountCents() < 100) { showError('Please choose a donation amount of at least $1.'); return; }
         clearError();
         panelMode = (state.frequency === 'monthly') ? 'subscription' : 'payment';
-        if (paymentElement) { try { paymentElement.unmount(); } catch (e) {} paymentElement = null; }
-        elements = stripe.elements({
+        var opts = {
           mode: panelMode,
           amount: amountCents(),
           currency: 'usd',
           appearance: { theme: 'stripe', variables: { colorPrimary: '#cc0000' } }
-        });
-        // Card first, then the wallets, in this order; anything else collapses
-        // under a "More" button. (Methods only appear if activated in Stripe.)
+        };
+
+        // Card + inline methods (Card first, wallets next, extras under "More").
+        if (paymentElement) { try { paymentElement.unmount(); } catch (e) {} paymentElement = null; }
+        elements = stripe.elements(opts);
         paymentElement = elements.create('payment', {
           layout: { type: 'accordion', visibleAccordionItemsCount: 6 },
           paymentMethodOrder: ['card', 'apple_pay', 'google_pay', 'amazon_pay', 'paypal', 'link']
         });
         paymentElement.mount('#stripe-payment-element');
+
+        // Express Checkout Element (Apple/Google/Amazon Pay, PayPal, Link buttons),
+        // in its own Elements group so its submit() doesn't validate the card form.
+        var exWrap = document.getElementById('express-wrap');
+        if (exWrap) exWrap.style.display = 'none';
+        if (expressElement) { try { expressElement.unmount(); } catch (e) {} expressElement = null; }
+        eceElements = stripe.elements(opts);
+        expressElement = eceElements.create('expressCheckout', { emailRequired: true });
+        expressElement.on('ready', function (ev) {
+          var m = ev && ev.availablePaymentMethods;
+          var hasAny = m && Object.keys(m).some(function (k) { return m[k]; });
+          if (exWrap) exWrap.style.display = hasAny ? '' : 'none';
+        });
+        expressElement.on('confirm', handleExpressConfirm);
+        expressElement.mount('#express-checkout-element');
+
         payPanel.hidden = false;
         donateBtn.style.display = 'none';
         payPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
       function closePayPanel() {
         if (paymentElement) { try { paymentElement.unmount(); } catch (e) {} paymentElement = null; }
+        if (expressElement) { try { expressElement.unmount(); } catch (e) {} expressElement = null; }
         elements = null;
+        eceElements = null;
         panelMode = null;
         payPanel.hidden = true;
         donateBtn.style.display = '';
@@ -1025,8 +1053,9 @@
           var wantMode = (state.frequency === 'monthly') ? 'subscription' : 'payment';
           if (wantMode !== panelMode) {
             openPayPanel(); // frequency changed → rebuild the element for the new mode
-          } else if (elements && amountCents() >= 100) {
-            try { elements.update({ amount: amountCents() }); } catch (e) {}
+          } else if (amountCents() >= 100) {
+            try { if (elements) elements.update({ amount: amountCents() }); } catch (e) {}
+            try { if (eceElements) eceElements.update({ amount: amountCents() }); } catch (e) {}
           }
         }
       }
@@ -1083,7 +1112,67 @@
       });
       backBtn.addEventListener('click', closePayPanel);
 
-      // --- Complete donation → create intent server-side, then confirm on-page ---
+      // Shared: create the intent server-side, then confirm with the given group.
+      function submitPaymentIntent(elemGroup, email, name) {
+        return (window.tdoAuth && window.tdoAuth.getToken ? window.tdoAuth.getToken() : Promise.resolve(null))
+          .then(function (token) {
+            var headers = { 'Content-Type': 'application/json' };
+            if (token) { headers['Authorization'] = 'Bearer ' + token; }
+            return fetch(CREATE_ENDPOINT, {
+              method: 'POST',
+              headers: headers,
+              body: JSON.stringify({
+                baseAmount: state.baseAmount,
+                coverFee: coverFeeBox.checked,
+                frequency: state.frequency,
+                email: email,
+                name: name || ''
+              })
+            });
+          })
+          .then(function (resp) { return resp.json().then(function (d) { return { ok: resp.ok, d: d }; }); })
+          .then(function (res) {
+            if (!res.ok || !res.d || !res.d.clientSecret) {
+              throw new Error((res.d && res.d.error) || 'Could not start the donation. Please try again.');
+            }
+            return stripe.confirmPayment({
+              elements: elemGroup,
+              clientSecret: res.d.clientSecret,
+              confirmParams: { return_url: location.origin + location.pathname + '?thanks=1' },
+              redirect: 'if_required'
+            });
+          })
+          .then(function (result) { if (result && result.error) { throw result.error; } });
+      }
+
+      // Shared: show the thank-you and (for guests) email a sign-in link.
+      function finishSuccess(email) {
+        var isGuest = !(window.tdoAuth && window.tdoAuth.isSignedIn && window.tdoAuth.isSignedIn());
+        showThanks();
+        if (isGuest && email && window.tdoAuth && window.tdoAuth.sendGuestLink) {
+          window.tdoAuth.sendGuestLink(email).then(function () {
+            var sub = document.querySelector('.donate-thanks .thanks-sub');
+            if (sub) { sub.innerHTML += '<br><span style="display:inline-block;margin-top:8px">We’ve emailed <strong>' + String(email).replace(/[<>&"]/g, '') + '</strong> a link to access your donation and create your account.</span>'; }
+          }).catch(function () {});
+        }
+      }
+
+      // Express Checkout Element (Apple/Google/Amazon Pay, PayPal, Link) payment.
+      function handleExpressConfirm(event) {
+        clearError();
+        var bd = (event && event.billingDetails) || {};
+        var email = (bd.email || (event && event.email) || '').trim();
+        eceElements.submit().then(function (r) {
+          if (r.error) { throw r.error; }
+          return submitPaymentIntent(eceElements, email, bd.name || '');
+        }).then(function () {
+          finishSuccess(email);
+        }).catch(function (err) {
+          showError((err && err.message) || 'Payment could not be completed. Please try again.');
+        });
+      }
+
+      // --- Complete donation (card) → create intent server-side, then confirm ---
       completeBtn.addEventListener('click', function () {
         clearError();
         var email = (donorEmail.value || '').trim();
@@ -1099,44 +1188,9 @@
 
         elements.submit().then(function (r) {
           if (r.error) { throw r.error; }
-          // Attach the donation to the signed-in donor's account, if any.
-          return (window.tdoAuth && window.tdoAuth.getToken) ? window.tdoAuth.getToken() : Promise.resolve(null);
-        }).then(function (token) {
-          var headers = { 'Content-Type': 'application/json' };
-          if (token) { headers['Authorization'] = 'Bearer ' + token; }
-          return fetch(CREATE_ENDPOINT, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-              baseAmount: state.baseAmount,
-              coverFee: coverFeeBox.checked,
-              frequency: state.frequency,
-              email: email,
-              name: (donorName.value || '').trim()
-            })
-          });
-        }).then(function (resp) {
-          return resp.json().then(function (d) { return { ok: resp.ok, d: d }; });
-        }).then(function (res) {
-          if (!res.ok || !res.d || !res.d.clientSecret) {
-            throw new Error((res.d && res.d.error) || 'Could not start the donation. Please try again.');
-          }
-          return stripe.confirmPayment({
-            elements: elements,
-            clientSecret: res.d.clientSecret,
-            confirmParams: { return_url: location.origin + location.pathname + '?thanks=1' },
-            redirect: 'if_required'
-          });
-        }).then(function (result) {
-          if (result && result.error) { throw result.error; }
-          var isGuest = !(window.tdoAuth && window.tdoAuth.isSignedIn && window.tdoAuth.isSignedIn());
-          showThanks(); // succeeded inline (no redirect needed — typical for cards)
-          if (isGuest && email && window.tdoAuth && window.tdoAuth.sendGuestLink) {
-            window.tdoAuth.sendGuestLink(email).then(function () {
-              var sub = document.querySelector('.donate-thanks .thanks-sub');
-              if (sub) { sub.innerHTML += '<br><span style="display:inline-block;margin-top:8px">We’ve emailed <strong>' + email.replace(/[<>&"]/g, '') + '</strong> a link to access your donation and create your account.</span>'; }
-            }).catch(function () {});
-          }
+          return submitPaymentIntent(elements, email, (donorName.value || '').trim());
+        }).then(function () {
+          finishSuccess(email);
         }).catch(function (err) {
           showError((err && err.message) || 'Payment could not be completed. Please try again.');
           completeBtn.disabled = false;
