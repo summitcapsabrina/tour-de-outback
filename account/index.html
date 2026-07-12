@@ -16,7 +16,7 @@
     .acct-card { background: #fff; border-radius: 12px; box-shadow: 0 6px 28px rgba(0,0,0,0.10); padding: 28px 30px; margin-bottom: 22px; max-width: 760px; }
     .acct-card.soon { opacity: 0.72; }
     .acct-card h2 { font-family: 'Oswald', sans-serif; font-size: 1.3rem; margin-bottom: 14px; }
-    .acct-lead { color: #fff; font-size: 1.05rem; margin-bottom: 22px; max-width: 760px; text-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+    .acct-lead { color: #1e1e1e; font-size: 1.05rem; margin-bottom: 22px; max-width: 760px; text-shadow: 0 1px 2px rgba(255,255,255,0.7); }
     .acct-btn { display: inline-block; border: none; border-radius: 8px; padding: 12px 20px; font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; text-align: center; }
     .acct-btn-primary { background: #cc0000; color: #fff; } .acct-btn-primary:hover { background: #a80000; }
     .muted { color: #666; } .acct-card .muted { font-size: 0.9rem; }
@@ -29,6 +29,33 @@
     .pill.succeeded { background: #e8f5e9; color: #2e7d32; } .pill.other { background: #eee; color: #666; }
     .spinner { width: 26px; height: 26px; border: 3px solid #ddd; border-top-color: #cc0000; border-radius: 50%; animation: spin .8s linear infinite; margin: 30px auto; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* Address forms (Addresses card) */
+    .addr-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px 14px; }
+    .addr-f { display: flex; flex-direction: column; min-width: 0; }   /* min-width:0 lets grid cells shrink */
+    .addr-f.addr-wide { grid-column: 1 / -1; }
+    .addr-f.addr-city { grid-column: span 1; }
+    .addr-f label { font-size: 0.8rem; font-weight: 600; color: #444; margin-bottom: 5px; }
+    .addr-f input, .addr-f select {
+      box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0;
+      padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 7px;
+      font-family: inherit; font-size: 0.95rem; color: #222; background: #fff;
+    }
+    .addr-f input:focus, .addr-f select:focus { outline: none; border-color: #cc0000; }
+    @media (max-width: 560px) {
+      .addr-grid { grid-template-columns: 1fr 1fr; }
+      .addr-f.addr-city { grid-column: 1 / -1; }
+    }
+    .pac-container { z-index: 100000; border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.18); }
+    /* Account tabs */
+    .acct-tabs { display: flex; flex-wrap: wrap; gap: 6px; max-width: 760px; margin-bottom: 22px; border-bottom: 2px solid rgba(0,0,0,0.18); }
+    .acct-tab { background: transparent; border: none; color: #2a2a2a; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 500; letter-spacing: .01em; padding: 10px 16px; cursor: pointer; border-radius: 8px 8px 0 0; opacity: .82; border-bottom: 3px solid transparent; margin-bottom: -2px; text-shadow: 0 1px 2px rgba(255,255,255,0.6); }
+    .acct-tab:hover { opacity: 1; color: #cc0000; }
+    .acct-tab.active { opacity: 1; background: #fff; color: #cc0000; border-bottom-color: #cc0000; text-shadow: none; }
+    .acct-panel { display: none; } .acct-panel.active { display: block; }
+    .ord-item { border: 1px solid #eee; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+    .ord-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 8px; }
+    .ord-lines { margin: 0; padding-left: 18px; font-size: .92rem; color: #444; }
+    .recur-box { background: #eef6ee; border-left: 3px solid #2e7d32; border-radius: 6px; padding: 12px 14px; }
     [hidden] { display: none !important; }
   </style>
 </head>
@@ -42,12 +69,14 @@
         <a href="/routes/">Routes</a>
         <a href="/schedule/">Schedule</a>
         <a href="/about/">About</a>
-        <a href="/volunteer/">Volunteer</a>
+        <a href="/shop/">Shop</a>
         <a href="/blog/">Blog</a>
-        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="/donate/">Donate</a>
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
       <div class="weather-widget" id="weather-widget"></div>
+        <div class="tdo-auth"><button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg></button><div class="tdo-menu" id="tdo-menu" role="menu"></div></div>
+        <div class="tdo-cart-slot"><button class="tdo-cart-nav" type="button" aria-label="Open cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="tdo-cart-badge" hidden>0</span></button></div>
     </div>
   </nav>
 
@@ -79,24 +108,148 @@
         <div id="view-signed-in" hidden>
           <p class="acct-lead" id="welcome-lead">Welcome back.</p>
 
-          <div class="acct-card">
-            <h2>Billing &amp; Donations</h2>
-            <div class="msg error" id="billing-error"></div>
-            <div id="history-loading"><div class="spinner"></div></div>
-            <div id="history-empty" hidden><p class="muted">No donations on your account yet. When you give while signed in, your history appears here.</p></div>
-            <div id="history-wrap" hidden style="overflow-x:auto;">
-              <table class="history">
-                <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
-                <tbody id="history-body"></tbody>
-              </table>
-            </div>
-            <button class="acct-btn acct-btn-primary" id="portal-btn" style="margin-top:18px;">Manage billing &amp; subscriptions</button>
-            <p class="muted" style="margin-top:10px;">Update your card, download receipts, or cancel a recurring gift in our secure billing portal.</p>
+          <div class="acct-tabs" role="tablist">
+            <button class="acct-tab active" data-tab="profile">Profile</button>
+            <button class="acct-tab" data-tab="orders">Orders</button>
+            <button class="acct-tab" data-tab="donations">Donations</button>
+            <button class="acct-tab" data-tab="rides">Ride History</button>
           </div>
 
-          <div class="acct-card soon">
-            <h2>Registrations</h2>
-            <p class="muted">Your event registration history will appear here. <em>Coming soon.</em></p>
+          <!-- ===== Profile ===== -->
+          <div class="acct-panel active" data-panel="profile">
+            <div class="acct-card">
+              <h2>Your details</h2>
+              <div class="msg error" id="prof-error"></div>
+              <div id="prof-loading"><div class="spinner"></div></div>
+              <div id="prof-form" hidden>
+                <div class="addr-grid">
+                  <div class="addr-f"><label>First name</label><input id="pf_first" autocomplete="given-name"></div>
+                  <div class="addr-f"><label>Last name</label><input id="pf_last" autocomplete="family-name"></div>
+                  <div class="addr-f addr-wide"><label>Email</label><input id="pf_email" disabled style="background:#f5f5f5;color:#777;"></div>
+                  <div class="addr-f"><label>Phone</label><input id="pf_phone" type="tel" autocomplete="tel"></div>
+                  <div class="addr-f"><label>Date of birth</label><input id="pf_dob" placeholder="MM/DD/YYYY"></div>
+                  <div class="addr-f"><label>Emergency contact name</label><input id="pf_emg_name"></div>
+                  <div class="addr-f"><label>Emergency contact phone</label><input id="pf_emg_phone" type="tel"></div>
+                  <div class="addr-f"><label>Bike(s) you'll bring</label><input id="pf_bike" placeholder="e.g. Gravel bike, Road bike"></div>
+                  <div class="addr-f"><label>Team / club (optional)</label><input id="pf_team"></div>
+                  <div class="addr-f addr-wide"><label>Dietary restrictions (optional)</label><input id="pf_dietary"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="acct-card">
+              <h2>Addresses</h2>
+              <p class="muted" style="margin-bottom:16px;">Save your shipping and billing addresses once and they'll be filled in automatically at checkout.</p>
+              <div class="msg error" id="addr-error"></div>
+              <div id="addr-form" hidden>
+                <h3 style="font-family:'Oswald',sans-serif;font-size:1.05rem;margin:0 0 12px;">Shipping address</h3>
+                <div class="addr-grid">
+                  <div class="addr-f"><label>First name</label><input id="sh_first" autocomplete="given-name"></div>
+                  <div class="addr-f"><label>Last name</label><input id="sh_last" autocomplete="family-name"></div>
+                  <div class="addr-f addr-wide"><label>Phone (optional)</label><input id="sh_phone" type="tel" autocomplete="tel"></div>
+                  <div class="addr-f addr-wide"><label>Address</label><input id="sh_addr1" autocomplete="address-line1"></div>
+                  <div class="addr-f addr-wide"><label>Apt, suite, etc. (optional)</label><input id="sh_addr2" autocomplete="address-line2"></div>
+                  <div class="addr-f addr-city"><label>City</label><input id="sh_city" autocomplete="address-level2"></div>
+                  <div class="addr-f"><label>State / Province</label><input id="sh_region" autocomplete="address-level1"></div>
+                  <div class="addr-f"><label>ZIP / Postal</label><input id="sh_zip" autocomplete="postal-code"></div>
+                  <div class="addr-f addr-wide"><label>Country</label><select id="sh_country"></select></div>
+                </div>
+
+                <label style="display:flex;align-items:center;gap:9px;margin:8px 0 4px;font-weight:600;cursor:pointer;">
+                  <input type="checkbox" id="addr-same" checked style="width:18px;height:18px;"> Billing address is the same as shipping
+                </label>
+
+                <div id="billing-block" hidden style="margin-top:14px;">
+                  <h3 style="font-family:'Oswald',sans-serif;font-size:1.05rem;margin:8px 0 12px;">Billing address</h3>
+                  <div class="addr-grid">
+                    <div class="addr-f"><label>First name</label><input id="bl_first"></div>
+                    <div class="addr-f"><label>Last name</label><input id="bl_last"></div>
+                    <div class="addr-f addr-wide"><label>Phone (optional)</label><input id="bl_phone" type="tel"></div>
+                    <div class="addr-f addr-wide"><label>Address</label><input id="bl_addr1"></div>
+                    <div class="addr-f addr-wide"><label>Apt, suite, etc. (optional)</label><input id="bl_addr2"></div>
+                    <div class="addr-f addr-city"><label>City</label><input id="bl_city"></div>
+                    <div class="addr-f"><label>State / Province</label><input id="bl_region"></div>
+                    <div class="addr-f"><label>ZIP / Postal</label><input id="bl_zip"></div>
+                    <div class="addr-f addr-wide"><label>Country</label><select id="bl_country"></select></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:14px;max-width:760px;">
+              <button class="acct-btn acct-btn-primary" id="prof-save">Save changes</button>
+              <span id="prof-saved" class="muted" style="color:#1b7a26;"></span>
+            </div>
+          </div>
+
+          <!-- ===== Orders ===== -->
+          <div class="acct-panel" data-panel="orders">
+            <div class="acct-card">
+              <h2>Shop orders</h2>
+              <div class="msg error" id="ord-error"></div>
+              <div id="ord-loading"><div class="spinner"></div></div>
+              <div id="ord-empty" hidden><p class="muted">No shop orders yet. Browse the <a href="/shop/">shop</a> to find your kit.</p></div>
+              <div id="ord-list" hidden></div>
+            </div>
+          </div>
+
+          <!-- ===== Donations ===== -->
+          <div class="acct-panel" data-panel="donations">
+            <div class="acct-card">
+              <h2>Donations</h2>
+              <div class="msg error" id="billing-error"></div>
+              <div id="recurring-wrap" hidden style="margin-bottom:18px;"></div>
+              <div id="history-loading"><div class="spinner"></div></div>
+              <div id="history-empty" hidden><p class="muted">No donations on your account yet. When you give while signed in, your history appears here.</p></div>
+              <div id="history-wrap" hidden style="overflow-x:auto;">
+                <table class="history">
+                  <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th></tr></thead>
+                  <tbody id="history-body"></tbody>
+                </table>
+              </div>
+              <button class="acct-btn acct-btn-primary" id="portal-btn" style="margin-top:18px;">Manage billing &amp; subscriptions</button>
+              <p class="muted" style="margin-top:10px;">Update your card, download receipts, or cancel a recurring gift in our secure billing portal.</p>
+            </div>
+          </div>
+
+          <!-- ===== Ride History ===== -->
+          <div class="acct-panel" data-panel="rides">
+            <div class="acct-card">
+              <h2>Ride history</h2>
+              <div class="msg error" id="reg-error"></div>
+              <div id="reg-loading"><div class="spinner"></div></div>
+              <div id="reg-none" hidden><p class="muted">We don't have any past registrations on file for your email yet. Once you register, your history and rider rewards will appear here.</p></div>
+              <div id="reg-wrap" hidden>
+                <div id="reg-rides-wrap" hidden style="overflow-x:auto;margin-bottom:16px;">
+                  <table class="history">
+                    <thead><tr><th>Year</th><th>Route</th><th>Registered</th></tr></thead>
+                    <tbody id="reg-rides-body"></tbody>
+                  </table>
+                </div>
+                <p id="reg-years" style="margin-bottom:10px;"></p>
+                <div id="reg-lock" hidden style="background:#f5f5f5;border-left:3px solid #cc0000;border-radius:6px;padding:12px 14px;margin-bottom:16px;">
+                  <strong id="reg-lock-title"></strong>
+                  <div id="reg-lock-rates" class="muted" style="margin-top:6px;font-size:.94rem;"></div>
+                </div>
+
+                <div style="margin-bottom:16px;">
+                  <h3 style="font-family:'Oswald',sans-serif;font-size:1.05rem;margin-bottom:6px;">Your referral code</h3>
+                  <p class="muted" style="margin-bottom:8px;font-size:.94rem;">Share this code so friends can register at your rate. You'll see everyone you've brought below.</p>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <code id="reg-code" style="font-size:1.15rem;font-weight:600;letter-spacing:1px;background:#fff;border:1px dashed #cc0000;border-radius:6px;padding:6px 12px;"></code>
+                    <button class="acct-btn" id="reg-copy" style="padding:6px 14px;">Copy</button>
+                  </div>
+                </div>
+
+                <div id="reg-brought-wrap" hidden style="margin-bottom:16px;">
+                  <h3 style="font-family:'Oswald',sans-serif;font-size:1.05rem;margin-bottom:6px;">Riders you've brought</h3>
+                  <ul id="reg-brought" style="margin:0;padding-left:18px;"></ul>
+                </div>
+
+                <!-- Referral codes are applied at checkout in Registration, not here. -->
+                <p class="muted" id="reg-referred-by" hidden style="margin-bottom:8px;font-size:.94rem;"></p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -120,7 +273,6 @@
             <li><a href="/about/">About</a></li>
             <li><a href="/volunteer/">Volunteer</a></li>
             <li><a href="/blog/">Blog</a></li>
-            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
             <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
           </ul>
         </div>
@@ -142,8 +294,9 @@
 
   <script src="../js/main.min.js"></script>
   <script type="module">
-    import { auth, API } from "/js/firebase-init.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+    import { auth, API, firebaseConfig } from "/js/firebase-init.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+    import { onAuthStateChanged, initializeAuth, inMemoryPersistence, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
 
     var $ = function (id) { return document.getElementById(id); };
     function show(id) { $(id).hidden = false; } function hide(id) { $(id).hidden = true; }
@@ -153,19 +306,173 @@
       if (window.tdoOpenAuth) window.tdoOpenAuth();
     });
 
-    onAuthStateChanged(auth, function (user) {
+    // ---------------------- Admin "view as / edit user" ----------------------
+    // When opened from the admin panel as /account/#viewas=<view|edit>:<token>,
+    // sign into an ISOLATED, in-memory auth session with a one-shot custom token.
+    // The whole page then runs as that user (their token/uid/email → every
+    // account endpoint reproduces exactly what they see) without ever touching
+    // the admin's own persisted login on this browser.
+    var acctAuth = auth;        // the auth instance this page uses for everything
+    var IMPERSONATION = null;   // { mode: 'view' | 'edit' } while active
+    (function () {
+      var m = (location.hash || '').match(/^#viewas=(view|edit):([\s\S]+)$/);
+      if (!m) return;
+      var mode = m[1], token = decodeURIComponent(m[2]);
+      // Scrub the token from the address bar/history right away.
+      try { history.replaceState(null, '', location.pathname); } catch (e) {}
+      IMPERSONATION = { mode: mode };
+      try {
+        var app2 = initializeApp(firebaseConfig, 'impersonation');
+        acctAuth = initializeAuth(app2, { persistence: inMemoryPersistence });
+      } catch (e) { acctAuth = auth; }
+      signInWithCustomToken(acctAuth, token).catch(function () {
+        IMPERSONATION = null; hide('view-loading');
+        document.body.insertAdjacentHTML('afterbegin',
+          '<div style="background:#b71c1c;color:#fff;padding:12px 16px;text-align:center;font-weight:600;">' +
+          'This admin view-as link has expired. Reopen it from the admin Users list.</div>');
+      });
+    })();
+
+    function applyImpersonationUI(user) {
+      if (!IMPERSONATION || $('imp-banner')) return;
+      var editing = IMPERSONATION.mode === 'edit';
+      var who = esc(user.email || user.displayName || 'this user');
+      var bar = document.createElement('div');
+      bar.id = 'imp-banner';
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;width:100%;z-index:99999;display:flex;flex-wrap:wrap;gap:10px 16px;' +
+        'align-items:center;justify-content:center;padding:11px 16px;font-weight:600;color:#fff;' +
+        'font-family:\'Open Sans\',sans-serif;font-size:.95rem;box-shadow:0 2px 10px rgba(0,0,0,.25);' +
+        'background:' + (editing ? '#b8860b' : '#1b5e7a') + ';';
+      bar.innerHTML = '<span>👁 ' + (editing
+          ? 'Editing <strong>' + who + '</strong> — changes you save affect this rider’s account.'
+          : 'Viewing as <strong>' + who + '</strong> — admin preview (read-only).') +
+        '</span><button id="imp-exit" style="background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.6);' +
+        'color:#fff;font-weight:600;border-radius:6px;padding:5px 14px;cursor:pointer;font-family:inherit;">Exit</button>';
+      document.body.insertBefore(bar, document.body.firstChild);
+      $('imp-exit').addEventListener('click', function () {
+        try { window.close(); } catch (e) {}
+        location.href = '/admin/#users';
+      });
+      // Read-only mode: prevent any mutation of the rider's data.
+      if (!editing) {
+        ['prof-save', 'portal-btn'].forEach(function (id) {
+          var el = $(id); if (el) { el.disabled = true; el.title = 'Read-only in admin preview'; el.style.opacity = '.5'; el.style.cursor = 'not-allowed'; }
+        });
+      }
+    }
+
+    function fmtDate(ms) { try { return new Date(ms).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }); } catch (e) { return ''; } }
+    function money(c) { return '$' + (((c || 0)) / 100).toFixed(2); }
+
+    // ---------------------- Tabs ----------------------
+    var acctLoaded = {};
+    var ACCT_TABS = ['profile', 'orders', 'donations', 'rides'];
+    function ensureLoaded(name) {
+      var u = acctAuth.currentUser; if (!u) return;
+      if (name === 'orders' && !acctLoaded.orders) { acctLoaded.orders = true; loadOrders(u); }
+      if (name === 'donations' && !acctLoaded.donations) { acctLoaded.donations = true; loadHistory(u); }
+      if (name === 'rides' && !acctLoaded.rides) { acctLoaded.rides = true; loadRegistrations(u); }
+    }
+    function activateAcctTab(name) {
+      if (ACCT_TABS.indexOf(name) === -1) name = 'profile';
+      document.querySelectorAll('.acct-tab').forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-tab') === name); });
+      document.querySelectorAll('.acct-panel').forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-panel') === name); });
+      try { history.replaceState(null, '', '#' + name); } catch (e) { location.hash = name; }
+      ensureLoaded(name);
+    }
+    document.querySelectorAll('.acct-tab').forEach(function (t) {
+      t.addEventListener('click', function () { activateAcctTab(t.getAttribute('data-tab')); });
+    });
+
+    onAuthStateChanged(acctAuth, function (user) {
+      // In impersonation mode, the very first callback fires null before the
+      // custom-token sign-in resolves — keep the spinner up and wait for it.
+      if (!user && IMPERSONATION) return;
       hide('view-loading');
       if (user) {
         hide('view-signed-out'); show('view-signed-in');
+        if (IMPERSONATION) applyImpersonationUI(user);
         $('welcome-lead').textContent = user.displayName ? ('Welcome back, ' + user.displayName.split(' ')[0] + '.') : 'Welcome back.';
-        loadHistory(user);
+        acctLoaded = {};
+        loadProfile(user);   // default (Profile) tab loads immediately
+        var hash = (location.hash || '').replace(/^#/, '').toLowerCase();
+        activateAcctTab(ACCT_TABS.indexOf(hash) !== -1 ? hash : 'profile');
       } else {
         hide('view-signed-in'); show('view-signed-out');
       }
     });
 
+    // ---------------------- Profile (details + addresses) ----------------------
+    function loadProfile(user) {
+      fillCountrySelect('sh_country'); fillCountrySelect('bl_country');
+      show('prof-loading'); hide('prof-form'); hide('addr-form');
+      $('prof-error').classList.remove('show'); $('prof-saved').textContent = '';
+      user.getIdToken().then(function (t) {
+        return fetch(API.myProfile, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          hide('prof-loading'); show('prof-form'); show('addr-form');
+          var p = (res.ok && res.d && res.d.profile) || {};
+          var per = p.personal || {};
+          var dn = (user.displayName || '').split(' ');
+          $('pf_email').value = p.email || user.email || '';
+          $('pf_first').value = per.firstName || dn[0] || '';
+          $('pf_last').value = per.lastName || dn.slice(1).join(' ') || '';
+          $('pf_phone').value = per.phone || '';
+          $('pf_dob').value = per.dob || '';
+          $('pf_emg_name').value = per.emergencyName || '';
+          $('pf_emg_phone').value = per.emergencyPhone || '';
+          $('pf_bike').value = per.bikeType || '';
+          $('pf_team').value = per.team || '';
+          $('pf_dietary').value = per.dietary || '';
+          setAddr('sh', p.shipping || {});
+          $('addr-same').checked = p.billingSameAsShipping !== false;
+          setAddr('bl', p.billing || p.shipping || {});
+          if (!p.shipping || !p.shipping.first_name) {
+            if (!$('sh_first').value) $('sh_first').value = $('pf_first').value;
+            if (!$('sh_last').value) $('sh_last').value = $('pf_last').value;
+          }
+          syncBillingVisibility();
+        })
+        .catch(function () { hide('prof-loading'); show('prof-form'); show('addr-form'); syncBillingVisibility(); });
+    }
+
+    // ---------------------- Orders ----------------------
+    function renderOrder(o) {
+      var when = o.createdAt ? fmtDate(o.createdAt) : '';
+      var status = String(o.printifyStatus || o.status || 'processing').replace(/_/g, ' ');
+      var pillCls = /deliver|fulfil|shipp|complete|paid|succeed/i.test(status) ? 'succeeded' : 'other';
+      var lines = (o.items || []).map(function (it) {
+        return '<li>' + esc(it.title) + (it.variantTitle ? (' — ' + esc(it.variantTitle)) : '') + ' × ' + (it.quantity || 1) + '</li>';
+      }).join('');
+      return '<div class="ord-item">' +
+        '<div class="ord-head"><strong>' + esc(o.orderNumber || 'Order') + '</strong><span class="muted">' + esc(when) + '</span></div>' +
+        '<ul class="ord-lines">' + lines + '</ul>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">' +
+        '<span class="pill ' + pillCls + '">' + esc(status) + '</span>' +
+        '<span class="ord-total" style="font-weight:700;">' + money(o.total) +
+        (o.refundedAmount ? (' <span style="color:#7a2350;font-weight:600;">(−' + money(o.refundedAmount) + ' refunded)</span>') : '') +
+        '</span></div></div>';
+    }
+    function loadOrders(user) {
+      show('ord-loading'); hide('ord-list'); hide('ord-empty'); $('ord-error').classList.remove('show');
+      user.getIdToken().then(function (t) {
+        return fetch(API.myShopOrders, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          hide('ord-loading');
+          if (!res.ok) { throw new Error((res.d && res.d.error) || 'Could not load your orders.'); }
+          var orders = (res.d && res.d.orders) || [];
+          if (!orders.length) { show('ord-empty'); return; }
+          $('ord-list').innerHTML = orders.map(renderOrder).join('');
+          show('ord-list');
+        })
+        .catch(function (e) { hide('ord-loading'); var el = $('ord-error'); el.textContent = e.message; el.classList.add('show'); });
+    }
+
+    // ---------------------- Donations (history + recurring) ----------------------
     function loadHistory(user) {
-      show('history-loading'); hide('history-wrap'); hide('history-empty');
+      show('history-loading'); hide('history-wrap'); hide('history-empty'); hide('recurring-wrap');
       $('billing-error').classList.remove('show');
       user.getIdToken().then(function (t) {
         return fetch(API.billingHistory, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
@@ -173,6 +480,13 @@
         .then(function (res) {
           hide('history-loading');
           if (!res.ok) { throw new Error((res.d && res.d.error) || 'Could not load your history.'); }
+          var recurring = (res.d && res.d.recurring) || [];
+          if (recurring.length) {
+            $('recurring-wrap').innerHTML = '<div class="recur-box"><strong>Active recurring gift' + (recurring.length > 1 ? 's' : '') + '</strong>' +
+              recurring.map(function (s) { return '<div style="margin-top:4px;font-size:.94rem;">' + esc(s.amount || '') + ' / ' + esc(s.interval) + ' · since ' + esc(s.since) + '</div>'; }).join('') +
+              '<div class="muted" style="margin-top:6px;font-size:.86rem;">Manage or cancel with the button below.</div></div>';
+            show('recurring-wrap');
+          }
           var items = (res.d && res.d.items) || [];
           if (!items.length) { show('history-empty'); return; }
           $('history-body').innerHTML = items.map(function (it) {
@@ -185,10 +499,169 @@
         .catch(function (e) { hide('history-loading'); var el = $('billing-error'); el.textContent = e.message; el.classList.add('show'); });
     }
 
+    // ---------------------- Saved addresses ----------------------
+    var ADDR_COUNTRIES = [
+      ['US','United States'],['CA','Canada'],['GB','United Kingdom'],['AU','Australia'],
+      ['NZ','New Zealand'],['IE','Ireland'],['DE','Germany'],['FR','France'],['NL','Netherlands'],
+      ['ES','Spain'],['IT','Italy'],['SE','Sweden'],['NO','Norway'],['DK','Denmark'],['CH','Switzerland'],
+      ['AT','Austria'],['BE','Belgium'],['FI','Finland'],['PT','Portugal'],['MX','Mexico'],['JP','Japan']
+    ];
+    var ADDR_FIELDS = ['first','last','phone','addr1','addr2','city','region','zip','country'];
+    var ADDR_KEYMAP = { first: 'first_name', last: 'last_name', phone: 'phone', addr1: 'address1', addr2: 'address2', city: 'city', region: 'region', zip: 'zip', country: 'country' };
+
+    function fillCountrySelect(id) {
+      var s = $(id); if (!s) return;
+      s.innerHTML = ADDR_COUNTRIES.map(function (c) { return '<option value="' + c[0] + '">' + c[1] + '</option>'; }).join('');
+      s.value = 'US';
+    }
+    function setAddr(prefix, a) {
+      a = a || {};
+      ADDR_FIELDS.forEach(function (f) {
+        var el = $(prefix + '_' + f); if (!el) return;
+        var v = a[ADDR_KEYMAP[f]] || (f === 'country' ? 'US' : '');
+        el.value = v;
+      });
+    }
+    function readAddr(prefix) {
+      var a = {};
+      ADDR_FIELDS.forEach(function (f) { var el = $(prefix + '_' + f); a[ADDR_KEYMAP[f]] = el ? el.value.trim() : ''; });
+      return a;
+    }
+    function syncBillingVisibility() {
+      $('billing-block').hidden = $('addr-same').checked;
+    }
+
+    document.addEventListener('change', function (e) {
+      if (e.target && e.target.id === 'addr-same') syncBillingVisibility();
+    });
+    // Single "Save changes" for the Profile tab — personal details + addresses.
+    document.addEventListener('click', function (e) {
+      if (!e.target || e.target.id !== 'prof-save') return;
+      var btn = e.target, orig = btn.textContent;
+      var err = $('prof-error'); err.classList.remove('show'); $('prof-saved').textContent = '';
+      var same = $('addr-same').checked;
+      var sh = readAddr('sh');
+      // Validate the shipping address only if the rider has started filling it in.
+      var addrStarted = sh.address1 || sh.city || sh.zip || sh.region;
+      if (addrStarted) {
+        var need = ['first_name', 'last_name', 'address1', 'city', 'region', 'zip'];
+        for (var i = 0; i < need.length; i++) {
+          if (!sh[need[i]]) { err.textContent = 'Please complete your shipping address, or clear it, before saving.'; err.classList.add('show'); return; }
+        }
+      }
+      var payload = {
+        personal: {
+          firstName: $('pf_first').value.trim(), lastName: $('pf_last').value.trim(),
+          phone: $('pf_phone').value.trim(), dob: $('pf_dob').value.trim(),
+          emergencyName: $('pf_emg_name').value.trim(), emergencyPhone: $('pf_emg_phone').value.trim(),
+          bikeType: $('pf_bike').value.trim(), team: $('pf_team').value.trim(),
+          dietary: $('pf_dietary').value.trim()
+        },
+        shipping: sh, billing: same ? null : readAddr('bl'), billingSameAsShipping: same
+      };
+      btn.disabled = true; btn.textContent = 'Saving…';
+      acctAuth.currentUser.getIdToken().then(function (t) {
+        return fetch(API.saveMyProfile, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t },
+          body: JSON.stringify(payload)
+        });
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.d || !res.d.ok) throw new Error((res.d && res.d.error) || 'Could not save your changes.');
+          $('prof-saved').textContent = '✓ Saved';
+          setTimeout(function () { $('prof-saved').textContent = ''; }, 4000);
+        })
+        .catch(function (e2) { err.textContent = e2.message; err.classList.add('show'); })
+        .then(function () { btn.disabled = false; btn.textContent = orig; });
+    });
+
+    // ---------------------- Registrations + referrals ----------------------
+    function dollars(n) { return '$' + n; }
+    function renderRegistrations(d) {
+      hide('reg-loading');
+      if ((!d.years || !d.years.length) && !d.rateLocked && (!d.broughtRiders || !d.broughtRiders.length)) {
+        // Still show the referral code even with no history, so new riders can share.
+        if (!d.referralCode) { show('reg-none'); return; }
+      }
+      show('reg-wrap');
+
+      // Per-year rides table: year · route · registered date.
+      var rtby = d.rideTypeByYear || {}, dby = d.datesByYear || {};
+      if (d.years && d.years.length) {
+        $('reg-rides-body').innerHTML = d.years.slice().sort(function (a, b) { return b - a; }).map(function (y) {
+          var route = rtby[y] || '—';
+          var reg = dby[y] ? fmtDate(dby[y]) : '—';
+          return '<tr><td>' + y + '</td><td>' + esc(route) + '</td><td>' + esc(reg) + '</td></tr>';
+        }).join('');
+        show('reg-rides-wrap');
+      }
+
+      if (d.years && d.years.length) {
+        $('reg-years').innerHTML = 'Registered: <strong>' + d.years.join(', ') + '</strong>';
+      } else {
+        $('reg-years').innerHTML = '<span class="muted">No past registrations on file for your email yet.</span>';
+      }
+
+      if (d.rateLocked && d.lockedRates) {
+        var tiers = d.tiers || [];
+        var rows = tiers.map(function (t) {
+          return t.label + ' (' + t.window + '): <strong>' + dollars(d.lockedRates[t.key]) + '</strong>';
+        }).join(' &nbsp;•&nbsp; ');
+        $('reg-lock-title').textContent = d.grandfathered
+          ? "You're grandfathered — your rate is locked in."
+          : "Your rate is locked in through a referral.";
+        $('reg-lock-rates').innerHTML = rows + '<br>Keep registering every year to keep this rate.';
+        show('reg-lock');
+      }
+
+      $('reg-code').textContent = d.referralCode || '—';
+
+      var brought = d.broughtRiders || [];
+      if (brought.length) {
+        $('reg-brought').innerHTML = brought.map(function (r) {
+          return '<li>' + esc(r.name || r.email || 'A rider') + (r.year ? (' — ' + r.year) : '') + '</li>';
+        }).join('');
+        show('reg-brought-wrap');
+      }
+
+      if (d.referredBy) {
+        var rb = $('reg-referred-by');
+        rb.textContent = 'You were referred in with code ' + d.referredBy + '.';
+        rb.hidden = false;
+      }
+    }
+
+    function loadRegistrations(user) {
+      show('reg-loading'); hide('reg-wrap'); hide('reg-none');
+      $('reg-error').classList.remove('show');
+      user.getIdToken().then(function (t) {
+        return fetch(API.myRegistrations, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { throw new Error((res.d && res.d.error) || 'Could not load your registrations.'); }
+          renderRegistrations(res.d || {});
+        })
+        .catch(function (e) { hide('reg-loading'); var el = $('reg-error'); el.textContent = e.message; el.classList.add('show'); });
+    }
+
+    document.addEventListener('click', function (ev) {
+      if (ev.target && ev.target.id === 'reg-copy') {
+        var code = $('reg-code').textContent || '';
+        if (code && navigator.clipboard) {
+          navigator.clipboard.writeText(code).then(function () {
+            var b = $('reg-copy'); var old = b.textContent; b.textContent = 'Copied!';
+            setTimeout(function () { b.textContent = old; }, 1500);
+          });
+        }
+      }
+    });
+
+    // Referral codes are applied at checkout in Registration (not on this page).
+
     $('portal-btn').addEventListener('click', function () {
       var el = $('billing-error'); el.classList.remove('show');
       var btn = $('portal-btn'); btn.disabled = true; btn.textContent = 'Opening…';
-      auth.currentUser.getIdToken().then(function (t) {
+      acctAuth.currentUser.getIdToken().then(function (t) {
         return fetch(API.portalSession, { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
       }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (res) {
@@ -197,6 +670,46 @@
         })
         .catch(function (e) { el.textContent = e.message; el.classList.add('show'); btn.disabled = false; btn.textContent = 'Manage billing & subscriptions'; });
     });
+  </script>
+
+  <!-- Google Places autocomplete for the saved shipping/billing address fields.
+       Same key as checkout; leave '' to disable (fields still work manually). -->
+  <script>window.TDO_GOOGLE_MAPS_API_KEY = 'AIzaSyAErle17nKtJae5BlqPubMkKhYo8J4jAJs';</script>
+  <script>
+    (function () {
+      var KEY = window.TDO_GOOGLE_MAPS_API_KEY;
+      if (!KEY) return;
+      function comp(place, type, useShort) {
+        var list = place.address_components || [];
+        for (var i = 0; i < list.length; i++) {
+          if (list[i].types.indexOf(type) !== -1) return useShort ? list[i].short_name : list[i].long_name;
+        }
+        return '';
+      }
+      function setVal(id, v) { var el = document.getElementById(id); if (el && v) el.value = v; }
+      function attach(inputId, prefix) {
+        var el = document.getElementById(inputId);
+        if (!el || !window.google || !google.maps || !google.maps.places) return;
+        var ac = new google.maps.places.Autocomplete(el, { types: ['address'], fields: ['address_components'] });
+        ac.addListener('place_changed', function () {
+          var p = ac.getPlace();
+          if (!p || !p.address_components) return;
+          setVal(prefix + '_addr1', (comp(p, 'street_number') + ' ' + comp(p, 'route')).trim());
+          setVal(prefix + '_city', comp(p, 'locality') || comp(p, 'postal_town') || comp(p, 'sublocality') || comp(p, 'administrative_area_level_2'));
+          setVal(prefix + '_region', comp(p, 'administrative_area_level_1', true));
+          setVal(prefix + '_zip', comp(p, 'postal_code'));
+          var country = comp(p, 'country', true);
+          if (country) { var s = document.getElementById(prefix + '_country'); if (s) s.value = country; }
+        });
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+      }
+      window.__tdoInitAcctPlaces = function () { attach('sh_addr1', 'sh'); attach('bl_addr1', 'bl'); };
+      var s = document.createElement('script');
+      s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(KEY) +
+        '&libraries=places&loading=async&callback=__tdoInitAcctPlaces';
+      s.async = true;
+      document.head.appendChild(s);
+    })();
   </script>
 </body>
 </html>

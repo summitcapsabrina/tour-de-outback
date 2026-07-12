@@ -6,6 +6,7 @@
       "**/.*",
       "**/node_modules/**",
       "functions/**",
+      "tools/**",
       "Email Blasts/**",
       "Volunteer Forms/**",
       "*.csv",
@@ -34,6 +35,246 @@
       {
         "source": "/api/stripe-webhook",
         "function": { "functionId": "stripeWebhook", "region": "us-central1" }
+      },
+      {
+        "source": "/api/chat",
+        "function": { "functionId": "chat", "region": "us-central1" }
+      },
+      {
+        "source": "/api/chat-poll",
+        "function": { "functionId": "chatPoll", "region": "us-central1" }
+      },
+      {
+        "source": "/api/chat-escalate",
+        "function": { "functionId": "chatEscalate", "region": "us-central1" }
+      },
+      {
+        "source": "/api/chat-typing",
+        "function": { "functionId": "chatTyping", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-chat-reply",
+        "function": { "functionId": "adminChatReply", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-chat-action",
+        "function": { "functionId": "adminChatAction", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-kb-seed",
+        "function": { "functionId": "adminKbSeed", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-kb-save",
+        "function": { "functionId": "adminKbSave", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-kb-delete",
+        "function": { "functionId": "adminKbDelete", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-kb-bulk",
+        "function": { "functionId": "adminKbBulk", "region": "us-central1" }
+      },
+      {
+        "source": "/api/register-push-subscription",
+        "function": { "functionId": "registerPushSubscription", "region": "us-central1" }
+      },
+      {
+        "source": "/api/unregister-push-subscription",
+        "function": { "functionId": "unregisterPushSubscription", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-profile",
+        "function": { "functionId": "adminProfile", "region": "us-central1" }
+      },
+      {
+        "source": "/api/registration-interest",
+        "function": { "functionId": "registrationInterest", "region": "us-central1" }
+      },
+      {
+        "source": "/api/submit-survey",
+        "function": { "functionId": "submitSurvey", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-survey-action",
+        "function": { "functionId": "adminSurveyAction", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-survey-summary",
+        "function": { "functionId": "adminSurveySummary", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-upload-registrations",
+        "function": { "functionId": "adminUploadRegistrations", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-registration-progress",
+        "function": { "functionId": "adminRegistrationProgress", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-registrants",
+        "function": { "functionId": "adminRegistrants", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-clear-registrations",
+        "function": { "functionId": "adminClearRegistrations", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-ride-days",
+        "function": { "functionId": "adminRideDays", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-checkins",
+        "function": { "functionId": "adminCheckins", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-update-registrant",
+        "function": { "functionId": "adminUpdateRegistrant", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-merge-registrants",
+        "function": { "functionId": "adminMergeRegistrants", "region": "us-central1" }
+      },
+      {
+        "source": "/api/my-registrations",
+        "function": { "functionId": "getMyRegistrations", "region": "us-central1" }
+      },
+      {
+        "source": "/api/apply-referral-code",
+        "function": { "functionId": "applyReferralCode", "region": "us-central1" }
+      },
+      {
+        "source": "/api/shop-products",
+        "function": { "functionId": "shopProducts", "region": "us-central1" }
+      },
+      {
+        "source": "/api/create-shop-order",
+        "function": { "functionId": "createShopOrder", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-complete-publishes",
+        "function": { "functionId": "adminCompletePublishes", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-set-role",
+        "function": { "functionId": "adminSetRole", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-impersonate",
+        "function": { "functionId": "adminImpersonate", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-user-profile",
+        "function": { "functionId": "adminGetUserProfile", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-save-user-profile",
+        "function": { "functionId": "adminSaveUserProfile", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-set-shop-order",
+        "function": { "functionId": "adminSetShopOrder", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-shop-orders",
+        "function": { "functionId": "adminShopOrders", "region": "us-central1" }
+      },
+      {
+        "source": "/api/my-shop-orders",
+        "function": { "functionId": "myShopOrders", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-donations",
+        "function": { "functionId": "adminDonations", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-sync-donations",
+        "function": { "functionId": "adminSyncDonations", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-sync-shop-orders",
+        "function": { "functionId": "adminSyncShopOrders", "region": "us-central1" }
+      },
+      {
+        "source": "/api/gallery-photos",
+        "function": { "functionId": "galleryPhotos", "region": "us-central1" }
+      },
+      {
+        "source": "/api/photo/**",
+        "function": { "functionId": "photoServe", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-upload-photo",
+        "function": { "functionId": "adminUploadPhoto", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-save-gallery",
+        "function": { "functionId": "adminSaveGallery", "region": "us-central1" }
+      },
+      {
+        "source": "/api/validate-shop-discount",
+        "function": { "functionId": "validateShopDiscount", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-discounts",
+        "function": { "functionId": "adminDiscounts", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-save-discount",
+        "function": { "functionId": "adminSaveDiscount", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-delete-discount",
+        "function": { "functionId": "adminDeleteDiscount", "region": "us-central1" }
+      },
+      {
+        "source": "/api/my-profile",
+        "function": { "functionId": "myProfile", "region": "us-central1" }
+      },
+      {
+        "source": "/api/save-my-profile",
+        "function": { "functionId": "saveMyProfile", "region": "us-central1" }
+      },
+      {
+        "source": "/api/printify-webhook",
+        "function": { "functionId": "printifyWebhook", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-save",
+        "function": { "functionId": "adminAccountingSave", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-seed",
+        "function": { "functionId": "adminAccountingSeed", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-delete",
+        "function": { "functionId": "adminAccountingDelete", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-rider-counts",
+        "function": { "functionId": "adminRiderCounts", "region": "us-central1" }
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" }
+        ]
+      },
+      {
+        "source": "**/*.@(jpg|jpeg|gif|png|svg|webp|avif|ico|woff|woff2|ttf|otf|eot)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
+        "source": "/api/photo/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
       }
     ]
   },
@@ -54,5 +295,8 @@
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }

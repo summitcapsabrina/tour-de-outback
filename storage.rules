@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Storage for the site. Uploads happen ONLY through Cloud Functions (Admin SDK,
+// which bypasses these rules) — clients never write directly. About-page gallery
+// images are world-readable so the public site can display them; everything else
+// is locked down.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /about-gallery/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

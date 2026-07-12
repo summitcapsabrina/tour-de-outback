@@ -33,12 +33,14 @@
         <a href="/routes/">Routes</a>
         <a href="/schedule/">Schedule</a>
         <a href="/about/">About</a>
-        <a href="/volunteer/">Volunteer</a>
+        <a href="/shop/">Shop</a>
         <a href="/blog/">Blog</a>
-        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="/donate/">Donate</a>
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
       <div class="weather-widget" id="weather-widget"></div>
+        <div class="tdo-auth"><button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg></button><div class="tdo-menu" id="tdo-menu" role="menu"></div></div>
+        <div class="tdo-cart-slot"><button class="tdo-cart-nav" type="button" aria-label="Open cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="tdo-cart-badge" hidden>0</span></button></div>
     </div>
   </nav>
 
@@ -52,11 +54,12 @@
     <p><strong>Information you provide:</strong></p>
     <ul>
       <li><strong>Account information</strong> — when you create an account, we collect your name, email address, and (if you sign in with a provider) your profile photo.</li>
+      <li><strong>Registration information</strong> — when you register for the event (or have registered in past years), we keep your name, email address, phone number, and the year(s) you participated, so we can show your registration history and any returning-rider benefits in your account.</li>
       <li><strong>Donation information</strong> — donation amount, frequency (one-time or monthly), and billing details. Card details are entered directly into our payment processor and are not stored on our servers (see Payments below).</li>
       <li><strong>Communications</strong> — messages you send us through our on-site chat, contact forms, or email, and newsletter sign-ups.</li>
     </ul>
     <p><strong>Information collected automatically:</strong> device and browser type, IP address, pages visited, and similar usage data, collected through cookies and analytics tools.</p>
-    <p><strong>Information from third parties:</strong> if you sign in using Google (or, in the future, other providers), that provider shares basic profile information such as your name, email, and photo. If you register for the event, our registration partner shares your registration details with us.</p>
+    <p><strong>Information from third parties:</strong> if you sign in using Google (or, in the future, other providers), that provider shares basic profile information such as your name, email, and photo.</p>
 
     <h2>2. How We Use Your Information</h2>
     <ul>
@@ -81,7 +84,7 @@
       <li><strong>Stripe</strong> — payment processing and billing.</li>
       <li><strong>Google Analytics &amp; Meta Pixel</strong> — site analytics.</li>
       <li><strong>Our on-site chat</strong> — support conversations, operated by us.</li>
-      <li><strong>BikeReg</strong> — event registration.</li>
+      <li><strong>Event registration</strong> — handled in-house by us (using Firebase and Stripe, listed above); we no longer use a third-party registration provider.</li>
       <li><strong>EmailOctopus</strong> — newsletter delivery.</li>
       <li><strong>Weather data providers</strong> — to display local conditions (no personal data shared).</li>
     </ul>
@@ -130,7 +133,6 @@
             <li><a href="/about/">About</a></li>
             <li><a href="/volunteer/">Volunteer</a></li>
             <li><a href="/blog/">Blog</a></li>
-            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
             <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
           </ul>
         </div>

@@ -14,7 +14,7 @@ import {
   // ---- Styles ----
   var css = document.createElement('style');
   css.textContent = [
-    '.tdo-auth{position:relative;display:flex;align-items:center;margin-left:14px;font-family:inherit}',
+    '.tdo-auth{position:relative;display:flex;align-items:center;margin-left:24px;font-family:inherit}',
     '.tdo-avatar{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);background:#3a3a3a;cursor:pointer;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center}',
     '.tdo-avatar:hover{border-color:#cc0000}',
     '.tdo-avatar img{width:100%;height:100%;object-fit:cover;display:block}',
@@ -22,7 +22,7 @@ import {
     '.tdo-menu{position:absolute;top:48px;right:0;width:300px;max-width:88vw;background:#fff;color:#222;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.25);padding:18px;z-index:1200;display:none;text-align:left}',
     '.tdo-menu.open{display:block}',
     // Modal
-    '.tdo-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:2000;padding:20px}',
+    '.tdo-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:2147483646;padding:20px}',
     '.tdo-modal-overlay.open{display:flex}',
     '.tdo-modal{position:relative;background:#fff;color:#222;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.35);width:380px;max-width:92vw;max-height:90vh;overflow:auto;padding:28px 26px;text-align:left}',
     '.tdo-modal-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.6rem;line-height:1;color:#999;cursor:pointer;padding:0}',
@@ -59,17 +59,27 @@ import {
   function mount() {
     var navbar = document.querySelector('.navbar');
     if (!navbar) return null;
-    var wrap = document.createElement('div');
-    wrap.className = 'tdo-auth';
-    wrap.innerHTML =
-      '<button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false">' + HEAD_SVG + '</button>' +
-      '<div class="tdo-menu" id="tdo-menu" role="menu"></div>';
-    var weather = document.getElementById('weather-widget');
-    if (weather && weather.parentNode) {
-      weather.parentNode.insertBefore(wrap, weather.nextSibling);
-    } else {
-      var container = navbar.querySelector('.container, .nav-container') || navbar;
-      container.appendChild(wrap);
+    // Reuse the slot main.js reserved before first paint (so the avatar fills in
+    // without shifting the menu). Only create one if the reservation is missing.
+    var wrap = navbar.querySelector('.tdo-auth');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.className = 'tdo-auth';
+      var weather = document.getElementById('weather-widget');
+      if (weather && weather.parentNode) {
+        weather.parentNode.insertBefore(wrap, weather.nextSibling);
+      } else {
+        var container = navbar.querySelector('.container, .nav-container') || navbar;
+        container.appendChild(wrap);
+      }
+    }
+    // main.js already paints the avatar button (with the cached photo) before
+    // first paint — reuse it so we don't wipe the photo back to the default icon
+    // and cause a flash. Only build it here if that reservation is missing.
+    if (!wrap.querySelector('.tdo-avatar')) {
+      wrap.innerHTML =
+        '<button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false">' + HEAD_SVG + '</button>' +
+        '<div class="tdo-menu" id="tdo-menu" role="menu"></div>';
     }
     return wrap;
   }
@@ -189,10 +199,27 @@ import {
       : HEAD_SVG;
   }
 
+  // Bridge so other widgets (e.g. the chat widget) can read auth state and react
+  // to sign-in/out. `resolved` flips true once Firebase has determined the state.
+  window.tdoAuth = window.tdoAuth || { currentUser: null, resolved: false };
+
   onAuthStateChanged(auth, function (user) {
     currentUser = user;
     setAvatar(user);
+    // Cache the photo so the next page can paint it synchronously (no flash).
+    // Cleared on sign-out or for accounts without a photo (both show the icon).
+    try {
+      if (user && user.photoURL) localStorage.setItem('tdoAvatarPhoto', user.photoURL);
+      else localStorage.removeItem('tdoAvatarPhoto');
+    } catch (e) { /* storage disabled */ }
     if (user) { renderSignedIn(user); closeModal(); }
     else { menu.innerHTML = ''; closeMenu(); }
+    window.tdoAuth.currentUser = user
+      ? { uid: user.uid, displayName: user.displayName || '', email: user.email || '' }
+      : null;
+    window.tdoAuth.resolved = true;
+    try {
+      window.dispatchEvent(new CustomEvent('tdo-auth-changed', { detail: window.tdoAuth.currentUser }));
+    } catch (e) { /* older browsers */ }
   });
 })();

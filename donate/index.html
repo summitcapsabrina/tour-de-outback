@@ -360,14 +360,75 @@
       justify-content: center;
       width: 18px;
       height: 18px;
+      padding: 0;
+      background: none;
       border-radius: 50%;
       border: 1.5px solid #aaa;
       color: #aaa;
       font-size: 0.75rem;
       font-weight: 700;
-      cursor: help;
+      line-height: 1;
+      cursor: pointer;
       flex-shrink: 0;
+      transition: border-color 0.15s ease, color 0.15s ease;
     }
+    .donate-fee-info:hover,
+    .donate-fee-info:focus-visible {
+      border-color: #cc0000;
+      color: #cc0000;
+      outline: none;
+    }
+
+    /* Processing-fee explainer modal */
+    .donate-fee-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.55);
+    }
+    .donate-fee-modal[hidden] { display: none; }
+    .donate-fee-modal-box {
+      position: relative;
+      background: #fff;
+      color: #333;
+      max-width: 420px;
+      width: 100%;
+      border-radius: 12px;
+      padding: 28px 28px 24px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+      text-align: left;
+    }
+    .donate-fee-modal-box h3 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.35rem;
+      color: #222;
+      margin: 0 0 12px;
+      padding-right: 24px;
+    }
+    .donate-fee-modal-box p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin: 0 0 12px;
+    }
+    .donate-fee-modal-box p:last-child { margin-bottom: 0; }
+    .donate-fee-modal-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      line-height: 1;
+      color: #999;
+      cursor: pointer;
+      padding: 0;
+    }
+    .donate-fee-modal-close:hover,
+    .donate-fee-modal-close:focus-visible { color: #cc0000; outline: none; }
 
     /* PayPal / Venmo / Give buttons */
     .donate-pay-btn {
@@ -627,12 +688,23 @@
     }
 
     .donate-other-section {
-      padding: 36px 0 44px;
+      /* Tax disclaimer sits ~80px below the donate card. The card grows as the
+         donation wizard expands; because this block is in normal flow, the gap
+         tracks the card automatically. The tax note is first so the 80px offset
+         is fixed (independent of how the hidden "Other Ways to Give" text wraps).
+         56px here + the form section's 24px bottom padding = 80px below the card. */
+      padding: 56px 0 44px;
       background: #222;
       color: #fff;
     }
+    .donate-other-wrap .donate-tax-note {
+      margin: 0 0 8px;
+    }
+    /* "Other Ways to Give" heading + mail paragraph follow the tax note. */
+    .donate-other-wrap h2 { margin-top: 8px; }
     @media (max-width: 768px) {
-      .donate-other-section { padding: 28px 0 36px; }
+      /* 64px + the form section's 16px bottom padding = 80px below the card. */
+      .donate-other-section { padding: 64px 0 36px; }
     }
     .donate-other-wrap {
       max-width: 760px;
@@ -691,13 +763,14 @@
         <a href="/routes/">Routes</a>
         <a href="/schedule/">Schedule</a>
         <a href="/about/">About</a>
-        <!-- <a href="/shop/">Shop</a> -->
-        <a href="/volunteer/">Volunteer</a>
+        <a href="/shop/">Shop</a>
         <a href="/blog/">Blog</a>
-        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="/donate/" class="active">Donate</a>
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
       <div class="weather-widget" id="weather-widget"></div>
+        <div class="tdo-auth"><button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg></button><div class="tdo-menu" id="tdo-menu" role="menu"></div></div>
+        <div class="tdo-cart-slot"><button class="tdo-cart-nav" type="button" aria-label="Open cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="tdo-cart-badge" hidden>0</span></button></div>
     </div>
   </nav>
 
@@ -749,9 +822,19 @@
 
         <!-- Cover fees -->
         <div class="donate-fee-row">
-          <input type="checkbox" id="donate-cover-fee" checked>
+          <input type="checkbox" id="donate-cover-fee">
           <label for="donate-cover-fee"><span id="donate-fee-label-text">Add a little extra to help cover processing fees</span></label>
-          <span class="donate-fee-info" title="Card processors charge ~2.9% + $0.30. Covering this means the full base amount supports the event.">?</span>
+          <button type="button" class="donate-fee-info" id="donate-fee-info-btn" aria-label="What are processing fees?" aria-haspopup="dialog">?</button>
+        </div>
+
+        <!-- Processing-fee explainer modal (opened by the "?" button above) -->
+        <div class="donate-fee-modal" id="donate-fee-modal" role="dialog" aria-modal="true" aria-labelledby="donate-fee-modal-title" hidden>
+          <div class="donate-fee-modal-box" role="document">
+            <button type="button" class="donate-fee-modal-close" id="donate-fee-modal-close" aria-label="Close">&times;</button>
+            <h3 id="donate-fee-modal-title">About processing fees</h3>
+            <p>When you give online, our payment processor (Stripe) charges a small fee on every transaction &mdash; about <strong>2.9% + $0.30</strong>.</p>
+            <p>Checking this box adds that amount to your gift so the full donation reaches Oregon Tour de Outback and our partner, Lake County Search and Rescue. It&rsquo;s completely optional &mdash; your base donation goes through either way.</p>
+          </div>
         </div>
 
         <!-- Primary action: submit donation to the in-house payment backend -->
@@ -818,9 +901,9 @@
   <section class="donate-other-section">
     <div class="container">
       <div class="donate-other-wrap">
+        <p class="donate-tax-note" style="font-size: 0.85rem; opacity: 0.75;">Oregon Tour de Outback is presented by the Lake County Chamber of Commerce, a 501(c)(6) organization. Contributions are <strong>not tax-deductible as charitable contributions</strong>, but may be deductible as ordinary and necessary business expenses. Please consult your tax advisor.</p>
         <h2>Other Ways to Give</h2>
         <p>Prefer to mail a check or explore corporate sponsorship? Reach out to us at <a href="mailto:info@tourdeoutback.org">info@tourdeoutback.org</a> and we'll connect you with the right people at the Lake County Chamber of Commerce.</p>
-        <p style="font-size: 0.85rem; opacity: 0.75; margin-top: 24px;">Oregon Tour de Outback is presented by the Lake County Chamber of Commerce, a 501(c)(6) organization. Contributions are <strong>not tax-deductible as charitable contributions</strong>, but may be deductible as ordinary and necessary business expenses. Please consult your tax advisor.</p>
       </div>
     </div>
   </section>
@@ -842,7 +925,6 @@
             <li><a href="/about/">About</a></li>
             <li><a href="/volunteer/">Volunteer</a></li>
             <li><a href="/blog/">Blog</a></li>
-            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
             <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
           </ul>
         </div>
@@ -1106,6 +1188,27 @@
 
       coverFeeBox.addEventListener('change', render);
 
+      // --- Processing-fee explainer modal ---
+      var feeInfoBtn = document.getElementById('donate-fee-info-btn');
+      var feeModal = document.getElementById('donate-fee-modal');
+      var feeModalClose = document.getElementById('donate-fee-modal-close');
+      function openFeeModal() {
+        feeModal.hidden = false;
+        feeModalClose.focus();
+      }
+      function closeFeeModal() {
+        feeModal.hidden = true;
+        feeInfoBtn.focus();
+      }
+      feeInfoBtn.addEventListener('click', openFeeModal);
+      feeModalClose.addEventListener('click', closeFeeModal);
+      feeModal.addEventListener('click', function (e) {
+        if (e.target === feeModal) closeFeeModal();
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !feeModal.hidden) closeFeeModal();
+      });
+
       // --- Donate → reveal Stripe Payment Element ---
       donateBtn.addEventListener('click', function () {
         if (donateBtn.disabled) return;
@@ -1248,18 +1351,5 @@
     }
     onAuthStateChanged(auth, function (user) { current = user; renderPrompt(user); });
   </script>
-  <!--Start of Tawk.to Script-->
-  <script type="text/javascript">
-  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-  (function(){
-  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-  s1.async=true;
-  s1.src='https://embed.tawk.to/69a3fa1d4ebd121c340a9c32/1jik8i17d';
-  s1.charset='UTF-8';
-  s1.setAttribute('crossorigin','*');
-  s0.parentNode.insertBefore(s1,s0);
-  })();
-  </script>
-  <!--End of Tawk.to Script-->
 </body>
 </html>

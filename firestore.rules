@@ -4,13 +4,67 @@ rules_version = '2';
 // bypasses these rules. No client (browser) reads or writes are permitted.
 service cloud.firestore {
   match /databases/{database}/documents {
-    // A signed-in user may read their own account record. All writes go through
-    // Cloud Functions (Admin SDK), which bypass these rules.
+    // Verified admins (keep in sync with ADMIN_EMAILS in functions/index.js and
+    // js/firebase-init.js). Used for the real-time chat inbox + KB manager, which
+    // read Firestore directly via onSnapshot. All writes still go through Cloud
+    // Functions (Admin SDK), which bypass these rules.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (request.auth.token.email == 'info@tourdeoutback.org'
+            || request.auth.token.admin == true);
+    }
+
+    // A signed-in user may read their own account record.
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }
-    // Everything else is closed to clients (donation/price/config docs, etc.).
+
+    // Sabrina chat: admins read conversations + messages live in the inbox.
+    // Visitors never touch Firestore directly — they go through the /api/chat*
+    // Cloud Functions. All writes are function-only.
+    match /conversations/{cid} {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /messages/{mid} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // Knowledge base: admins read live in the KB manager; writes are function-only.
+    match /kb_entries/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Registration history + referrals hold other riders' PII (names, emails,
+    // phones). Clients NEVER read these directly — a signed-in rider gets only
+    // their OWN row through the /api/my-registrations Cloud Function. Closed here.
+    match /registration_history/{email} {
+      allow read, write: if false;
+    }
+    match /referrals/{id} {
+      allow read, write: if false;
+    }
+
+    // Rider survey responses: admins read them live in the Surveys panel;
+    // riders submit through the /api/submit-survey Cloud Function (Admin SDK),
+    // so no direct client writes.
+    match /survey_responses/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Accounting books: admins read the per-year P&L live in the Accounting tab;
+    // all writes go through the /api/admin-accounting-* Cloud Functions (Admin SDK).
+    match /accounting_years/{year} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Everything else is closed to clients (donation/price/config/mail docs, etc.).
     match /{document=**} {
       allow read, write: if false;
     }

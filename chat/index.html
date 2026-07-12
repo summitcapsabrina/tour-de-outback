@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>TdO Chat — Admin</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#111111">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TdO Chat">
+  <link rel="manifest" href="/chat/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/chat/icon-180.png">
+  <link rel="icon" href="/chat/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --red:#cc0000; --dark:#1a1a1a; --bar:#111111; }
+    * { box-sizing: border-box; }
+    /* Lock the whole app in place — no pinch-zoom, no rubber-band panning of the
+       window. Scrolling happens only inside the designated scroll containers. */
+    html, body { margin:0; height:100%; width:100%; position:fixed; inset:0; overflow:hidden; overscroll-behavior:none; touch-action:none; }
+    body { font-family:'Open Sans',Arial,sans-serif; background:#f2f2f2; color:#222; -webkit-text-size-adjust:100%; }
+    #app { display:flex; flex-direction:column; height:100dvh; max-width:560px; margin:0 auto; background:#fff; position:relative; }
+    .hdr { background:var(--bar); color:#fff; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 14px 10px; flex:none; }
+    .hdr img { height:30px; }
+    .hdr .t { font-family:'Oswald',sans-serif; font-weight:600; font-size:1.15rem; }
+    .hdr .sp { margin-left:auto; display:flex; gap:6px; }
+    .hdr button { background:rgba(255,255,255,0.15); border:none; color:#fff; width:38px; height:38px; border-radius:9px; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; }
+    .hdr button:hover { background:rgba(255,255,255,0.28); }
+    .hdr button.on { background:#fff; color:var(--red); }
+    .view { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; }
+    #conv-list { touch-action:pan-y; overscroll-behavior:contain; }
+    .center { display:flex; align-items:center; justify-content:center; height:100%; flex-direction:column; gap:16px; padding:24px; text-align:center; color:#666; }
+    .btn { background:var(--red); color:#fff; border:none; border-radius:10px; padding:13px 20px; font-weight:600; font-size:1rem; cursor:pointer; font-family:inherit; }
+    .btn:hover { background:#a80000; } .btn.dark { background:#222; } .btn.ghost { background:#eee; color:#333; }
+    .btn:disabled { opacity:.5; cursor:default; }
+    .spin { width:30px; height:30px; border:3px solid #ddd; border-top-color:var(--red); border-radius:50%; animation:s .8s linear infinite; }
+    @keyframes s { to { transform:rotate(360deg); } }
+    /* inbox */
+    .signals { display:flex; gap:8px; padding:10px 12px; flex-wrap:wrap; border-bottom:1px solid #eee; }
+    .sig { background:#f4f4f4; border-radius:8px; padding:5px 11px; font-size:0.76rem; color:#555; }
+    .sig b { color:#222; } .sig.warn { background:#fdecea; color:#b71c1c; } .sig.warn b { color:#b71c1c; }
+    .conv { display:block; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid #f0f0f0; padding:13px 14px; cursor:pointer; position:relative; font-family:inherit; }
+    .conv:hover { background:#fafafa; }
+    .conv .top { display:flex; align-items:center; gap:7px; }
+    .conv .dot { width:8px; height:8px; border-radius:50%; background:#4caf50; flex:none; }
+    .conv .dot.off { background:#ccc; }
+    .conv .nm { font-weight:700; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .conv .tm { margin-left:auto; font-size:0.68rem; color:#aaa; flex:none; }
+    .conv .pv { font-size:0.85rem; color:#777; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pill { font-size:0.62rem; font-weight:700; text-transform:uppercase; padding:1px 7px; border-radius:9px; }
+    .pill.bot { background:#eef; color:#335; } .pill.escalated { background:#fdecea; color:#b71c1c; }
+    .pill.human { background:#e7f6e9; color:#1b5e20; } .pill.resolved { background:#eee; color:#888; }
+    .conv .unread { position:absolute; top:14px; right:12px; width:9px; height:9px; border-radius:50%; background:var(--red); }
+    /* thread overlay */
+    .overlay { position:absolute; inset:0; background:#fff; display:none; flex-direction:column; z-index:10; }
+    .overlay.open { display:flex; }
+    .obar { display:flex; align-items:center; gap:8px; padding:calc(8px + env(safe-area-inset-top)) 12px 8px; background:var(--bar); color:#fff; flex:none; }
+    .obar .back { background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer; padding:2px 6px; }
+    .obar-id { flex:1; min-width:0; }
+    .obar .who { font-weight:700; font-size:0.98rem; }
+    .obar .meta { font-size:0.7rem; opacity:.9; }
+    .obar-done { flex:none; background:rgba(255,255,255,0.15); border:none; color:#fff; width:40px; height:40px; border-radius:10px; font-size:1.35rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .obar-done:hover { background:rgba(255,255,255,0.3); }
+    .msgs { flex:1; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain; padding:14px; background:#f7f7f7; display:flex; flex-direction:column; gap:8px; }
+    .m { max-width:82%; padding:9px 13px; border-radius:13px; font-size:0.92rem; line-height:1.4; word-wrap:break-word; }
+    .m.user { align-self:flex-start; background:#fff; border:1px solid #e6e6e6; }
+    .m.assistant { align-self:flex-end; background:#eef1ff; }
+    .m.agent { align-self:flex-end; background:var(--red); color:#fff; }
+    .m.system { align-self:center; background:#eaeaea; color:#777; font-size:0.78rem; }
+    .m .w { font-size:0.66rem; opacity:.7; margin-bottom:2px; }
+    /* Live preview of what the visitor is typing (before they hit Send). */
+    .draftline { padding:4px 14px 0; background:#f7f7f7; }
+    .draftline .m.user { display:inline-block; max-width:82%; background:#fff; border:1px dashed #cbcbcb; color:#666; opacity:.9; }
+    .draftline .dcaret { display:inline-block; width:2px; height:0.95em; background:var(--red); margin-left:1px; vertical-align:text-bottom; animation:tdocaret 1s steps(2) infinite; }
+    @keyframes tdocaret { 50% { opacity:0; } }
+    .reply { display:flex; gap:8px; padding:10px 12px calc(10px + env(safe-area-inset-bottom)); border-top:1px solid #eee; }
+    .reply textarea { flex:1; border:1px solid #ccc; border-radius:12px; padding:10px 13px; font:inherit; font-size:0.95rem; resize:none; max-height:120px; }
+    .reply button { flex:none; background:var(--red); color:#fff; border:none; border-radius:10px; padding:0 18px; font-weight:600; cursor:pointer; }
+    /* Big Take-over button occupying the reply spot until a human takes over. */
+    .takeover-bar { padding:12px 14px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid #eee; }
+    .takeover-btn { width:100%; padding:16px; font-size:1.05rem; border-radius:12px; }
+    /* Confirm dialog (mark completed) */
+    .confirm-ov { position:absolute; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; padding:24px; z-index:60; }
+    .confirm-card { background:#fff; color:#222; border-radius:14px; padding:22px 20px; max-width:340px; width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.35); }
+    .confirm-msg { margin:0 0 18px; font-size:1rem; line-height:1.5; }
+    .confirm-acts { display:flex; gap:10px; } .confirm-acts .btn { flex:1; }
+    /* settings */
+    .settings { padding:20px 16px; }
+    .settings h3 { font-family:'Oswald',sans-serif; margin:0 0 4px; }
+    .settings .sub { color:#777; font-size:0.85rem; margin:0 0 18px; }
+    .settings label { display:block; font-weight:600; font-size:0.85rem; margin:0 0 5px; }
+    .settings input { width:100%; padding:11px 13px; border:1px solid #ccc; border-radius:9px; font:inherit; font-size:1rem; margin-bottom:8px; }
+    .row { display:flex; gap:10px; align-items:center; margin-bottom:14px; }
+    .note { font-size:0.8rem; color:#888; background:#f6f6f6; border-radius:8px; padding:10px 12px; margin:0 0 16px; line-height:1.4; }
+    .note.warn { background:#fff6e5; color:#8a5a00; }
+    .toast { position:absolute; left:50%; transform:translateX(-50%); bottom:20px; background:#222; color:#fff; padding:11px 16px; border-radius:10px; font-size:0.9rem; z-index:50; box-shadow:0 6px 24px rgba(0,0,0,0.3); max-width:88%; }
+    /* Toggle switch */
+    .tgl { position:relative; display:inline-block; width:46px; height:26px; flex:none; }
+    .tgl input { opacity:0; width:0; height:0; }
+    .tgl .sl { position:absolute; inset:0; background:#ccc; border-radius:26px; transition:.2s; cursor:pointer; }
+    .tgl .sl:before { content:""; position:absolute; width:20px; height:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+    .tgl input:checked + .sl { background:var(--red); }
+    .tgl input:checked + .sl:before { transform:translateX(20px); }
+    /* --- Dark mode --- */
+    #app.dark { background:#15171a; color:#e8e8e8; }
+    .dark .view, .dark #view-inbox { background:#15171a; }
+    .dark .signals { border-color:#26292e; }
+    .dark .sig { background:#22262b; color:#cfcfcf; } .dark .sig b { color:#fff; }
+    .dark .conv { border-color:#24272c; } .dark .conv:hover { background:#1c1f24; } .dark .conv.sel { background:#2a1c1c; }
+    .dark .conv .nm { color:#eee; } .dark .conv .pv { color:#9aa0a6; }
+    .dark .overlay { background:#15171a; color:#e8e8e8; }
+    .dark #thread-empty, .dark .center { color:#9aa0a6; }
+    .dark .msgs { background:#0f1113; }
+    .dark .draftline { background:#0f1113; }
+    .dark .draftline .m.user { background:#1a1d21; border-color:#3a3e44; color:#b8bdc4; }
+    .dark .m.user { background:#22262b; border-color:#34383e; color:#eaeaea; }
+    .dark .m.assistant { background:#1e2740; color:#dfe6ff; }
+    .dark .m.system { background:#26292e; color:#a7adb3; }
+    .dark .reply { border-color:#24272c; }
+    .dark .reply textarea { background:#22262b; border-color:#34383e; color:#eee; }
+    .dark .takeover-bar { border-color:#24272c; }
+    .dark .confirm-card { background:#1e2126; color:#eaeaea; }
+    .dark .settings h3 { color:#fff; } .dark .settings .sub { color:#aab0b6; }
+    .dark .settings input { background:#22262b; border-color:#34383e; color:#eee; }
+    .dark .note { background:#22262b; color:#b7bcc2; } .dark .note.warn { background:#3a2f16; color:#e6c67a; }
+    .dark .btn.ghost { background:#2a2e34; color:#dcdcdc; }
+    .dark .settings hr { border-top-color:#2a2e34 !important; }
+    [hidden] { display:none !important; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="hdr">
+      <img src="/images/logo-white-red.png" alt="Tour de Outback">
+      <span class="t">Chat</span>
+      <span class="sp">
+        <button id="bell" title="Notifications" hidden>🔔</button>
+        <button id="gear" title="Settings" hidden>⚙️</button>
+      </span>
+    </div>
+
+    <div class="view" id="view-loading"><div class="center"><div class="spin"></div></div></div>
+
+    <div class="view" id="view-denied" hidden>
+      <div class="center">
+        <p>Sign in with an <b>administrator</b> account to manage chats.</p>
+        <button class="btn" id="signin">Sign in with Google</button>
+        <p id="denied-msg" style="color:#b71c1c;font-size:0.85rem"></p>
+      </div>
+    </div>
+
+    <div class="view" id="view-inbox" hidden>
+      <div class="signals" id="signals"></div>
+      <div id="conv-list"></div>
+    </div>
+
+    <!-- Thread overlay -->
+    <div class="overlay" id="thread">
+      <div class="obar">
+        <button class="back" id="th-back" aria-label="Back">‹</button>
+        <div class="obar-id"><div class="who" id="th-who">Visitor</div><div class="meta" id="th-meta"></div></div>
+        <button class="obar-done" id="th-complete" title="Mark completed" aria-label="Mark completed">✓</button>
+      </div>
+      <div class="msgs" id="th-msgs"></div>
+      <div class="draftline" id="th-draft" style="display:none"></div>
+      <!-- Before takeover: a big Take-over button sits where the reply box goes. -->
+      <div class="takeover-bar" id="th-takeover-bar">
+        <button id="th-takeover" class="btn takeover-btn">Take over this chat</button>
+      </div>
+      <div class="reply" id="th-reply" hidden>
+        <textarea id="th-input" rows="1" placeholder="Reply as a human…"></textarea>
+        <button id="th-send">Send</button>
+      </div>
+    </div>
+
+    <!-- Mark-completed confirm -->
+    <div class="confirm-ov" id="confirm-ov" hidden>
+      <div class="confirm-card">
+        <p class="confirm-msg">Mark this conversation as completed? Sabrina will resume for future messages.</p>
+        <div class="confirm-acts">
+          <button class="btn ghost" id="confirm-cancel">Cancel</button>
+          <button class="btn" id="confirm-ok">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings overlay -->
+    <div class="overlay" id="settings-ov">
+      <div class="obar"><button class="back" id="set-back" aria-label="Back">‹</button><div class="who">Settings</div></div>
+      <div class="settings view">
+        <h3>Appearance</h3>
+        <p class="sub">Switch between light and dark.</p>
+        <div class="row" style="margin-bottom:20px"><label class="tgl"><input type="checkbox" id="dark-toggle"><span class="sl"></span></label><span>Dark mode</span></div>
+        <h3>Your display name</h3>
+        <p class="sub">Visitors see only this first name when you reply.</p>
+        <label for="set-name">First name</label>
+        <input type="text" id="set-name" maxlength="60" placeholder="e.g. Sabrina">
+        <div class="row"><button class="btn" id="set-save">Save name</button><span id="set-saved" style="color:#1b5e20;font-size:0.85rem"></span></div>
+        <h3 style="margin-top:20px">Notifications</h3>
+        <p class="sub">Get a push alert on this device when a visitor asks for a human.</p>
+        <div id="notif-block"></div>
+        <hr style="border:none;border-top:1px solid #eee;margin:22px 0">
+        <button class="btn ghost" id="signout">Sign out</button>
+        <p class="sub" id="whoami" style="margin-top:14px"></p>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut }
+      from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+    import { getFirestore, collection, query, orderBy, limit, onSnapshot }
+      from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+
+    // --- config (public client identifiers) ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAli_2DbFIhnKBox5yXLX__uoTg5aHb4OE",
+      authDomain: "oregon-tour-de-outback.firebaseapp.com",
+      projectId: "oregon-tour-de-outback",
+      storageBucket: "oregon-tour-de-outback.firebasestorage.app",
+      messagingSenderId: "11400321135",
+      appId: "1:11400321135:web:82a6eba65acfbec9cb559a",
+    };
+    const ADMIN_EMAILS = ["info@tourdeoutback.org"];
+    // Web Push public (VAPID) key — pairs with the WEBPUSH_PRIVATE_KEY secret on the
+    // server. Safe to embed; no Firebase Console setup needed.
+    const VAPID_PUBLIC_KEY = "BMRC6gIY-l02Kel2Mld6GPOi8aIxlX8OJuNWVLzF_O_h2DjoTrFp1NRrOaUIalEHKLCoTDjy-xWJUCAb0oD5Oi8";
+
+    const API = {
+      reply: "/api/admin-chat-reply", action: "/api/admin-chat-action",
+      profile: "/api/admin-profile", registerSub: "/api/register-push-subscription",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+    const isSuperAdmin = (u) => !!(u && u.email && u.emailVerified && ADMIN_EMAILS.indexOf(u.email.toLowerCase()) !== -1);
+    // Admin = super-admin email OR a verified user with the `admin:true` custom
+    // claim (granted from the dashboard). May refresh the token to pick it up.
+    async function resolveAdmin(u) {
+      if (!u || !u.emailVerified) return false;
+      if (isSuperAdmin(u)) return true;
+      try {
+        let r = await u.getIdTokenResult();
+        if (r.claims && r.claims.admin === true) return true;
+        r = await u.getIdTokenResult(true);
+        return !!(r.claims && r.claims.admin === true);
+      } catch (e) { return false; }
+    }
+    function toast(t) { const el = $("toast"); el.textContent = t; el.hidden = false; clearTimeout(el._t); el._t = setTimeout(() => el.hidden = true, 3200); }
+    function show(id) { $(id).hidden = false; } function hide(id) { $(id).hidden = true; }
+    function tms(ts) { return ts && ts.toDate ? ts.toDate().getTime() : 0; }
+    function ago(ts) { const t = tms(ts); if (!t) return ""; const s = Math.floor((Date.now()-t)/1000); if (s<60) return "now"; if (s<3600) return Math.floor(s/60)+"m"; if (s<86400) return Math.floor(s/3600)+"h"; return Math.floor(s/86400)+"d"; }
+    function online(c) { return (Date.now() - tms(c.lastVisitorSeenAt)) < 35000; }
+
+    let user = null, convs = [], convMap = {}, selectedCid = null, unsubMsgs = null, deepLink = null;
+
+    async function apiPost(url, body) {
+      const t = await user.getIdToken();
+      const r = await fetch(url, { method:"POST", headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+t }, body: JSON.stringify(body||{}) });
+      const d = await r.json().catch(()=>({}));
+      return { ok:r.ok, d };
+    }
+
+    // Deep link from ?c= or from a notification click.
+    const params = new URLSearchParams(location.search);
+    if (params.get("c")) deepLink = params.get("c");
+
+    // Theme (dark mode) — applied immediately, persisted per browser.
+    const THEME_KEY = "tdo_chat_theme";
+    function applyTheme(dark) { $("app").classList.toggle("dark", dark); const t = $("dark-toggle"); if (t) t.checked = dark; }
+    applyTheme(localStorage.getItem(THEME_KEY) === "dark");
+    $("dark-toggle").addEventListener("change", function () { const d = this.checked; try { localStorage.setItem(THEME_KEY, d ? "dark" : "light"); } catch (e) {} applyTheme(d); });
+
+    $("signin").addEventListener("click", () => signInWithPopup(auth, new GoogleAuthProvider()).catch(e => { $("denied-msg").textContent = e.message; }));
+    $("signout").addEventListener("click", () => signOut(auth));
+    $("gear").addEventListener("click", () => $("settings-ov").classList.add("open"));
+    $("set-back").addEventListener("click", () => $("settings-ov").classList.remove("open"));
+    $("bell").addEventListener("click", enableNotifications);
+    $("th-back").addEventListener("click", closeThread);
+    $("th-send").addEventListener("click", sendReply);
+    $("th-input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } });
+    $("th-input").addEventListener("input", () => { const i = $("th-input"); i.style.height="auto"; i.style.height=Math.min(i.scrollHeight,120)+"px"; });
+    $("th-takeover").addEventListener("click", () => act("takeover"));
+    $("th-complete").addEventListener("click", () => { $("confirm-ov").hidden = false; });
+    $("confirm-cancel").addEventListener("click", () => { $("confirm-ov").hidden = true; });
+    $("confirm-ok").addEventListener("click", async () => { $("confirm-ov").hidden = true; await act("resolve"); closeThread(); });
+    $("set-save").addEventListener("click", saveName);
+
+    // Block pinch-zoom / double-tap-zoom so the window can't be moved around.
+    document.addEventListener("gesturestart", e => e.preventDefault());
+    document.addEventListener("gesturechange", e => e.preventDefault());
+    let lastTouchEnd = 0;
+    document.addEventListener("touchend", e => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    onAuthStateChanged(auth, (u) => {
+      resolveAdmin(u).then((ok) => {
+        hide("view-loading");
+        if (ok) {
+          user = u;
+          hide("view-denied"); show("view-inbox");
+          $("gear").hidden = false; $("bell").hidden = false;
+          $("whoami").textContent = "Signed in as " + (u.email || "");
+          subscribeConvs();
+          loadProfile();
+          renderNotifBlock();
+          refreshSubscription(); // keep this device's push subscription fresh
+        } else {
+          user = null; hide("view-inbox"); show("view-denied");
+          $("gear").hidden = true; $("bell").hidden = true;
+          if (u) $("denied-msg").textContent = "That account isn't an administrator.";
+        }
+      });
+    });
+
+    // ---- inbox ----
+    function subscribeConvs() {
+      const q = query(collection(db, "conversations"), orderBy("lastMessageAt", "desc"), limit(100));
+      onSnapshot(q, (snap) => {
+        convs = []; convMap = {};
+        snap.forEach(d => { const c = d.data(); c._id = d.id; convs.push(c); convMap[d.id] = c; });
+        renderSignals(); renderList();
+        if (selectedCid && convMap[selectedCid]) { renderThreadHead(convMap[selectedCid]); renderVisitorLive(); }
+        if (deepLink && convMap[deepLink]) { const c = deepLink; deepLink = null; openThread(c); }
+      }, (err) => { $("conv-list").innerHTML = '<div class="center" style="color:#b71c1c">'+esc(err.message)+'</div>'; });
+    }
+    function renderSignals() {
+      let waiting=0, human=0, active=0;
+      convs.forEach(c => { if (c.status==="escalated") waiting++; if (c.status==="human") human++; if (c.status!=="resolved") active++; });
+      $("signals").innerHTML =
+        '<span class="sig"><b>'+active+'</b> active</span>' +
+        '<span class="sig '+(waiting?"warn":"")+'"><b>'+waiting+'</b> waiting</span>' +
+        '<span class="sig"><b>'+human+'</b> handling</span>';
+      $("bell").classList.toggle("on", ("Notification" in window) && Notification.permission === "granted");
+    }
+    function renderList() {
+      if (!convs.length) { $("conv-list").innerHTML = '<div class="center">No conversations yet.</div>'; return; }
+      $("conv-list").innerHTML = convs.map(c => {
+        const st = c.status || "bot";
+        return '<button class="conv" data-cid="'+c._id+'">' +
+          (c.unread ? '<span class="unread"></span>' : '') +
+          '<div class="top"><span class="dot '+(online(c)?"":"off")+'"></span>' +
+          '<span class="nm">'+esc(c.visitorName || "Visitor")+'</span>' +
+          '<span class="pill '+st+'">'+st+'</span>' +
+          '<span class="tm">'+ago(c.lastMessageAt)+'</span></div>' +
+          '<div class="pv">'+esc(c.lastMessagePreview || c.firstMessage || "")+'</div></button>';
+      }).join("");
+      document.querySelectorAll("#conv-list .conv").forEach(el => el.addEventListener("click", () => openThread(el.getAttribute("data-cid"))));
+    }
+
+    // ---- thread ----
+    let draftTimer = null;
+    function openThread(cid) {
+      selectedCid = cid;
+      $("thread").classList.add("open");
+      if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; }
+      const c = convMap[cid];
+      renderThreadHead(c);
+      $("th-input").value = (c && c.adminDraft) || "";
+      apiPost(API.action, { conversationId: cid, action: "read" });
+      const mq = query(collection(db, "conversations", cid, "messages"), orderBy("createdAt", "asc"));
+      unsubMsgs = onSnapshot(mq, (snap) => {
+        const el = $("th-msgs"); el.innerHTML = "";
+        snap.forEach(d => el.appendChild(msgEl(d.data())));
+        el.scrollTop = el.scrollHeight;
+      });
+      renderVisitorLive();
+      if (draftTimer) clearInterval(draftTimer);
+      draftTimer = setInterval(() => {
+        if (convMap[selectedCid]) renderThreadHead(convMap[selectedCid]);
+        renderVisitorLive();
+      }, 1200);
+    }
+    // Live preview of the visitor's in-progress text (from the conversation doc).
+    function renderVisitorLive() {
+      const c = convMap[selectedCid];
+      const fresh = c && c.visitorTyping && (Date.now() - tms(c.visitorTypingAt) < 8000);
+      const draft = (fresh && c && c.visitorDraft) ? String(c.visitorDraft) : "";
+      const el = $("th-draft");
+      if (!el) return;
+      if (draft) {
+        el.innerHTML = '<div class="m user"><div class="w">' + esc(c.visitorName || "Visitor") + '</div><div>' +
+          esc(draft).replace(/\n/g, "<br>") + '<span class="dcaret"></span></div></div>';
+        el.style.display = "";
+      } else { el.innerHTML = ""; el.style.display = "none"; }
+    }
+    function closeThread() { $("thread").classList.remove("open"); selectedCid = null; if (unsubMsgs) { unsubMsgs(); unsubMsgs = null; } if (draftTimer) { clearInterval(draftTimer); draftTimer = null; } var d = $("th-draft"); if (d) { d.innerHTML = ""; d.style.display = "none"; } }
+    function msgEl(m) {
+      const d = document.createElement("div");
+      const role = m.role === "user" ? "user" : (m.role === "agent" ? "agent" : (m.role === "system" ? "system" : "assistant"));
+      d.className = "m " + role;
+      const who = m.role === "user" ? (m.senderName || "Visitor") : (m.role === "agent" ? (m.senderName || "You") : (m.role === "system" ? "" : "Sabrina"));
+      d.innerHTML = (role!=="system" && who ? '<div class="w">'+esc(who)+'</div>' : '') + '<div>'+esc(m.text).replace(/\n/g,"<br>")+'</div>';
+      return d;
+    }
+    // The visitor currently has the chat window open (flagged open + recently seen).
+    function presenceOpen(c) { return !!c && c.visitorPanelOpen === true && online(c); }
+    function renderThreadHead(c) {
+      if (!c) return;
+      $("th-who").textContent = (c.visitorName || "Visitor") + (c.visitorEmail ? " · "+c.visitorEmail : "");
+      const st = c.status || "bot";
+      const presence = presenceOpen(c)
+        ? '<span style="color:#8ef0a6">chat open</span>'
+        : 'chat closed' + (c.lastVisitorSeenAt ? ' · last seen '+ago(c.lastVisitorSeenAt)+" ago" : "");
+      $("th-meta").innerHTML = esc(st) + " · " + presence;
+      // Bottom: reply box once a human is handling; otherwise the big Take-over button.
+      const human = (st === "human");
+      $("th-reply").hidden = !human;
+      $("th-takeover-bar").hidden = human;
+    }
+    async function sendReply() {
+      const text = $("th-input").value.trim(); if (!text || !selectedCid) return;
+      $("th-send").disabled = true;
+      const r = await apiPost(API.reply, { conversationId: selectedCid, text });
+      $("th-send").disabled = false;
+      if (r.ok) { $("th-input").value = ""; $("th-input").style.height="auto"; } else toast((r.d && r.d.error) || "Could not send.");
+    }
+    async function act(action) { if (!selectedCid) return; const r = await apiPost(API.action, { conversationId: selectedCid, action }); if (!r.ok) toast((r.d && r.d.error) || "Action failed."); }
+
+    // ---- profile (first name) ----
+    async function loadProfile() {
+      const r = await apiPost(API.profile, {});
+      if (r.ok && r.d) { $("set-name").value = r.d.firstName || ""; }
+    }
+    async function saveName() {
+      const fn = $("set-name").value.trim(); if (!fn) { toast("Enter a first name."); return; }
+      $("set-save").disabled = true;
+      const r = await apiPost(API.profile, { firstName: fn });
+      $("set-save").disabled = false;
+      if (r.ok) { $("set-saved").textContent = "Saved"; setTimeout(()=>$("set-saved").textContent="",1500); } else toast("Could not save.");
+    }
+
+    // ---- push notifications (standard Web Push / VAPID) ----
+    let swReg = null;
+    function pushSupported() { return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); }
+    async function registerSW() {
+      if (!("serviceWorker" in navigator)) return null;
+      if (swReg) return swReg;
+      swReg = await navigator.serviceWorker.register("/chat/sw.js", { scope: "/chat/" });
+      return swReg;
+    }
+    function urlB64ToUint8(base64) {
+      const pad = "=".repeat((4 - (base64.length % 4)) % 4);
+      const b64 = (base64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+      const raw = atob(b64); const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
+    }
+    async function renderNotifBlock() {
+      const el = $("notif-block");
+      if (!pushSupported()) { el.innerHTML = '<p class="note warn">This browser doesn\'t support push notifications. On iPhone, add this app to your Home Screen first (Share → Add to Home Screen, iOS 16.4+), open it, then enable notifications.</p>'; return; }
+      const perm = Notification.permission;
+      if (perm === "granted") { el.innerHTML = '<p class="note">✅ Notifications are on for this device. <button class="btn ghost" id="notif-refresh" style="margin-top:8px">Re-register this device</button></p>'; $("notif-refresh").addEventListener("click", enableNotifications); }
+      else if (perm === "denied") { el.innerHTML = '<p class="note warn">Notifications are blocked in your browser/site settings. Enable them for this site, then reload.</p>'; }
+      else { el.innerHTML = '<button class="btn" id="notif-enable">Enable notifications</button>'; $("notif-enable").addEventListener("click", enableNotifications); }
+    }
+    async function enableNotifications() {
+      try {
+        if (!pushSupported()) { toast("Push isn't supported on this device/browser."); return; }
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") { toast("Notifications not allowed."); renderNotifBlock(); return; }
+        const reg = await registerSW();
+        await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(VAPID_PUBLIC_KEY) });
+        const r = await apiPost(API.registerSub, { subscription: sub.toJSON() });
+        toast(r.ok ? "Notifications enabled on this device 🎉" : "Could not register device.");
+        renderNotifBlock(); renderSignals();
+      } catch (e) { toast("Notification setup failed: " + e.message); }
+    }
+    // On each app open, silently refresh this device's subscription with the server
+    // (subscriptions can rotate/expire — a common cause of missed iOS pushes).
+    async function refreshSubscription() {
+      try {
+        if (!pushSupported() || Notification.permission !== "granted") return;
+        const reg = await registerSW();
+        await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(VAPID_PUBLIC_KEY) });
+        await apiPost(API.registerSub, { subscription: sub.toJSON() });
+      } catch (e) { /* best-effort */ }
+    }
+
+    // Register the SW early (needed for push + install).
+    if ("serviceWorker" in navigator) registerSW().catch(() => {});
+    // Notification click (from SW) → open that conversation.
+    navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", (e) => {
+      if (e.data && e.data.type === "open" && e.data.link) {
+        try { const c = new URL(e.data.link, location.href).searchParams.get("c"); if (c && convMap[c]) openThread(c); } catch (x) {}
+      }
+    });
+  </script>
+</body>
+</html>

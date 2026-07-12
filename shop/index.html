@@ -17,7 +17,7 @@
   <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2075249173025215&ev=PageView&noscript=1"/></noscript>
   <!-- End Meta Pixel Code -->
   <title>Shop | Oregon Tour de Outback</title>
-  <meta name="description" content="Shop official Oregon Tour de Outback gear and merchandise. Jerseys, t-shirts, water bottles, and more.">
+  <meta name="description" content="Shop official Oregon Tour de Outback gear and apparel. Jerseys, t-shirts, caps, and more — printed on demand and shipped to your door.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://www.googletagmanager.com">
@@ -46,12 +46,14 @@
       margin-bottom: 16px;
     }
     .shop-intro p {
-      font-size: 1.15rem;
-      color: #555;
-      max-width: 640px;
+      font-size: 0.95rem;
+      color: #666;
+      max-width: 620px;
       margin: 0 auto;
-      line-height: 1.7;
+      line-height: 1.6;
     }
+    .shop-intro p + p { margin-top: 12px; }
+    .shop-copy { padding: 8px 0 20px; }
     .shop-badge {
       display: inline-block;
       background: #cc0000;
@@ -66,42 +68,13 @@
       margin-bottom: 20px;
     }
 
-    /* ─── Category Tabs ─── */
-    .shop-categories {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding: 0 0 48px;
-    }
-    .shop-tab {
-      font-family: 'Oswald', sans-serif;
-      font-size: 1rem;
-      font-weight: 500;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      padding: 10px 28px;
-      border: 2px solid #ddd;
-      border-radius: 30px;
-      background: #fff;
-      color: #555;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .shop-tab:hover, .shop-tab.active {
-      border-color: #cc0000;
-      color: #cc0000;
-      background: #fff5f5;
-    }
-
     /* ─── Product Grid ─── */
     .shop-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 32px;
-      padding-bottom: 80px;
+      padding-bottom: 40px;
     }
-
     .product-card {
       background: #fff;
       border-radius: 12px;
@@ -109,12 +82,14 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
       transition: transform 0.3s, box-shadow 0.3s;
       position: relative;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
     }
     .product-card:hover {
       transform: translateY(-6px);
       box-shadow: 0 12px 36px rgba(0,0,0,0.12);
     }
-
     .product-image {
       width: 100%;
       aspect-ratio: 1 / 1;
@@ -122,29 +97,17 @@
       position: relative;
       background: #f0f0f0;
     }
-    .product-image svg {
+    .product-image img {
       width: 100%;
       height: 100%;
+      object-fit: cover;
+      display: block;
     }
-
-    .product-tag {
-      position: absolute;
-      top: 14px;
-      left: 14px;
-      background: #cc0000;
-      color: #fff;
-      font-family: 'Oswald', sans-serif;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      padding: 4px 14px;
-      border-radius: 20px;
-      z-index: 2;
-    }
-
     .product-info {
       padding: 20px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
     }
     .product-info h3 {
       font-family: 'Oswald', sans-serif;
@@ -158,11 +121,17 @@
       color: #777;
       margin-bottom: 14px;
       line-height: 1.5;
+      /* Never let a long Printify description stretch the card — clamp to 2 lines. */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     .product-price-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      margin-top: auto;   /* pin price/button to the card bottom regardless of text length */
     }
     .product-price {
       font-family: 'Oswald', sans-serif;
@@ -170,6 +139,7 @@
       font-weight: 700;
       color: #cc0000;
     }
+    .product-price small { font-size: 0.8rem; color: #999; font-weight: 500; }
     .product-btn {
       display: inline-block;
       padding: 8px 22px;
@@ -186,82 +156,235 @@
       text-decoration: none;
       transition: background 0.3s, transform 0.2s;
     }
-    .product-btn:hover {
-      background: #a00;
-      transform: scale(1.04);
-    }
+    .product-btn:hover { background: #a00; transform: scale(1.04); }
 
-    /* ─── Size/Color Swatches ─── */
-    .product-sizes {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 14px;
+    /* ─── Loading / empty / error states ─── */
+    .shop-status {
+      text-align: center;
+      padding: 60px 20px 80px;
+      color: #888;
     }
-    .size-chip {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 3px 8px;
-      border: 1px solid #ddd;
-      border-radius: 3px;
-      color: #666;
-      background: #fafafa;
-    }
-
-    /* ─── Featured Banner ─── */
-    .shop-featured {
-      background: linear-gradient(135deg, #222 0%, #3a3a3a 100%);
-      border-radius: 16px;
-      padding: 60px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 48px;
-      align-items: center;
-      margin-bottom: 64px;
-      overflow: hidden;
-      position: relative;
-    }
-    .shop-featured::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -20%;
-      width: 500px;
-      height: 500px;
-      border-radius: 50%;
-      background: rgba(204, 0, 0, 0.08);
-    }
-    .featured-text {
-      position: relative;
-      z-index: 2;
-    }
-    .featured-text .shop-badge {
-      background: rgba(204, 0, 0, 0.9);
-    }
-    .featured-text h2 {
+    .shop-status h3 {
       font-family: 'Oswald', sans-serif;
-      font-size: 2.4rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 16px;
-      line-height: 1.2;
+      font-size: 1.5rem;
+      color: #444;
+      margin-bottom: 10px;
     }
-    .featured-text p {
-      color: rgba(255,255,255,0.75);
-      font-size: 1.05rem;
-      line-height: 1.7;
-      margin-bottom: 24px;
+    .shop-spinner {
+      width: 42px; height: 42px;
+      margin: 0 auto 20px;
+      border: 4px solid #eee;
+      border-top-color: #cc0000;
+      border-radius: 50%;
+      animation: tdoSpin 0.8s linear infinite;
     }
-    .featured-image {
-      position: relative;
-      z-index: 2;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #444;
-      aspect-ratio: 4 / 3;
+    @keyframes tdoSpin { to { transform: rotate(360deg); } }
+    .shop-skeleton {
+      background: linear-gradient(90deg,#f2f2f2 25%,#e9e9e9 37%,#f2f2f2 63%);
+      background-size: 400% 100%;
+      animation: tdoShimmer 1.4s ease infinite;
     }
-    .featured-image svg {
-      width: 100%;
-      height: 100%;
+    @keyframes tdoShimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    /* ─── Product Modal ─── */
+    .product-modal[hidden] { display: none; }
+    .product-modal {
+      position: fixed; inset: 0; z-index: 1400;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .pm-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
+    .pm-dialog {
+      position: relative; z-index: 2;
+      background: #fff; border-radius: 14px; overflow: hidden;
+      width: 860px; max-width: 100%;
+      /* Fixed height so EVERY product's modal is identical and sized to fit the
+         product with the most options (the mugs, ~9 color swatches + size) with
+         no scrolling. Capped at 90vh for short viewports. */
+      height: 620px; max-height: 90vh;
+      display: grid; grid-template-columns: 1fr 1fr; align-items: stretch;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    .pm-close {
+      position: absolute; top: 12px; right: 14px; z-index: 5;
+      background: rgba(255,255,255,0.9); border: none; width: 34px; height: 34px;
+      border-radius: 50%; font-size: 1.4rem; line-height: 1; color: #444; cursor: pointer;
+    }
+    .pm-close:hover { background: #fff; color: #cc0000; }
+    /* Media column can be taller than the square image now that the dialog has a
+       fixed height — center the image + thumbnails so it isn't top-heavy. */
+    .pm-media { background: #fff; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+    .pm-main { position: relative; aspect-ratio: 1 / 1; background: #f0f0f0; flex: 0 0 auto; }
+    .pm-main img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+    /* Magnifier hint so users know the image opens larger. */
+    .pm-zoom-badge {
+      position: absolute; bottom: 10px; right: 10px; z-index: 2; pointer-events: none;
+      width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pm-zoom-badge svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .pm-nav {
+      position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 36px;
+      border-radius: 50%; border: none; background: rgba(255,255,255,0.85); color: #333;
+      font-size: 1.5rem; line-height: 1; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; z-index: 3;
+    }
+    .pm-nav:hover { background: #fff; color: #cc0000; }
+    .pm-nav.prev { left: 10px; }
+    .pm-nav.next { right: 10px; }
+    .pm-thumbs { display: flex; gap: 8px; padding: 10px; overflow-x: auto; background: #fff; }
+    .pm-thumb {
+      width: 56px; height: 56px; flex: 0 0 auto; border-radius: 6px; overflow: hidden;
+      border: 2px solid transparent; cursor: pointer; background: #f2f2f2; padding: 0;
+    }
+    .pm-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pm-thumb.active { border-color: #cc0000; }
+    /* The details column's inner content is absolutely positioned so it does NOT
+       add to the modal's height — the modal is sized by the (always square) image,
+       so every product's modal is the same size. Long option lists scroll here. */
+    .pm-details { position: relative; min-width: 0; }
+    .pm-details-inner {
+      position: absolute; inset: 0; overflow-y: auto; padding: 34px 34px 0;
+      display: flex; flex-direction: column;
+    }
+    /* Qty + Add to Cart pinned to the bottom so the CTA is always visible even when
+       a product has many options (the options scroll above it). */
+    .pm-cta {
+      position: sticky; bottom: 0; margin-top: auto; background: #fff;
+      padding: 14px 0 26px; border-top: 1px solid #f0f0f0;
+    }
+    .pm-details h2 {
+      font-family: 'Oswald', sans-serif; font-size: 1.7rem; font-weight: 700;
+      color: #222; margin-bottom: 8px; line-height: 1.15;
+    }
+    .pm-price {
+      font-family: 'Oswald', sans-serif; font-size: 1.6rem; font-weight: 700;
+      color: #cc0000; margin-bottom: 16px;
+    }
+    /* "More info" link in the details column. */
+    .pm-moreinfo {
+      background: none; border: none; padding: 0; margin: -6px 0 18px;
+      color: #cc0000; font-family: 'Oswald', sans-serif; font-weight: 500;
+      font-size: 0.88rem; letter-spacing: 0.5px; cursor: pointer; text-decoration: underline;
+    }
+    .pm-moreinfo:hover { color: #a00; }
+
+    /* Rich-text body (used inside the "More info" popup). */
+    .pm-desc { font-size: 0.92rem; color: #555; line-height: 1.6; }
+    .pm-desc p { margin-bottom: 10px; }
+    .pm-desc ul, .pm-desc ol { margin: 6px 0 12px; padding-left: 20px; }
+    .pm-desc li { margin-bottom: 5px; }
+    .pm-desc strong, .pm-desc b { color: #333; font-weight: 600; }
+    .pm-desc h3, .pm-desc h4, .pm-desc h5 { font-family: 'Oswald', sans-serif; color: #222; margin: 14px 0 6px; font-size: 1rem; }
+    .pm-desc :first-child { margin-top: 0; }
+    .pm-desc :last-child { margin-bottom: 0; }
+
+    /* "More info" popup (sits above the product modal). */
+    .info-modal[hidden] { display: none; }
+    .info-modal {
+      position: fixed; inset: 0; z-index: 1500;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .info-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.55); }
+    .info-dialog {
+      position: relative; z-index: 2; background: #fff; border-radius: 14px;
+      width: 560px; max-width: 100%; max-height: 85vh; overflow-y: auto;
+      padding: 30px 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    .info-close {
+      position: absolute; top: 12px; right: 14px; background: none; border: none;
+      font-size: 1.6rem; line-height: 1; color: #888; cursor: pointer;
+    }
+    .info-close:hover { color: #cc0000; }
+    .info-dialog h3 {
+      font-family: 'Oswald', sans-serif; font-size: 1.4rem; font-weight: 700;
+      color: #222; margin-bottom: 14px; padding-right: 30px;
+    }
+    .info-shipping { margin-top: 20px; padding-top: 18px; border-top: 1px solid #eee; }
+    .info-shipping h4 {
+      font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 600;
+      color: #222; margin-bottom: 8px; letter-spacing: 0.5px;
+    }
+    .info-shipping p { font-size: 0.9rem; color: #555; line-height: 1.6; margin-bottom: 8px; }
+    .info-shipping p:last-child { margin-bottom: 0; }
+    .info-shipping strong { color: #333; }
+    .pm-optgroup { margin-bottom: 20px; }
+    .pm-optgroup > label {
+      display: block; font-family: 'Oswald', sans-serif; font-weight: 600;
+      font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase;
+      color: #333; margin-bottom: 10px;
+    }
+    .pm-optgroup > label .pm-optval { color: #888; font-weight: 400; text-transform: none; letter-spacing: 0; }
+    .pm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pm-chip {
+      padding: 8px 16px; border: 1.5px solid #ddd; border-radius: 6px; background: #fff;
+      font-size: 0.88rem; font-weight: 500; color: #444; cursor: pointer; transition: all 0.15s;
+    }
+    .pm-chip:hover { border-color: #cc0000; }
+    .pm-chip.selected { border-color: #cc0000; background: #fff5f5; color: #cc0000; }
+    .pm-chip.unavailable { opacity: 0.35; text-decoration: line-through; cursor: not-allowed; }
+    .pm-swatch {
+      width: 34px; height: 34px; border-radius: 50%; padding: 0; border: 2px solid #ddd;
+      position: relative; cursor: pointer;
+    }
+    .pm-swatch.selected { border-color: #cc0000; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #cc0000; }
+    .pm-swatch.unavailable { opacity: 0.35; cursor: not-allowed; }
+    .pm-qtyrow { display: flex; align-items: center; gap: 14px; margin: 6px 0 24px; }
+    .pm-qtyrow label { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; color: #333; }
+    .pm-qty { display: inline-flex; align-items: center; border: 1.5px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .pm-qty button { width: 34px; height: 36px; border: none; background: #fafafa; font-size: 1.1rem; cursor: pointer; color: #333; }
+    .pm-qty button:hover { background: #f0f0f0; }
+    .pm-qty span { min-width: 40px; text-align: center; font-weight: 600; }
+    .pm-add {
+      display: block; width: 100%; padding: 15px; background: #cc0000; color: #fff; border: none;
+      border-radius: 6px; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    }
+    .pm-add:hover { background: #a00; }
+    .pm-add[disabled] { background: #ccc; cursor: not-allowed; }
+    .pm-err { color: #cc0000; font-size: 0.85rem; margin-top: 12px; min-height: 1em; }
+
+    /* ─── Image zoom lightbox (opens on top of the product modal) ─── */
+    .pm-lightbox[hidden] { display: none; }
+    .pm-lightbox {
+      position: fixed; inset: 0; z-index: 1600;
+      background: rgba(0,0,0,0.9);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pm-lb-stage {
+      position: relative; width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .pm-lb-img {
+      max-width: 92vw; max-height: 88vh; object-fit: contain; display: block;
+      user-select: none; -webkit-user-drag: none; cursor: zoom-in;
+      transition: transform 0.12s ease; will-change: transform;
+    }
+    .pm-lb-img.zoomed { cursor: zoom-out; transition: none; }
+    .pm-lb-close {
+      position: absolute; top: 18px; right: 22px; z-index: 5;
+      background: rgba(255,255,255,0.15); border: none; color: #fff;
+      width: 44px; height: 44px; border-radius: 50%; font-size: 1.9rem; line-height: 1; cursor: pointer;
+    }
+    .pm-lb-close:hover { background: rgba(255,255,255,0.32); }
+    .pm-lb-nav {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+      width: 52px; height: 52px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.15); color: #fff; font-size: 2rem; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pm-lb-nav:hover { background: rgba(255,255,255,0.32); }
+    .pm-lb-nav.prev { left: 22px; }
+    .pm-lb-nav.next { right: 22px; }
+    .pm-lb-count {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 5;
+      color: #fff; font-size: 0.85rem; letter-spacing: 1px;
+      background: rgba(0,0,0,0.4); padding: 5px 13px; border-radius: 14px;
+    }
+    @media (max-width: 900px) {
+      .pm-lb-nav { width: 42px; height: 42px; font-size: 1.6rem; }
+      .pm-lb-nav.prev { left: 8px; } .pm-lb-nav.next { right: 8px; }
+      .pm-lb-close { top: 12px; right: 12px; }
     }
 
     /* ─── Info Strip ─── */
@@ -272,71 +395,27 @@
       padding: 48px 0 64px;
       text-align: center;
     }
-    .info-item {
-      padding: 24px;
-    }
+    .info-item { padding: 24px; }
     .info-icon {
-      width: 48px;
-      height: 48px;
-      margin: 0 auto 16px;
-      background: #fff5f5;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 48px; height: 48px; margin: 0 auto 16px;
+      background: #fff5f5; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
     }
-    .info-icon svg {
-      width: 24px;
-      height: 24px;
-      stroke: #cc0000;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .info-item h4 {
-      font-family: 'Oswald', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #222;
-      margin-bottom: 8px;
-    }
-    .info-item p {
-      font-size: 0.9rem;
-      color: #777;
-      line-height: 1.6;
-    }
-
-    /* ─── Coming Soon Overlay ─── */
-    .coming-soon-section {
-      text-align: center;
-      padding: 40px 0 0;
-    }
-    .coming-soon-section p {
-      color: #999;
-      font-size: 0.95rem;
-    }
+    .info-icon svg { width: 24px; height: 24px; stroke: #cc0000; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .info-item h4 { font-family: 'Oswald', sans-serif; font-size: 1.1rem; font-weight: 600; color: #222; margin-bottom: 8px; }
+    .info-item p { font-size: 0.9rem; color: #777; line-height: 1.6; }
 
     @media (max-width: 900px) {
-      .shop-featured {
-        grid-template-columns: 1fr;
-        padding: 40px 28px;
-        gap: 32px;
-      }
-      .featured-text h2 {
-        font-size: 1.8rem;
-      }
-      .shop-grid {
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 20px;
-      }
-      .shop-info-strip {
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-      .shop-intro h2 {
-        font-size: 2.2rem;
-      }
+      .shop-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+      .shop-info-strip { grid-template-columns: 1fr; gap: 16px; }
+      .shop-intro h2 { font-size: 2.2rem; }
+      .pm-dialog { grid-template-columns: 1fr; height: auto; max-height: 92vh; overflow-y: auto; }
+      .pm-media { max-height: none; overflow: visible; justify-content: flex-start; }
+      .pm-thumb { width: 48px; height: 48px; }
+      /* On mobile the whole dialog scrolls, so put details back in normal flow. */
+      .pm-details { position: static; }
+      .pm-details-inner { position: static; overflow: visible; padding: 24px; display: block; }
+      .pm-cta { position: static; margin-top: 0; border-top: none; padding: 0; }
     }
   </style>
 
@@ -344,12 +423,12 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.tourdeoregon.com/shop/">
   <meta property="og:title" content="Shop | Oregon Tour de Outback">
-  <meta property="og:description" content="Shop official Oregon Tour de Outback gear and merchandise.">
+  <meta property="og:description" content="Shop official Oregon Tour de Outback gear and apparel.">
   <meta property="og:image" content="https://www.tourdeoregon.com/images/hero-road.jpg">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Shop | Oregon Tour de Outback">
-  <meta name="twitter:description" content="Shop official Oregon Tour de Outback gear and merchandise.">
+  <meta name="twitter:description" content="Shop official Oregon Tour de Outback gear and apparel.">
   <meta name="twitter:image" content="https://www.tourdeoregon.com/images/hero-road.jpg">
   <!-- Breadcrumb Schema.org -->
   <script type="application/ld+json">
@@ -357,18 +436,8 @@
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://www.tourdeoregon.com/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Shop",
-        "item": "https://www.tourdeoregon.com/shop/"
-      }
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.tourdeoregon.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Shop", "item": "https://www.tourdeoregon.com/shop/" }
     ]
   }
   </script>
@@ -385,14 +454,15 @@
         <a href="/routes/">Routes</a>
         <a href="/schedule/">Schedule</a>
         <a href="/about/">About</a>
-        <!-- <a href="/shop/">Shop</a> -->
-        <a href="/volunteer/">Volunteer</a>
+        <a href="/shop/" class="active">Shop</a>
         <a href="/blog/">Blog</a>
-        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="/donate/">Donate</a>
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
       <div class="weather-widget" id="weather-widget"></div>
-      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);var w=document.getElementById('weather-widget');if(w){var h='<span class="weather-current" role="button" tabindex="0"><span class="weather-main"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>';if(d.windSpeed!==undefined&&d.windSpeed!==null&&d.windDir!==null){h+='<span class="weather-wind"><svg class="wind-compass-svg" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><text x="25" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.7)" font-family="sans-serif">N</text><text x="25" y="46" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">S</text><text x="5" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">W</text><text x="45" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">E</text><g transform="rotate('+d.windDir+' 25 25)"><polygon points="25,3 22,14 25,12 28,14" fill="#cc0000"/></g><text x="25" y="29" text-anchor="middle" font-size="13" font-weight="700" fill="rgba(255,255,255,0.9)" font-family="sans-serif">'+d.windSpeed+'</text></svg>';if(d.windGusts)h+='<span class="wind-gusts">Gusts '+d.windGusts+' mph</span>';h+='</span>'}h+='<span class="weather-arrow">▾</span></span><div class="forecast-dropdown"></div>';w.innerHTML=h}}}()</script>
+      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);var w=document.getElementById('weather-widget');if(w){var h='<span class="weather-current" role="button" tabindex="0"><span class="weather-main"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>';h+='<span class="weather-arrow">▾</span></span><div class="forecast-dropdown"></div>';w.innerHTML=h}}}()</script>
+        <div class="tdo-auth"><button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg></button><div class="tdo-menu" id="tdo-menu" role="menu"></div></div>
+        <div class="tdo-cart-slot"><button class="tdo-cart-nav" type="button" aria-label="Open cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="tdo-cart-badge" hidden>0</span></button></div>
     </div>
   </nav>
 
@@ -401,7 +471,7 @@
     <div class="hero-bg" style="background-image: url('../images/hero-road.jpg'); background-color: #4a6741;"></div>
     <div class="hero-content">
       <h1>Shop</h1>
-      <p class="tagline">Official gear for the ride of a lifetime</p>
+      <p class="tagline">Every purchase helps Tour de Outback &amp; the Lake County Search and Rescue</p>
     </div>
   </section>
 
@@ -410,270 +480,27 @@
   <!-- Intro -->
   <section class="shop-intro">
     <div class="container">
-      <span class="shop-badge">2027 Collection</span>
-      <h2>Official Tour de Outback Gear</h2>
-      <p>Gear up for the ride with official Tour de Outback merchandise. From performance jerseys to casual wear, ride in style through Oregon's stunning outback.</p>
-    </div>
-  </section>
-
-  <!-- Category Tabs -->
-  <section>
-    <div class="container">
-      <div class="shop-categories">
-        <button class="shop-tab active" onclick="filterShop('all', this)">All</button>
-        <button class="shop-tab" onclick="filterShop('apparel', this)">Apparel</button>
-        <button class="shop-tab" onclick="filterShop('accessories', this)">Accessories</button>
-        <button class="shop-tab" onclick="filterShop('nutrition', this)">Nutrition</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Featured Item Banner -->
-  <section>
-    <div class="container">
-      <div class="shop-featured">
-        <div class="featured-text">
-          <span class="shop-badge">Featured</span>
-          <h2>2027 Official Cycling Jersey</h2>
-          <p>Our flagship jersey featuring the iconic Tour de Outback desert landscape design. Made with moisture-wicking fabric for all-day comfort on Oregon's open roads.</p>
-          <a href="#jersey" class="product-btn" style="padding: 12px 36px; font-size: 1rem;">Shop Now &rarr;</a>
-        </div>
-        <div class="featured-image">
-          <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <rect width="400" height="300" fill="#2a2a2a"/>
-            <rect x="120" y="40" width="160" height="200" rx="8" fill="#cc0000" opacity="0.9"/>
-            <path d="M120 80 L80 100 L80 160 L120 150 Z" fill="#b00000"/>
-            <path d="M280 80 L320 100 L320 160 L280 150 Z" fill="#b00000"/>
-            <circle cx="200" cy="110" r="25" fill="none" stroke="#fff" stroke-width="2"/>
-            <text x="200" y="160" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="11" font-weight="600" letter-spacing="2">TOUR DE OUTBACK</text>
-            <text x="200" y="178" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-family="Oswald" font-size="9" letter-spacing="1">2027</text>
-            <path d="M150 200 Q200 230 250 200" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-            <text x="200" y="275" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="Open Sans" font-size="10">Preview — Final design coming soon</text>
-          </svg>
-        </div>
-      </div>
+      <span class="shop-badge">Official Merch</span>
+      <h2>Tour de Outback Gear</h2>
     </div>
   </section>
 
   <!-- Product Grid -->
   <section>
     <div class="container">
-      <div class="shop-grid" id="shopGrid">
-
-        <!-- Product 1: Jersey -->
-        <div class="product-card" data-category="apparel" id="jersey">
-          <div class="product-image">
-            <span class="product-tag">Best Seller</span>
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#f5f0eb"/>
-              <rect x="90" y="50" width="120" height="170" rx="6" fill="#cc0000"/>
-              <path d="M90 80 L55 95 L55 145 L90 135 Z" fill="#a80000"/>
-              <path d="M210 80 L245 95 L245 145 L210 135 Z" fill="#a80000"/>
-              <circle cx="150" cy="100" r="18" fill="none" stroke="#fff" stroke-width="1.5"/>
-              <text x="150" y="140" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="8" font-weight="500" letter-spacing="1.5">TOUR DE OUTBACK</text>
-              <text x="150" y="270" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">Official Cycling Jersey</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>Official Cycling Jersey</h3>
-            <p class="product-desc">Moisture-wicking performance fabric with full-zip front</p>
-            <div class="product-sizes">
-              <span class="size-chip">XS</span>
-              <span class="size-chip">S</span>
-              <span class="size-chip">M</span>
-              <span class="size-chip">L</span>
-              <span class="size-chip">XL</span>
-              <span class="size-chip">2XL</span>
-            </div>
-            <div class="product-price-row">
-              <span class="product-price">$75</span>
-              <a href="https://www.bikereg.com/tour-de-outback" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product 2: T-Shirt -->
-        <div class="product-card" data-category="apparel">
-          <div class="product-image">
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#f0f0f0"/>
-              <rect x="95" y="55" width="110" height="160" rx="6" fill="#333"/>
-              <path d="M95 80 L65 93 L65 130 L95 122 Z" fill="#2a2a2a"/>
-              <path d="M205 80 L235 93 L235 130 L205 122 Z" fill="#2a2a2a"/>
-              <text x="150" y="130" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="10" font-weight="700" letter-spacing="1">TDO</text>
-              <text x="150" y="148" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-family="Oswald" font-size="7" letter-spacing="1">2027</text>
-              <text x="150" y="270" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">Event T-Shirt</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>Event T-Shirt</h3>
-            <p class="product-desc">Soft tri-blend tee with front logo and back route map</p>
-            <div class="product-sizes">
-              <span class="size-chip">S</span>
-              <span class="size-chip">M</span>
-              <span class="size-chip">L</span>
-              <span class="size-chip">XL</span>
-              <span class="size-chip">2XL</span>
-            </div>
-            <div class="product-price-row">
-              <span class="product-price">$30</span>
-              <a href="https://www.bikereg.com/tour-de-outback" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product 3: Cycling Cap -->
-        <div class="product-card" data-category="accessories">
-          <div class="product-image">
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#faf6f1"/>
-              <ellipse cx="150" cy="170" rx="70" ry="25" fill="#b00000"/>
-              <path d="M80 170 Q80 110 150 100 Q220 110 220 170" fill="#cc0000"/>
-              <rect x="80" y="165" width="90" height="12" rx="2" fill="#8a0000" transform="rotate(-5, 80, 170)"/>
-              <text x="150" y="145" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="9" font-weight="600" letter-spacing="2">OUTBACK</text>
-              <text x="150" y="270" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">Cycling Cap</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>Cycling Cap</h3>
-            <p class="product-desc">Classic cotton cycling cap with embroidered logo</p>
-            <div class="product-price-row">
-              <span class="product-price">$22</span>
-              <a href="https://www.bikereg.com/tour-de-outback" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product 4: Water Bottle -->
-        <div class="product-card" data-category="accessories">
-          <div class="product-image">
-            <span class="product-tag">New</span>
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#f2f2f2"/>
-              <rect x="125" y="40" width="50" height="20" rx="3" fill="#ddd"/>
-              <rect x="115" y="60" width="70" height="190" rx="12" fill="#fff" stroke="#cc0000" stroke-width="2.5"/>
-              <text x="150" y="140" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="8" font-weight="700" letter-spacing="2" transform="rotate(-90, 150, 140)">TOUR DE OUTBACK</text>
-              <line x1="115" y1="200" x2="185" y2="200" stroke="#cc0000" stroke-width="0.5" opacity="0.3"/>
-              <text x="150" y="225" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="7" letter-spacing="1">2027</text>
-              <text x="150" y="275" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">Insulated Water Bottle</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>Insulated Water Bottle</h3>
-            <p class="product-desc">24oz double-wall insulated, keeps drinks cold for hours</p>
-            <div class="product-price-row">
-              <span class="product-price">$18</span>
-              <a href="https://www.bikereg.com/tour-de-outback" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product 5: Arm Warmers -->
-        <div class="product-card" data-category="apparel">
-          <div class="product-image">
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#f5f5f5"/>
-              <rect x="90" y="60" width="40" height="180" rx="20" fill="#222"/>
-              <rect x="170" y="60" width="40" height="180" rx="20" fill="#222"/>
-              <text x="110" y="155" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="6" font-weight="600" letter-spacing="1" transform="rotate(-90, 110, 155)">TOUR DE OUTBACK</text>
-              <text x="190" y="155" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="6" font-weight="600" letter-spacing="1" transform="rotate(-90, 190, 155)">TOUR DE OUTBACK</text>
-              <text x="150" y="270" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">Arm Warmers</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>Arm Warmers</h3>
-            <p class="product-desc">Thermal fleece-lined arm warmers for cool morning starts</p>
-            <div class="product-sizes">
-              <span class="size-chip">S/M</span>
-              <span class="size-chip">L/XL</span>
-            </div>
-            <div class="product-price-row">
-              <span class="product-price">$28</span>
-              <a href="https://www.bikereg.com/tour-de-outback" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product 6: Hammer Nutrition Pack -->
-        <div class="product-card" data-category="nutrition">
-          <div class="product-image">
-            <span class="product-tag">Partner</span>
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#fff8e1"/>
-              <rect x="70" y="70" width="60" height="120" rx="6" fill="#f4a700"/>
-              <rect x="120" y="85" width="60" height="120" rx="6" fill="#e08600"/>
-              <rect x="170" y="70" width="60" height="120" rx="6" fill="#c66900"/>
-              <text x="100" y="140" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="6" font-weight="600">HEED</text>
-              <text x="150" y="155" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="6" font-weight="600">GEL</text>
-              <text x="200" y="140" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="6" font-weight="600">FIZZ</text>
-              <text x="150" y="230" text-anchor="middle" fill="#666" font-family="Oswald" font-size="9" font-weight="500">HAMMER NUTRITION</text>
-              <text x="150" y="270" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">TDO Nutrition Pack</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>TDO Nutrition Pack</h3>
-            <p class="product-desc">Curated Hammer Nutrition pack for your ride day fuel</p>
-            <div class="product-price-row">
-              <span class="product-price">$35</span>
-              <a href="https://hammernutrition.com/?srsltid=AfmBOopMR7znlrPTbULF2SmDeBqkIbMtgJRaPK7GLbqqVmUj7lsSfjBU" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product 7: Socks -->
-        <div class="product-card" data-category="apparel">
-          <div class="product-image">
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#f8f8f8"/>
-              <path d="M105 60 L105 180 Q105 220 130 230 L170 230 Q195 220 195 180 L195 60" fill="#fff" stroke="#cc0000" stroke-width="2"/>
-              <line x1="105" y1="90" x2="195" y2="90" stroke="#cc0000" stroke-width="4"/>
-              <line x1="105" y1="98" x2="195" y2="98" stroke="#222" stroke-width="2"/>
-              <line x1="105" y1="104" x2="195" y2="104" stroke="#cc0000" stroke-width="4"/>
-              <text x="150" y="160" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="8" font-weight="600" letter-spacing="1.5">TDO</text>
-              <text x="150" y="270" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">Cycling Socks</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>Cycling Socks</h3>
-            <p class="product-desc">6" cuff performance socks with arch support</p>
-            <div class="product-sizes">
-              <span class="size-chip">S/M</span>
-              <span class="size-chip">L/XL</span>
-            </div>
-            <div class="product-price-row">
-              <span class="product-price">$16</span>
-              <a href="https://www.bikereg.com/tour-de-outback" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Product 8: Sticker Pack -->
-        <div class="product-card" data-category="accessories">
-          <div class="product-image">
-            <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-              <rect width="300" height="300" fill="#f5f5f5"/>
-              <circle cx="120" cy="120" r="40" fill="#cc0000" opacity="0.9"/>
-              <text x="120" y="117" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="7" font-weight="600">TOUR DE</text>
-              <text x="120" y="129" text-anchor="middle" fill="#fff" font-family="Oswald" font-size="7" font-weight="600">OUTBACK</text>
-              <rect x="170" y="90" width="70" height="45" rx="4" fill="#222"/>
-              <text x="205" y="117" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="8" font-weight="700">TDO 2027</text>
-              <circle cx="150" cy="200" r="35" fill="none" stroke="#cc0000" stroke-width="2"/>
-              <text x="150" y="197" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="6" font-weight="600">LAKEVIEW</text>
-              <text x="150" y="209" text-anchor="middle" fill="#cc0000" font-family="Oswald" font-size="6" font-weight="600">OREGON</text>
-              <text x="150" y="275" text-anchor="middle" fill="#999" font-family="Open Sans" font-size="9">Sticker Pack</text>
-            </svg>
-          </div>
-          <div class="product-info">
-            <h3>Sticker Pack</h3>
-            <p class="product-desc">Set of 5 die-cut vinyl stickers for bikes, bottles, and laptops</p>
-            <div class="product-price-row">
-              <span class="product-price">$8</span>
-              <a href="https://www.bikereg.com/tour-de-outback" target="_blank" class="product-btn">Buy Now</a>
-            </div>
-          </div>
-        </div>
-
+      <div class="shop-status" id="shopStatus">
+        <div class="shop-spinner"></div>
+        <p>Loading the shop…</p>
       </div>
+      <div class="shop-grid" id="shopGrid" hidden></div>
+    </div>
+  </section>
+
+  <!-- Shop copy (below the items) -->
+  <section class="shop-intro shop-copy">
+    <div class="container">
+      <p>Gear up for the ride with official Tour de Outback apparel — and every purchase helps support Lake County Search and Rescue.</p>
+      <p>Every item is printed on demand and ships straight to your door. In-person pickup at event check-in is coming soon — once registration opens, you'll be able to skip shipping and grab your gear when you collect your ride packet.</p>
     </div>
   </section>
 
@@ -683,24 +510,24 @@
       <div class="shop-info-strip">
         <div class="info-item">
           <div class="info-icon">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
           </div>
-          <h4>Free Shipping</h4>
-          <p>Free shipping on all orders over $50 within the US</p>
+          <h4>Ship It or Pick It Up</h4>
+          <p>Have your gear shipped straight to your door, or grab it at event check-in — pickup available once registration opens.</p>
         </div>
         <div class="info-item">
           <div class="info-icon">
             <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
           </div>
           <h4>Ride for a Cause</h4>
-          <p>Proceeds support Lake County Search and Rescue</p>
+          <p>Proceeds support Lake County Search and Rescue.</p>
         </div>
         <div class="info-item">
           <div class="info-icon">
-            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21l2.3-7.4-6-4.6h7.6z"/></svg>
           </div>
-          <h4>Pickup at Event</h4>
-          <p>Order online, pick up at packet check-in on June 25-26</p>
+          <h4>Official Designs</h4>
+          <p>Officially licensed Tour de Outback artwork you won't find anywhere else.</p>
         </div>
       </div>
     </div>
@@ -717,6 +544,66 @@
 
   </div><!-- /.page-content -->
 
+  <!-- Product Modal -->
+  <div class="product-modal" id="productModal" hidden>
+    <div class="pm-overlay" data-close></div>
+    <div class="pm-dialog" role="dialog" aria-modal="true" aria-label="Product details">
+      <button class="pm-close" type="button" data-close aria-label="Close">&times;</button>
+      <div class="pm-media">
+        <div class="pm-main">
+          <button class="pm-nav prev" type="button" id="pmPrev" aria-label="Previous image">&lsaquo;</button>
+          <img id="pmImage" src="" alt="">
+          <span class="pm-zoom-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          </span>
+          <button class="pm-nav next" type="button" id="pmNext" aria-label="Next image">&rsaquo;</button>
+        </div>
+        <div class="pm-thumbs" id="pmThumbs"></div>
+      </div>
+      <div class="pm-details">
+        <div class="pm-details-inner">
+          <h2 id="pmTitle"></h2>
+          <div class="pm-price" id="pmPrice"></div>
+          <button type="button" class="pm-moreinfo" id="pmMoreInfo" hidden>Product details &amp; care &rarr;</button>
+          <div id="pmOptions"></div>
+          <div class="pm-cta">
+            <div class="pm-qtyrow">
+              <label>Qty</label>
+              <div class="pm-qty">
+                <button type="button" id="pmQtyDec" aria-label="Decrease">&minus;</button>
+                <span id="pmQty">1</span>
+                <button type="button" id="pmQtyInc" aria-label="Increase">+</button>
+              </div>
+            </div>
+            <button class="pm-add" id="pmAdd" type="button">Add to Cart</button>
+            <p class="pm-err" id="pmErr"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image zoom lightbox — large view on top of the product modal -->
+  <div class="pm-lightbox" id="pmLightbox" hidden>
+    <button class="pm-lb-close" type="button" id="pmLbClose" aria-label="Close">&times;</button>
+    <button class="pm-lb-nav prev" type="button" id="pmLbPrev" aria-label="Previous image">&lsaquo;</button>
+    <div class="pm-lb-stage" id="pmLbStage">
+      <img class="pm-lb-img" id="pmLbImage" src="" alt="" draggable="false">
+    </div>
+    <button class="pm-lb-nav next" type="button" id="pmLbNext" aria-label="Next image">&rsaquo;</button>
+    <div class="pm-lb-count" id="pmLbCount"></div>
+  </div>
+
+  <!-- Product "More info" popup — full spec / care sheet (rich text) -->
+  <div class="info-modal" id="infoModal" hidden>
+    <div class="info-overlay" data-infoclose></div>
+    <div class="info-dialog" role="dialog" aria-modal="true" aria-label="Product details">
+      <button class="info-close" type="button" data-infoclose aria-label="Close">&times;</button>
+      <h3 id="infoTitle"></h3>
+      <div class="pm-desc info-body" id="infoBody"></div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
@@ -732,10 +619,9 @@
             <li><a href="/routes/">Routes</a></li>
             <li><a href="/schedule/">Schedule</a></li>
             <li><a href="/about/">About</a></li>
-            <!-- <li><a href="/shop/">Shop</a></li> -->
+            <li><a href="/shop/">Shop</a></li>
             <li><a href="/volunteer/">Volunteer</a></li>
             <li><a href="/blog/">Blog</a></li>
-            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
             <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
           </ul>
         </div>
@@ -756,31 +642,371 @@
   </footer>
 
   <script src="../js/main.min.js"></script>
+  <script src="../js/shop.js?v=8"></script>
   <script>
-    // Shop filtering
-    function filterShop(category, btn) {
-      const cards = document.querySelectorAll('.product-card');
-      const tabs = document.querySelectorAll('.shop-tab');
+    // ─── Storefront: fetch the live Printify catalog and render it ───
+    (function () {
+      var statusEl = document.getElementById('shopStatus');
+      var gridEl = document.getElementById('shopGrid');
+      var PRODUCTS = [];
 
-      tabs.forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
+      function money(c) { return window.TDOShop.money(c); }
+      function esc(s) { return window.TDOShop.esc(s); }
 
-      cards.forEach(card => {
-        if (category === 'all' || card.dataset.category === category) {
-          card.style.display = '';
-          card.style.animation = 'fadeIn 0.4s ease';
-        } else {
-          card.style.display = 'none';
+      // Images with the Printify default mockup first, then the rest in order.
+      function sortedImages(p) {
+        return (p.images || []).slice().sort(function (a, b) {
+          return (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0);
+        });
+      }
+      function defaultImage(p) { var s = sortedImages(p); return (s[0] && s[0].src) || ''; }
+
+      // Set of option-value ids that appear in at least one in-stock variant, so we
+      // only show colors/sizes that are actually offered (hide the rest entirely).
+      function availableValueIds(product) {
+        var set = Object.create(null);
+        (product.variants || []).forEach(function (v) {
+          if (v.available !== false) (v.options || []).forEach(function (id) { set[id] = true; });
+        });
+        return set;
+      }
+
+      function showStatus(html) { statusEl.hidden = false; statusEl.innerHTML = html; gridEl.hidden = true; }
+
+      function renderGrid() {
+        if (!PRODUCTS.length) {
+          showStatus('<h3>The shop is opening soon</h3><p>Our official gear is on its way — check back shortly.</p>');
+          return;
         }
-      });
-    }
+        statusEl.hidden = true;
+        gridEl.hidden = false;
+        gridEl.innerHTML = PRODUCTS.map(function (p, idx) {
+          var img = defaultImage(p);
+          var priceLabel = p.priceFrom != null
+            ? (p.variants.length > 1 ? '<small>from</small> ' + money(p.priceFrom) : money(p.priceFrom))
+            : '';
+          return '<div class="product-card" data-idx="' + idx + '">' +
+            '<div class="product-image">' + (img ? '<img src="' + esc(img) + '" alt="' + esc(p.title) + '" loading="lazy">' : '') + '</div>' +
+            '<div class="product-info">' +
+            '<h3>' + esc(p.title) + '</h3>' +
+            '<div class="product-price-row"><span class="product-price">' + priceLabel + '</span>' +
+            '<button class="product-btn" type="button">' + (p.variants.length > 1 ? 'Choose Options' : 'View') + '</button></div>' +
+            '</div></div>';
+        }).join('');
+        Array.prototype.forEach.call(gridEl.querySelectorAll('.product-card'), function (card) {
+          card.addEventListener('click', function () { openModal(PRODUCTS[+card.getAttribute('data-idx')]); });
+        });
+      }
 
-    // Fade-in animation
-    const style = document.createElement('style');
-    style.textContent = '@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }';
-    document.head.appendChild(style);
+      // ─── Product modal + variant selection ───
+      var modal = document.getElementById('productModal');
+      var pmImage = document.getElementById('pmImage');
+      var pmTitle = document.getElementById('pmTitle');
+      var pmPrice = document.getElementById('pmPrice');
+      var pmOptions = document.getElementById('pmOptions');
+      var pmQty = document.getElementById('pmQty');
+      var pmAdd = document.getElementById('pmAdd');
+      var pmErr = document.getElementById('pmErr');
+      var pmThumbs = document.getElementById('pmThumbs');
+      var pmPrev = document.getElementById('pmPrev');
+      var pmNext = document.getElementById('pmNext');
+      var pmMoreInfo = document.getElementById('pmMoreInfo');
+      var current = null;   // { product, selected, qty, images, imgIndex }
+
+      // ─── "More info" popup (full spec / care sheet) ───
+      var infoModal = document.getElementById('infoModal');
+      var infoTitle = document.getElementById('infoTitle');
+      var infoBody = document.getElementById('infoBody');
+      function openInfo() {
+        if (!current) return;
+        var p = current.product;
+        infoTitle.textContent = p.title;
+        infoBody.innerHTML = p.descriptionHtml || esc(p.description || '');
+        infoModal.hidden = false;
+      }
+      function closeInfo() { infoModal.hidden = true; }
+      pmMoreInfo.addEventListener('click', openInfo);
+      Array.prototype.forEach.call(infoModal.querySelectorAll('[data-infoclose]'), function (el) {
+        el.addEventListener('click', closeInfo);
+      });
+
+      // ─── Image gallery ───
+      function renderGallery() {
+        var imgs = (current && current.images) || [];
+        if (!imgs.length) { pmImage.removeAttribute('src'); pmThumbs.innerHTML = ''; pmPrev.style.display = pmNext.style.display = 'none'; return; }
+        current.imgIndex = Math.max(0, Math.min(current.imgIndex, imgs.length - 1));
+        pmImage.src = imgs[current.imgIndex].src;
+        pmImage.alt = current.product.title;
+        pmThumbs.innerHTML = imgs.map(function (im, i) {
+          return '<button type="button" class="pm-thumb' + (i === current.imgIndex ? ' active' : '') +
+            '" data-i="' + i + '"><img src="' + esc(im.src) + '" alt="" loading="lazy"></button>';
+        }).join('');
+        Array.prototype.forEach.call(pmThumbs.querySelectorAll('.pm-thumb'), function (t) {
+          t.addEventListener('click', function () { current.imgIndex = +t.getAttribute('data-i'); renderGallery(); });
+        });
+        var multi = imgs.length > 1;
+        pmPrev.style.display = multi ? '' : 'none';
+        pmNext.style.display = multi ? '' : 'none';
+        pmThumbs.style.display = multi ? '' : 'none';
+      }
+      // Jump the gallery to the image tied to a selected variant (e.g. its color mockup).
+      function galleryToVariant(v) {
+        if (!v || !current || !current.images) return;
+        for (var i = 0; i < current.images.length; i++) {
+          if ((current.images[i].variantIds || []).indexOf(v.id) !== -1) { current.imgIndex = i; break; }
+        }
+        renderGallery();
+      }
+      pmPrev.addEventListener('click', function () {
+        var n = current.images.length; if (!n) return;
+        current.imgIndex = (current.imgIndex - 1 + n) % n; renderGallery();
+      });
+      pmNext.addEventListener('click', function () {
+        var n = current.images.length; if (!n) return;
+        current.imgIndex = (current.imgIndex + 1) % n; renderGallery();
+      });
+
+      // ─── Zoom lightbox (large image view on top of the card) ───
+      var lb = document.getElementById('pmLightbox');
+      var lbImage = document.getElementById('pmLbImage');
+      var lbStage = document.getElementById('pmLbStage');
+      var lbCount = document.getElementById('pmLbCount');
+      var lbPrev = document.getElementById('pmLbPrev');
+      var lbNext = document.getElementById('pmLbNext');
+      var LB_ZOOM = 2.4;
+
+      function resetZoom() {
+        lbImage.classList.remove('zoomed');
+        lbImage.style.transform = '';
+      }
+      function renderLightbox() {
+        var imgs = (current && current.images) || [];
+        if (!imgs.length) return;
+        current.imgIndex = Math.max(0, Math.min(current.imgIndex, imgs.length - 1));
+        resetZoom();
+        lbImage.src = imgs[current.imgIndex].src;
+        lbImage.alt = current.product.title;
+        var multi = imgs.length > 1;
+        lbPrev.style.display = multi ? '' : 'none';
+        lbNext.style.display = multi ? '' : 'none';
+        lbCount.style.display = multi ? '' : 'none';
+        lbCount.textContent = (current.imgIndex + 1) + ' / ' + imgs.length;
+      }
+      function openLightbox() {
+        if (!current || !current.images || !current.images.length) return;
+        renderLightbox();
+        lb.hidden = false;
+      }
+      function closeLightbox() {
+        lb.hidden = true;
+        resetZoom();
+        renderGallery();   // keep the card's image in sync with where we navigated
+      }
+      function setZoomOrigin(e) {
+        var r = lbImage.getBoundingClientRect();
+        var x = Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100));
+        var y = Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100));
+        lbImage.style.transformOrigin = x + '% ' + y + '%';
+      }
+
+      pmImage.addEventListener('click', openLightbox);
+      document.getElementById('pmLbClose').addEventListener('click', closeLightbox);
+      lbPrev.addEventListener('click', function () {
+        var n = current.images.length; if (!n) return;
+        current.imgIndex = (current.imgIndex - 1 + n) % n; renderLightbox();
+      });
+      lbNext.addEventListener('click', function () {
+        var n = current.images.length; if (!n) return;
+        current.imgIndex = (current.imgIndex + 1) % n; renderLightbox();
+      });
+      // Click the dark background (not the image) to close.
+      lb.addEventListener('click', function (e) {
+        if (e.target === lb || e.target === lbStage) closeLightbox();
+      });
+      // Click the image to toggle zoom; move the mouse to pan while zoomed.
+      lbImage.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (lbImage.classList.contains('zoomed')) { resetZoom(); return; }
+        lbImage.classList.add('zoomed');
+        setZoomOrigin(e);
+        lbImage.style.transform = 'scale(' + LB_ZOOM + ')';
+      });
+      lbImage.addEventListener('mousemove', function (e) {
+        if (lbImage.classList.contains('zoomed')) setZoomOrigin(e);
+      });
+
+      function variantFor(product, selected) {
+        var chosen = product.options.map(function (o) { return selected[o.name]; });
+        if (chosen.some(function (v) { return v == null; })) return null;
+        return product.variants.filter(function (v) {
+          return chosen.every(function (id) { return v.options.indexOf(id) !== -1; });
+        })[0] || null;
+      }
+
+      // First variant consistent with a PARTIAL selection (e.g. a color chosen but
+      // not yet a size) — used to switch the photo the moment a color is picked.
+      function variantMatchingSelection(product, selected) {
+        var chosen = product.options.map(function (o) { return selected[o.name]; })
+          .filter(function (x) { return x != null; });
+        if (!chosen.length) return null;
+        return product.variants.filter(function (v) {
+          return chosen.every(function (id) { return v.options.indexOf(id) !== -1; });
+        })[0] || null;
+      }
+
+      // Would picking `valueId` for `optName` (keeping other current picks) map to an available variant?
+      function valueAvailable(product, selected, optName, valueId) {
+        var trial = Object.assign({}, selected); trial[optName] = valueId;
+        // Only consider options the user has already chosen (plus this one).
+        var chosen = product.options
+          .map(function (o) { return trial[o.name]; })
+          .filter(function (v) { return v != null; });
+        return product.variants.some(function (v) {
+          return v.available !== false && chosen.every(function (id) { return v.options.indexOf(id) !== -1; });
+        });
+      }
+
+      function imageForVariant(product, variant) {
+        if (variant) {
+          var m = (product.images || []).filter(function (im) { return (im.variantIds || []).indexOf(variant.id) !== -1; })[0];
+          if (m) return m.src;
+        }
+        return defaultImage(product);
+      }
+
+      function renderOptions() {
+        var p = current.product;
+        var availSet = availableValueIds(p);
+        pmOptions.innerHTML = p.options.map(function (o, oi) {
+          var isColor = /colou?r/i.test(o.name) || o.type === 'color';
+          var selVal = current.selected[o.name];
+          var selTitle = '';
+          // Only show values that exist in an in-stock variant (hide the rest).
+          var shownValues = o.values.filter(function (val) { return availSet[val.id]; });
+          if (!shownValues.length) return '';
+          var chips = shownValues.map(function (val) {
+            var avail = valueAvailable(p, current.selected, o.name, val.id);
+            var sel = selVal === val.id;
+            if (sel) selTitle = val.title;
+            if (isColor && val.color) {
+              return '<button type="button" class="pm-swatch' + (sel ? ' selected' : '') + (avail ? '' : ' unavailable') +
+                '" style="background:' + esc(val.color) + '" data-oi="' + oi + '" data-val="' + esc(val.id) +
+                '" title="' + esc(val.title) + '" aria-label="' + esc(val.title) + '"></button>';
+            }
+            return '<button type="button" class="pm-chip' + (sel ? ' selected' : '') + (avail ? '' : ' unavailable') +
+              '" data-oi="' + oi + '" data-val="' + esc(val.id) + '">' + esc(val.title) + '</button>';
+          }).join('');
+          return '<div class="pm-optgroup"><label>' + esc(o.name) +
+            (selTitle ? ' <span class="pm-optval">' + esc(selTitle) + '</span>' : '') +
+            '</label><div class="pm-chips">' + chips + '</div></div>';
+        }).join('');
+
+        Array.prototype.forEach.call(pmOptions.querySelectorAll('[data-oi]'), function (btn) {
+          if (btn.classList.contains('unavailable')) return;
+          btn.addEventListener('click', function () {
+            var o = p.options[+btn.getAttribute('data-oi')];
+            // data-val is a string; option value ids may be numbers — match by string compare.
+            var val = o.values.filter(function (v) { return String(v.id) === btn.getAttribute('data-val'); })[0];
+            current.selected[o.name] = val.id;
+            renderOptions();
+            renderState();
+          });
+        });
+      }
+
+      function renderState() {
+        var p = current.product;
+        var v = variantFor(p, current.selected);
+        // Switch the photo to match the selection — even a partial one (color only).
+        var imgVariant = v || variantMatchingSelection(p, current.selected);
+        if (imgVariant) galleryToVariant(imgVariant);
+        if (v) {
+          pmPrice.textContent = money(v.price);
+          if (v.available === false) {
+            pmAdd.disabled = true; pmAdd.textContent = 'Sold Out';
+          } else {
+            pmAdd.disabled = false; pmAdd.textContent = 'Add to Cart';
+          }
+        } else {
+          pmPrice.textContent = p.priceFrom != null ? 'from ' + money(p.priceFrom) : '';
+          pmAdd.disabled = true;
+          pmAdd.textContent = p.options.length ? 'Select Options' : 'Unavailable';
+        }
+        pmErr.textContent = '';
+      }
+
+      function openModal(product) {
+        current = { product: product, selected: {}, qty: 1, images: sortedImages(product), imgIndex: 0 };
+        // Preselect when an option has only one AVAILABLE value.
+        var availSet = availableValueIds(product);
+        product.options.forEach(function (o) {
+          var avVals = o.values.filter(function (val) { return availSet[val.id]; });
+          if (avVals.length === 1) current.selected[o.name] = avVals[0].id;
+        });
+        pmTitle.textContent = product.title;
+        // Show "More info" only if there's a description to show.
+        pmMoreInfo.hidden = !(product.descriptionHtml || product.description);
+        pmQty.textContent = '1';
+        renderGallery();
+        renderOptions();
+        renderState();
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+      }
+      function closeModal() { closeInfo(); lb.hidden = true; resetZoom(); modal.hidden = true; document.body.style.overflow = ''; current = null; }
+
+      Array.prototype.forEach.call(modal.querySelectorAll('[data-close]'), function (el) {
+        el.addEventListener('click', closeModal);
+      });
+      // Keyboard: the zoom lightbox takes priority (Esc closes it, arrows navigate);
+      // otherwise Escape closes the "More info" popup first, then the product modal.
+      document.addEventListener('keydown', function (e) {
+        if (!lb.hidden) {
+          if (e.key === 'Escape') { closeLightbox(); }
+          else if (e.key === 'ArrowLeft') { lbPrev.click(); }
+          else if (e.key === 'ArrowRight') { lbNext.click(); }
+          return;
+        }
+        if (e.key !== 'Escape') return;
+        if (!infoModal.hidden) { closeInfo(); }
+        else if (!modal.hidden) { closeModal(); }
+      });
+
+      document.getElementById('pmQtyDec').addEventListener('click', function () {
+        current.qty = Math.max(1, current.qty - 1); pmQty.textContent = current.qty;
+      });
+      document.getElementById('pmQtyInc').addEventListener('click', function () {
+        current.qty = Math.min(20, current.qty + 1); pmQty.textContent = current.qty;
+      });
+
+      pmAdd.addEventListener('click', function () {
+        var p = current.product;
+        var v = variantFor(p, current.selected);
+        if (!v) { pmErr.textContent = 'Please choose ' + p.options.map(function (o) { return o.name.toLowerCase(); }).join(' and ') + '.'; return; }
+        if (v.available === false) { pmErr.textContent = 'That option is sold out.'; return; }
+        window.TDOShop.cart.add({
+          productId: p.id, variantId: v.id, quantity: current.qty,
+          title: p.title, variantTitle: v.title, price: v.price, image: imageForVariant(p, v)
+        });
+        closeModal();
+        window.TDOShop.openDrawer();
+      });
+
+      // ─── Load catalog ───
+      // Instant from the sessionStorage cache (warmed by shop.js on other pages),
+      // then revalidated in the background — re-renders only if the data changed.
+      window.TDOShop.loadCatalog(function (products, meta) {
+        if (products === null) {
+          showStatus('<h3>The shop is opening soon</h3><p>We couldn\'t load our gear just now. Please check back in a little while, or email <a href="mailto:info@tourdeoutback.org">info@tourdeoutback.org</a>.</p>');
+          return;
+        }
+        PRODUCTS = products;
+        renderGrid();
+      });
+    })();
   </script>
-    <!-- Newsletter Slide-In Popup -->
+
+  <!-- Newsletter Slide-In Popup -->
   <div class="newsletter-popup" id="newsletter-popup" role="dialog" aria-label="Newsletter signup">
     <button class="newsletter-popup-close" type="button" aria-label="Close">&times;</button>
     <h3>Stay in the Loop</h3>
@@ -790,18 +1016,5 @@
     </div>
   </div>
 
-  <!--Start of Tawk.to Script-->
-  <script type="text/javascript">
-  var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-  (function(){
-  var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-  s1.async=true;
-  s1.src='https://embed.tawk.to/69a3fa1d4ebd121c340a9c32/1jik8i17d';
-  s1.charset='UTF-8';
-  s1.setAttribute('crossorigin','*');
-  s0.parentNode.insertBefore(s1,s0);
-  })();
-  </script>
-  <!--End of Tawk.to Script-->
 </body>
 </html>

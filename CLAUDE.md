@@ -1,15 +1,14 @@
 # Tour de Outback — Project Guide
 
 ## What This Is
-Static website for the **Oregon Tour de Outback** cycling event (June 27, 2026, Lakeview, OR). Hosted on GitHub Pages at **www.tourdeoregon.com**. Repo: `summitcapsabrina/tour-de-outback`.
+Website for the **Oregon Tour de Outback** cycling event (June 26, 2027, Lakeview, OR). Hosted on **Firebase Hosting** at **www.tourdeoregon.com** (project `oregon-tour-de-outback`; `.web.app` alias always live). Repo: `summitcapsabrina/tour-de-outback`.
 
 ## Tech Stack
 - Pure HTML5, CSS3, vanilla JavaScript — no frameworks, no build tools
-- GitHub Pages for hosting (deploys from `main` branch)
+- **Firebase Hosting** for the site + **Cloud Functions v2** (`functions/index.js`, nodejs22) for the `/api/**` backend; Firestore + Firebase Auth. Project: `oregon-tour-de-outback`. **GitHub Pages is retired** — do NOT `git push` to deploy (it would serve broken `/api` pages).
 - Google Fonts: Oswald (headings), Open Sans (body)
 - Google Analytics: `G-959LC5LDBS`
-- Tawk.to live chat widget on all pages
-- GitHub CLI (`gh`) is authenticated and handles git push auth — no tokens needed
+- In-house AI support chat ("Sabrina") replaced the old Tawk.to widget
 
 ## File Structure
 ```
@@ -129,6 +128,17 @@ print('CSS minified')
 "
 ```
 
+### Event Date — single source of truth (RIDE DAY anchor)
+**Never hand-edit event dates across pages.** Every date on the site is derived from one anchor — **RIDE DAY** — and propagated by [tools/set-event-date.js](tools/set-event-date.js). Derived days: day-before/Friday (`RIDE_DAY − 1`), weekend range (`[RIDE_DAY−1 … RIDE_DAY]`), volunteer-waiver window (`[RIDE_DAY−3 … RIDE_DAY+1]`), plus the countdown timer, JSON-LD `startDate`/`endDate`, hero, all "Join us …" CTAs, the chatbot's knowledge (`functions/index.js`), and the shop receipt footer (`functions/shop-receipt.js`).
+
+**To move the event:**
+1. Edit the one `const RIDE_DAY = 'YYYY-MM-DD';` line at the top of [tools/set-event-date.js](tools/set-event-date.js).
+2. Preview: `node tools/set-event-date.js --dry-run` (or `--dry-run --date=YYYY-MM-DD`). It replaces fully-formed old date strings with new ones (no fuzzy prose matching) and reports every change.
+3. Apply: `node tools/set-event-date.js` — rewrites all files and persists the new anchor back into the script.
+4. Deploy: `firebase deploy --only hosting,functions` (functions only needed because the chatbot/receipt dates live in Cloud Functions). Re-minify is NOT needed — the script edits `main.js` and `main.min.js` together.
+
+Intentionally NOT touched by the script: blog `datePublished` (historical), `Email Blasts/` (past-event templates), and copyright years.
+
 ### Route App Switcher (routes/index.html + js/main.js)
 The routes page has a button switcher: RideWithGPS, Strava, MapMyRide, Komoot. Each `.route-row-map` div stores embed URLs/data as `data-*` attributes.
 
@@ -153,8 +163,8 @@ EmailOctopus integration. Signup forms use direct EmailOctopus embed code.
 - **Email campaigns:** EmailOctopus — merge tags: `{{UnsubscribeURL}}`, `{{SenderInfo}}`, `{{RewardsURL}}`
 
 ## Event Details
-- **Event:** Oregon Tour de Outback 2026
-- **Date:** June 27, 2026
+- **Event:** Oregon Tour de Outback 2027
+- **Date:** June 26, 2027 (Ride Day; event weekend June 25–26). To change it, see **Event Date** under Key Patterns — never hand-edit dates across pages.
 - **Location:** Lakeview, OR — Lake County Fairgrounds
 - **Presented by:** Lake County Chamber of Commerce
 - **Beneficiary:** Lake County Search and Rescue
@@ -171,7 +181,13 @@ EmailOctopus integration. Signup forms use direct EmailOctopus embed code.
 - Strava mobile embed sizing — the `.strava-active` class with `!important` overrides may need testing
 - Clean up unused images in `/images/`
 
-## Git Workflow
-Push directly to `main` — GitHub Pages auto-deploys. Use `gh` CLI for auth (already configured via macOS keychain). Remote URL should be `https://github.com/summitcapsabrina/tour-de-outback.git` (no embedded token).
+## Deploy Workflow
+**Deploy = `firebase deploy` (NOT git push).** GitHub Pages is retired for the domain; a `git push` would serve broken `/api` pages. Firebase CLI is logged in as `info@tourdeoutback.org` (token expires ~hourly → `firebase login --reauth` if a deploy 401s). Project `oregon-tour-de-outback`; live at `www.tourdeoregon.com` (Firebase Hosting) with `oregon-tour-de-outback.web.app` as the always-on alias.
+- **Static/frontend only** (HTML/CSS/JS): `firebase deploy --only hosting` — ships the whole repo dir (`public: "."`).
+- **Backend changes** (`functions/index.js`): `firebase deploy --only functions` (needs the secrets already set; new secrets fail the deploy).
+- **Firestore rules:** `firebase deploy --only firestore:rules`.
+- Combine as needed, e.g. `firebase deploy --only functions,hosting,firestore:rules`.
+- Remember to re-minify `main.min.js` / `styles.min.css` before deploying frontend JS/CSS changes.
+- Git is for source history only (optionally `git push` to back up the source — it does NOT deploy).
 
 **Important:** zsh doesn't like `!` in double-quoted commit messages. Always use single quotes for commit messages containing special characters.

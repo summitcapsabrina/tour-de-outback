@@ -203,7 +203,121 @@
       margin-top: 16px;
       font-style: italic;
     }
+    .survey-block.q-invalid {
+      background: #fff6f6;
+      box-shadow: inset 3px 0 0 #cc0000;
+      border-radius: 4px;
+    }
+    .survey-form input[readonly] {
+      background: #f1f1f1;
+      color: #555;
+      cursor: not-allowed;
+    }
+    .info-note {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #2e7d32;
+      font-weight: 600;
+    }
+    .survey-chooser {
+      max-width: 760px;
+      margin: 0 auto 30px;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 28px 32px;
+      text-align: center;
+    }
+    .survey-chooser h3 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.55rem;
+      color: #222;
+      margin-bottom: 6px;
+    }
+    .survey-chooser p { color: #555; margin-bottom: 20px; }
+    .survey-chooser .choice {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+    .survey-chooser .choice a {
+      display: block;
+      padding: 15px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .survey-chooser .choice-primary { background: #cc0000; color: #fff; }
+    .survey-chooser .choice-primary:hover { background: #a80000; }
+    .survey-chooser .choice-secondary { background: #f5f5f5; color: #222; border: 1px solid #ddd; }
+    .survey-chooser .choice-secondary:hover { border-color: #cc0000; color: #cc0000; }
+    .q-error-note {
+      margin-top: 10px;
+      color: #cc0000;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .thank-you-actions .btn { margin: 4px; }
+    .thank-you-home {
+      display: inline-block;
+      margin-top: 14px;
+      color: #cc0000;
+      text-decoration: underline;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .thank-you-card {
+      display: none;
+      max-width: 620px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 56px 44px;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      text-align: center;
+      color: #222;
+    }
+    .thank-you-card.show {
+      display: block;
+      animation: thankYouIn 0.5s ease;
+    }
+    @keyframes thankYouIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .thank-you-check {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #cc0000;
+      color: #fff;
+      font-size: 2.4rem;
+      line-height: 72px;
+      margin: 0 auto 24px;
+    }
+    .thank-you-card h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #222;
+    }
+    .thank-you-card p {
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: #444;
+      margin-bottom: 14px;
+    }
+    .thank-you-card .thank-you-actions {
+      margin-top: 28px;
+    }
     @media (max-width: 720px) {
+      .thank-you-card { padding: 40px 24px; }
+      .thank-you-card h2 { font-size: 1.9rem; }
       .survey-form { padding: 28px 22px; }
       .survey-intro h2 { font-size: 2rem; }
       .two-col { grid-template-columns: 1fr; }
@@ -222,13 +336,15 @@
         <a href="/routes/">Routes</a>
         <a href="/schedule/">Schedule</a>
         <a href="/about/">About</a>
-        <a href="/volunteer/">Volunteer</a>
+        <a href="/shop/">Shop</a>
         <a href="/blog/">Blog</a>
-        <a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a>
+        <a href="/donate/">Donate</a>
         <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
       </div>
       <div class="weather-widget" id="weather-widget"></div>
-      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);var w=document.getElementById('weather-widget');if(w){var h='<span class="weather-current" role="button" tabindex="0"><span class="weather-main"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>';if(d.windSpeed!==undefined&&d.windSpeed!==null&&d.windDir!==null){h+='<span class="weather-wind"><svg class="wind-compass-svg" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg"><text x="25" y="12" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.7)" font-family="sans-serif">N</text><text x="25" y="46" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">S</text><text x="5" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">W</text><text x="45" y="29" text-anchor="middle" font-size="9" font-weight="700" fill="rgba(255,255,255,0.5)" font-family="sans-serif">E</text><g transform="rotate('+d.windDir+' 25 25)"><polygon points="25,3 22,14 25,12 28,14" fill="#cc0000"/></g><text x="25" y="29" text-anchor="middle" font-size="13" font-weight="700" fill="rgba(255,255,255,0.9)" font-family="sans-serif">'+d.windSpeed+'</text></svg>';if(d.windGusts)h+='<span class="wind-gusts">Gusts '+d.windGusts+' mph</span>';h+='</span>'}h+='<span class="weather-arrow">▾</span></span><div class="forecast-dropdown"></div>';w.innerHTML=h}}}()</script>
+      <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);var w=document.getElementById('weather-widget');if(w){var h='<span class="weather-current" role="button" tabindex="0"><span class="weather-main"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>';h+='<span class="weather-arrow">▾</span></span><div class="forecast-dropdown"></div>';w.innerHTML=h}}}()</script>
+        <div class="tdo-auth"><button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg></button><div class="tdo-menu" id="tdo-menu" role="menu"></div></div>
+        <div class="tdo-cart-slot"><button class="tdo-cart-nav" type="button" aria-label="Open cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="tdo-cart-badge" hidden>0</span></button></div>
     </div>
   </nav>
 
@@ -245,21 +361,34 @@
   <section class="survey-section">
     <div class="container">
 
-      <div class="survey-intro">
+      <!-- Attended / did-not-attend chooser -->
+      <div class="survey-chooser" id="surveyChooser">
+        <h3>Before you start</h3>
+        <p>Which of these describes you?</p>
+        <div class="choice">
+          <a href="#surveyStart" class="choice-primary" id="attendedBtn">&#10003;&nbsp; I attended Tour de Outback 2026 &mdash; take the rider survey</a>
+          <a href="/survey-nonrider/" class="choice-secondary">I didn&rsquo;t attend &mdash; take the short non-rider survey instead</a>
+        </div>
+      </div>
+
+      <div class="survey-intro" id="surveyStart">
         <h2>How was the ride?</h2>
         <p><strong>Thank you for being part of Tour de Outback 2026. Your feedback genuinely shapes how we plan 2027 &mdash; the food, the aid stations, the routes, the website, all of it.</strong></p>
         <p><strong>This takes about 3 minutes. Every response makes a difference.</strong></p>
       </div>
 
-      <form id="surveyForm" class="survey-form" action="https://formspree.io/f/meebleno" method="POST">
+      <form id="surveyForm" class="survey-form" novalidate>
 
-        <!-- Optional contact -->
-        <div class="survey-block">
-          <span class="q-label">Your info <span class="q-optional">(optional)</span></span>
+        <!-- Contact — auto-filled + locked for signed-in riders; email required otherwise -->
+        <div class="survey-block" id="infoBlock">
+          <span class="q-label">Your info</span>
+          <div id="authPrompt" style="margin-bottom:16px;"></div>
           <div class="two-col narrow-input">
-            <input class="text-input" type="text" name="name" placeholder="Name">
-            <input class="text-input" type="email" name="email" placeholder="Email">
+            <input class="text-input" type="text" name="name" id="surveyName" placeholder="Name (required)" autocomplete="name">
+            <input class="text-input" type="email" name="email" id="surveyEmail" placeholder="Email (required)" autocomplete="email">
           </div>
+          <div id="nameError" class="q-error-note" hidden>Please enter your name.</div>
+          <div id="emailError" class="q-error-note" hidden>Please enter a valid email address.</div>
         </div>
 
         <!-- 1. Route -->
@@ -290,12 +419,21 @@
           </div>
         </div>
 
-        <!-- 3. Where they traveled from -->
-        <div class="survey-block">
-          <span class="q-label"><span class="q-num">3</span>Where did you travel from? <span class="q-optional">(city + state)</span></span>
-          <div class="narrow-input">
-            <input class="text-input" type="text" name="travel_from" placeholder="e.g. Bend, OR">
+        <!-- 3. Where they traveled from (structured state + city) -->
+        <div class="survey-block" id="locationBlock">
+          <span class="q-label"><span class="q-num">3</span>Where did you travel from?</span>
+          <div class="two-col narrow-input">
+            <div class="ac-wrap">
+              <input class="text-input" type="text" id="stateInput" placeholder="State &mdash; type OR, CA&hellip;" autocomplete="off">
+              <input type="hidden" name="state" id="stateCode">
+              <div class="ac-list" id="stateList"></div>
+            </div>
+            <div class="ac-wrap">
+              <input class="text-input" type="text" name="city" id="cityInput" placeholder="City &mdash; type to search" autocomplete="off">
+              <div class="ac-list" id="cityList"></div>
+            </div>
           </div>
+          <div class="q-error-note" id="locationError" hidden>Please choose your state.</div>
         </div>
 
         <!-- 4. Meet and greet / pizza party -->
@@ -452,14 +590,24 @@
           <div class="narrow-input"><textarea class="text-area" name="open_feedback" placeholder="The best thing, the worst thing, the one thing we should change &mdash; we want to hear it." style="min-height:120px;"></textarea></div>
         </div>
 
-        <input type="hidden" name="_subject" value="Tour de Outback 2026 — Rider Survey Response">
-
         <div class="form-submit">
           <button type="submit" class="btn btn-primary">Submit Survey</button>
         </div>
         <p class="privacy-note">Your responses go directly to the Tour de Outback team. We don't share or sell rider data.</p>
         <div class="form-message" id="surveyMessage"></div>
       </form>
+
+      <!-- Thank You card (shown after successful submit) -->
+      <div class="thank-you-card" id="thankYouCard">
+        <div class="thank-you-check">&#10003;</div>
+        <h2>Thank you!</h2>
+        <p>Your survey has been submitted. We truly appreciate you taking the time &mdash; your feedback genuinely shapes Tour de Outback 2027.</p>
+        <p>See you on the road next year.</p>
+        <div class="thank-you-actions">
+          <button type="button" class="btn btn-primary" id="submitAnother">Submit Another Response</button>
+          <div><a href="/" class="thank-you-home">Back to Home</a></div>
+        </div>
+      </div>
 
     </div>
   </section>
@@ -482,7 +630,6 @@
             <li><a href="/about/">About</a></li>
             <li><a href="/volunteer/">Volunteer</a></li>
             <li><a href="/blog/">Blog</a></li>
-            <li><a href="https://oregontourdeoutback.tawk.help" target="_blank">FAQ</a></li>
             <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
           </ul>
         </div>
@@ -503,6 +650,7 @@
   </footer>
 
   <script src="../js/main.min.js"></script>
+  <script src="../js/location-autocomplete.js"></script>
 
   <!-- Survey form AJAX submit -->
   <script>
@@ -511,7 +659,80 @@
     var msg = document.getElementById('surveyMessage');
     if (!form) return;
 
-    // Show + require a write-in field when "Other" is selected in a radio group
+    // ---- Contact: prefill + lock name/email for signed-in riders; require a
+    // valid email for everyone else. Auth state comes from the shared auth widget
+    // (window.tdoAuth + the 'tdo-auth-changed' event) that main.js loads.
+    var nameInput = document.getElementById('surveyName');
+    var emailInput = document.getElementById('surveyEmail');
+    var emailError = document.getElementById('emailError');
+    var nameError = document.getElementById('nameError');
+    var infoBlock = document.getElementById('infoBlock');
+    var isLoggedIn = false;
+
+    function escName(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+    function emailValid(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    // Sign-in / guest prompt at the top of "Your info" (mirrors the Donate page).
+    function renderAuthPrompt(user){
+      var el = document.getElementById('authPrompt');
+      if (!el) return;
+      if (user && user.email){
+        var nm = user.displayName ? user.displayName.split(' ')[0] : user.email;
+        el.innerHTML = '<div style="background:#e8f5e9;color:#2e7d32;border-radius:8px;padding:11px 14px;font-weight:600;font-size:0.9rem">&#10003; Signed in as ' + escName(nm) + ' &mdash; your response will be linked to your account.</div>';
+      } else {
+        el.innerHTML = '<div style="background:#f5f5f5;border-radius:8px;padding:14px 16px;font-size:0.92rem;line-height:1.5">' +
+          '<strong>Have an account?</strong> Sign in (Google or email) to save your response &mdash; or just continue as a guest below.' +
+          '<div style="margin-top:11px"><button type="button" id="surveySignInBtn" class="btn btn-primary" style="padding:9px 18px;font-size:0.9rem">Sign In / Create Account</button></div>' +
+          '<div style="color:#666;font-size:0.85rem;margin-top:9px">Continuing as a guest? Just enter your name and a valid email below.</div></div>';
+        var b = document.getElementById('surveySignInBtn');
+        if (b) b.addEventListener('click', function(){ if (window.tdoOpenAuth) window.tdoOpenAuth(); });
+      }
+    }
+    function applyAuth(user){
+      isLoggedIn = !!(user && user.email);
+      renderAuthPrompt(user);
+      if (isLoggedIn){
+        if (emailInput){ emailInput.value = user.email; emailInput.readOnly = true; }
+        if (nameInput){
+          if (user.displayName){ nameInput.value = user.displayName; nameInput.readOnly = true; }
+          else { nameInput.readOnly = false; }
+        }
+        if (emailError) emailError.hidden = true;
+        if (infoBlock) infoBlock.classList.remove('q-invalid');
+      } else {
+        if (emailInput) emailInput.readOnly = false;
+        if (nameInput) nameInput.readOnly = false;
+      }
+    }
+    if (window.tdoAuth && window.tdoAuth.resolved) applyAuth(window.tdoAuth.currentUser);
+    else renderAuthPrompt(null); // show the guest / sign-in prompt until auth resolves
+    window.addEventListener('tdo-auth-changed', function(e){ applyAuth(e.detail); });
+    // Clear each contact error as soon as its field becomes valid; only drop the
+    // block's invalid state once BOTH name and email are good.
+    function infoFieldOk(){
+      var nameOk = !!(nameInput && nameInput.value.trim());
+      var emailOk = isLoggedIn || (emailInput && emailValid(emailInput.value.trim()));
+      return nameOk && emailOk;
+    }
+    if (emailInput) emailInput.addEventListener('input', function(){
+      if (emailInput.value.trim() && emailValid(emailInput.value.trim()) && emailError) emailError.hidden = true;
+      if (infoBlock && infoBlock.classList.contains('q-invalid') && infoFieldOk()){
+        infoBlock.classList.remove('q-invalid');
+        if (emailError) emailError.hidden = true;
+        if (nameError) nameError.hidden = true;
+        if (!form.querySelector('.q-invalid')){ msg.className = 'form-message'; msg.textContent = ''; }
+      }
+    });
+    if (nameInput) nameInput.addEventListener('input', function(){
+      if (nameInput.value.trim() && nameError) nameError.hidden = true;
+      if (infoBlock && infoBlock.classList.contains('q-invalid') && infoFieldOk()){
+        infoBlock.classList.remove('q-invalid');
+        if (emailError) emailError.hidden = true;
+        if (nameError) nameError.hidden = true;
+        if (!form.querySelector('.q-invalid')){ msg.className = 'form-message'; msg.textContent = ''; }
+      }
+    });
+
+    // Show a write-in field when "Other" is selected in a radio group.
     Array.prototype.forEach.call(document.querySelectorAll('.other-wrap'), function(wrap){
       var group = wrap.getAttribute('data-other-for');
       var input = wrap.querySelector('input');
@@ -520,36 +741,125 @@
         var checked = document.querySelector('input[name="' + group + '"]:checked');
         var isOther = checked && checked.value === 'Other';
         wrap.classList.toggle('show', isOther);
-        input.required = isOther;
-        if (!isOther) input.value = '';
+        if (!isOther && input) input.value = '';
       }
       Array.prototype.forEach.call(radios, function(r){ r.addEventListener('change', update); });
       update();
     });
+
+    // ---- Custom validation: every question with radio options must be answered.
+    function requiredBlocks(){
+      return Array.prototype.filter.call(form.querySelectorAll('.survey-block'), function(block){
+        return block.querySelector('input[type="radio"]');
+      });
+    }
+    function blockOk(block){
+      var checked = block.querySelector('input[type="radio"]:checked');
+      if (!checked) return false;
+      if (checked.value === 'Other'){
+        var other = block.querySelector('.other-wrap input');
+        if (other && !other.value.trim()) return false;
+      }
+      return true;
+    }
+    function setBlockInvalid(block, invalid){
+      block.classList.toggle('q-invalid', invalid);
+      var note = block.querySelector('.q-error-note');
+      if (invalid && !note){
+        note = document.createElement('div');
+        note.className = 'q-error-note';
+        note.textContent = 'Please answer this question.';
+        block.appendChild(note);
+      } else if (!invalid && note){
+        note.parentNode.removeChild(note);
+      }
+    }
+    function numberList(nums){
+      if (nums.length === 1) return nums[0];
+      if (nums.length === 2) return nums[0] + ' and ' + nums[1];
+      return nums.slice(0, -1).join(', ') + ', and ' + nums[nums.length - 1];
+    }
+    function joinAnd(a){
+      if (a.length === 1) return a[0];
+      if (a.length === 2) return a[0] + ' and ' + a[1];
+      return a.slice(0, -1).join(', ') + ', and ' + a[a.length - 1];
+    }
+    function validate(){
+      var missing = [];
+      requiredBlocks().forEach(function(block){
+        var ok = blockOk(block);
+        setBlockInvalid(block, !ok);
+        if (!ok){
+          var num = block.querySelector('.q-num');
+          missing.push(num ? num.textContent.trim() : '?');
+        }
+      });
+      var nameBad = !(nameInput && nameInput.value.trim());
+      var emailBad = !isLoggedIn && !(emailInput && emailValid(emailInput.value.trim()));
+      if (infoBlock) infoBlock.classList.toggle('q-invalid', nameBad || emailBad);
+      if (nameError) nameError.hidden = !nameBad;
+      if (emailError) emailError.hidden = !emailBad;
+      var locationBad = !(window.TDOLocation ? window.TDOLocation.validate(true) : true);
+      return { missing: missing, nameBad: nameBad, emailBad: emailBad, locationBad: locationBad };
+    }
+
+    // Clear a question's error as soon as the rider answers it.
+    form.addEventListener('change', function(e){
+      var block = e.target.closest && e.target.closest('.survey-block');
+      if (block && block.classList.contains('q-invalid') && blockOk(block)){
+        setBlockInvalid(block, false);
+        if (!form.querySelector('.survey-block.q-invalid')){ msg.className = 'form-message'; msg.textContent = ''; }
+      }
+    });
+
     form.addEventListener('submit', function(e){
       e.preventDefault();
+      var v = validate();
+      if (v.nameBad || v.emailBad || v.locationBad || v.missing.length){
+        var parts = [];
+        if (v.nameBad) parts.push('enter your name');
+        if (v.emailBad) parts.push('enter a valid email address');
+        if (v.locationBad) parts.push('enter your state and city');
+        if (v.missing.length) parts.push('answer question' + (v.missing.length > 1 ? 's ' : ' ') + numberList(v.missing));
+        msg.className = 'form-message error';
+        msg.textContent = 'Please ' + joinAnd(parts) + ', then try submitting again.';
+        var firstBad = form.querySelector('.q-invalid');
+        if (firstBad) firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       var btn = form.querySelector('button[type="submit"]');
       var orig = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Submitting...';
       msg.className = 'form-message';
       msg.textContent = '';
+      // Collect every named field into a plain object for the API.
       var data = new FormData(form);
-      fetch(form.action, {
+      var fields = {};
+      data.forEach(function(value, key){
+        if (key.charAt(0) === '_') return; // skip helper fields
+        var v = String(value).trim();
+        if (v) fields[key] = v;
+      });
+      fetch('/api/submit-survey', {
         method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
+        body: JSON.stringify({ type: 'rider', fields: fields, pageUrl: window.location.href }),
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
       }).then(function(res){
         if (res.ok) {
-          form.reset();
-          Array.prototype.forEach.call(document.querySelectorAll('.other-wrap'), function(wrap){
-            wrap.classList.remove('show');
-            var i = wrap.querySelector('input');
-            if (i) i.required = false;
-          });
-          msg.className = 'form-message success';
-          msg.textContent = 'Thanks! Your survey has been submitted. We truly appreciate your time.';
-          window.scrollTo({ top: msg.offsetTop - 100, behavior: 'smooth' });
+          // Hide the survey questions, intro, and the "Before you start" chooser,
+          // then reveal the Thank You card.
+          var intro = document.querySelector('.survey-intro');
+          if (intro) intro.style.display = 'none';
+          var chooser = document.getElementById('surveyChooser');
+          if (chooser) chooser.style.display = 'none';
+          form.style.display = 'none';
+          var card = document.getElementById('thankYouCard');
+          if (card) {
+            card.classList.add('show');
+            window.scrollTo({ top: card.offsetTop - 120, behavior: 'smooth' });
+          }
+          return;
         } else {
           msg.className = 'form-message error';
           msg.textContent = 'Something went wrong. Please try again, or email info@tourdeoutback.org.';
@@ -562,6 +872,29 @@
         btn.textContent = orig;
       });
     });
+
+    // "Submit Another Response" — reset the form and show it again so a rider can
+    // send more than one response. (There is no server-side limit per email.)
+    var again = document.getElementById('submitAnother');
+    if (again){
+      again.addEventListener('click', function(){
+        form.reset();
+        Array.prototype.forEach.call(form.querySelectorAll('.q-invalid'), function(b){ b.classList.remove('q-invalid'); });
+        Array.prototype.forEach.call(form.querySelectorAll('.q-error-note'), function(n){ if (n.id !== 'emailError') n.parentNode.removeChild(n); });
+        if (emailError) emailError.hidden = true;
+        Array.prototype.forEach.call(document.querySelectorAll('.other-wrap'), function(w){
+          w.classList.remove('show'); var i = w.querySelector('input'); if (i) i.value = '';
+        });
+        applyAuth(window.tdoAuth && window.tdoAuth.currentUser); // re-lock/prefill for signed-in riders
+        msg.className = 'form-message'; msg.textContent = '';
+        var card = document.getElementById('thankYouCard');
+        if (card) card.classList.remove('show');
+        var intro = document.querySelector('.survey-intro');
+        if (intro) intro.style.display = '';
+        form.style.display = '';
+        window.scrollTo({ top: form.offsetTop - 120, behavior: 'smooth' });
+      });
+    }
   })();
   </script>
 

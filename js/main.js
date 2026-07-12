@@ -166,12 +166,14 @@ function initWeather() {
   }
 
   function renderWeather(icon, temp, windSpeed, windDir, windGusts) {
+    // Header shows icon + temp + arrow only. The wind compass lives solely in the
+    // dropdown forecast cards (buildForecastCompass), not in the header.
     var html = '<span class="weather-current" role="button" tabindex="0">' +
         '<span class="weather-main">' +
           '<span class="weather-icon">' + icon + '</span> ' +
-          '<span class="weather-temp">' + temp + '°</span>' +
-        '</span>';
-    html += '<span class="weather-arrow">▾</span></span>';
+          '<span class="weather-temp">' + temp + '°F</span>' +
+        '</span>' +
+        '<span class="weather-arrow">▾</span></span>';
     // Preserve existing forecast dropdown if present
     var existing = widget.querySelector('.forecast-dropdown');
     var dd = existing ? existing.outerHTML : '<div class="forecast-dropdown"></div>';
@@ -197,7 +199,7 @@ function initWeather() {
     widget.innerHTML =
       '<span class="weather-current" role="button" tabindex="0">' +
         '<span class="weather-main">' +
-          '<span class="weather-icon">🌤️</span> ' +
+          '<span class="weather-icon">⛅</span> ' +
           '<span class="weather-temp">--°</span>' +
         '</span>' +
         '<span class="weather-arrow">▾</span>' +
@@ -221,25 +223,29 @@ function initWeather() {
     renderWeather(c.icon, c.temp, c.windSpeed, c.windDir, c.windGusts);
   }
 
-  // NWS weather description to emoji
+  // NWS weather description to emoji.
+  // IMPORTANT: only use widely-supported emoji (Unicode <= 6.1). The extended
+  // "weather" set (U+1F324–U+1F32B: 🌤️ 🌥️ 🌧️ 🌫️) and 🥶 (Emoji 5.0) render as a
+  // tofu box on many devices/browsers, which is why the widget periodically showed
+  // a square. ☀️ ⛅ ☁️ ☔ ⛈️ ❄️ 🌁 💨 🌙 all have universal coverage.
   function weatherToIcon(desc, isNight) {
     if (!desc) return isNight ? '🌙' : '☀️';
     var d = desc.toLowerCase();
     if (d.indexOf('snow') !== -1 || d.indexOf('blizzard') !== -1 || d.indexOf('sleet') !== -1 || d.indexOf('flurr') !== -1) return '❄️';
-    if (d.indexOf('ice') !== -1 || d.indexOf('freez') !== -1 || d.indexOf('frost') !== -1) return '🥶';
+    if (d.indexOf('ice') !== -1 || d.indexOf('freez') !== -1 || d.indexOf('frost') !== -1) return '❄️';
     if (d.indexOf('thunder') !== -1 || d.indexOf('lightning') !== -1) return '⛈️';
-    if (d.indexOf('rain') !== -1 || d.indexOf('drizzle') !== -1 || d.indexOf('shower') !== -1) return '🌧️';
-    if (d.indexOf('fog') !== -1 || d.indexOf('mist') !== -1 || d.indexOf('haze') !== -1 || d.indexOf('smoke') !== -1) return '🌫️';
+    if (d.indexOf('rain') !== -1 || d.indexOf('drizzle') !== -1 || d.indexOf('shower') !== -1) return '☔';
+    if (d.indexOf('fog') !== -1 || d.indexOf('mist') !== -1 || d.indexOf('haze') !== -1 || d.indexOf('smoke') !== -1) return '🌁';
     if (d.indexOf('overcast') !== -1) return '☁️';
     if (d.indexOf('mostly cloudy') !== -1 || d.indexOf('considerable') !== -1) return '☁️';
     if (d.indexOf('partly') !== -1 || d.indexOf('scattered') !== -1) return isNight ? '☁️' : '⛅';
     if (d.indexOf('cloudy') !== -1 || d.indexOf('cloud') !== -1) return '☁️';
-    if (d.indexOf('few clouds') !== -1 || d.indexOf('mostly clear') !== -1 || d.indexOf('mostly sunny') !== -1) return isNight ? '🌙' : '🌤️';
+    if (d.indexOf('few clouds') !== -1 || d.indexOf('mostly clear') !== -1 || d.indexOf('mostly sunny') !== -1) return isNight ? '🌙' : '⛅';
     if (d.indexOf('sunny') !== -1 || d.indexOf('clear') !== -1 || d.indexOf('fair') !== -1) return isNight ? '🌙' : '☀️';
     if (d.indexOf('wind') !== -1 || d.indexOf('breezy') !== -1 || d.indexOf('blust') !== -1) return '💨';
-    if (d.indexOf('dust') !== -1 || d.indexOf('sand') !== -1) return '🌫️';
+    if (d.indexOf('dust') !== -1 || d.indexOf('sand') !== -1) return '🌁';
     if (d.indexOf('hot') !== -1) return '☀️';
-    if (d.indexOf('cold') !== -1 || d.indexOf('frigid') !== -1 || d.indexOf('chill') !== -1) return '🥶';
+    if (d.indexOf('cold') !== -1 || d.indexOf('frigid') !== -1 || d.indexOf('chill') !== -1) return '❄️';
     return isNight ? '🌙' : '☀️';
   }
 
@@ -410,15 +416,18 @@ function initWeather() {
         var nowHour = new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Los_Angeles' });
         var isNightNow = parseInt(nowHour, 10) >= 20 || parseInt(nowHour, 10) < 6;
         var icon = weatherToIcon(p.textDescription, isNightNow);
-        currentObsIcon = icon;
-        currentObsTemp = temp;
         if (p.maxTemperatureLast24Hours && p.maxTemperatureLast24Hours.value !== null) {
           obsHigh = cToF(p.maxTemperatureLast24Hours.value);
         }
         var windSpeed = p.windSpeed && p.windSpeed.value !== null ? kmhToMph(p.windSpeed.value) : null;
         var windDir = p.windDirection && p.windDirection.value !== null ? p.windDirection.value : null;
         var windGusts = p.windGust && p.windGust.value !== null ? kmhToMph(p.windGust.value) : null;
+        // KLKV sometimes reports observations with a null temperature. Only take
+        // over the header when we actually have an observed temp; otherwise leave
+        // it to the forecast fallback below so it never stays stuck at "--°".
         if (temp !== null) {
+          currentObsIcon = icon;
+          currentObsTemp = temp;
           renderWeather(icon, temp, windSpeed, windDir, windGusts);
           syncFirstCard();
           sessionStorage.setItem('weatherData', JSON.stringify({
@@ -435,9 +444,24 @@ function initWeather() {
         fetch(pointsData.properties.forecast, { headers: nwsHeaders })
           .then(function(res) { return res.json(); })
           .then(function(data) {
-            var html = buildForecast(data.properties.periods);
+            var periods = data.properties.periods;
+            var html = buildForecast(periods);
             var dd = widget.querySelector('.forecast-dropdown');
             if (dd) dd.innerHTML = html;
+            // Fallback header: if the station observation had no temperature,
+            // drive the header icon/temp from the first forecast period so it
+            // doesn't stay stuck at the "--°" placeholder.
+            if (currentObsTemp === null && periods && periods.length) {
+              var fp = periods[0];
+              if (fp.temperature !== null && fp.temperature !== undefined) {
+                currentObsTemp = fp.temperature;
+                currentObsIcon = weatherToIcon(fp.shortForecast, !fp.isDaytime);
+                renderWeather(currentObsIcon, currentObsTemp, null, null, null);
+                sessionStorage.setItem('weatherData', JSON.stringify({
+                  icon: currentObsIcon, temp: currentObsTemp, timestamp: Date.now()
+                }));
+              }
+            }
             syncFirstCard();
             sessionStorage.setItem('weatherForecast', JSON.stringify({ html: html, timestamp: Date.now() }));
           })
@@ -742,47 +766,192 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Global auth widget: inject the Firebase Auth navbar dropdown (ES module) ---
 (function loadAuthWidget() {
+  // Reserve the avatar slot synchronously (before first paint) so the async
+  // module doesn't pop the avatar in and shove the menu sideways on every load.
+  // Also paint the signed-in user's CACHED photo right now, so it doesn't flash
+  // to the default icon while Firebase re-resolves the session on each nav.
+  // auth-widget.js reuses this element instead of creating its own.
+  var navbar = document.querySelector('.navbar');
+  if (navbar) {
+    var container = navbar.querySelector('.container') || navbar;
+    var slot = container.querySelector('.tdo-auth');
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = 'tdo-auth';
+      container.appendChild(slot);
+    }
+    if (!slot.querySelector('.tdo-avatar')) {
+      var cachedPhoto = null;
+      try { cachedPhoto = localStorage.getItem('tdoAvatarPhoto'); } catch (e) {}
+      var HEAD = '<svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg>';
+      var inner = HEAD;
+      if (cachedPhoto) {
+        var safe = cachedPhoto.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        inner = '<img src="' + safe + '" alt="" referrerpolicy="no-referrer">';
+      }
+      slot.innerHTML =
+        '<button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false">' + inner + '</button>' +
+        '<div class="tdo-menu" id="tdo-menu" role="menu"></div>';
+    }
+  }
   var s = document.createElement('script');
   s.type = 'module';
   s.src = '/js/auth-widget.js';
   (document.head || document.documentElement).appendChild(s);
 })();
 
+// --- Sabrina: inject the floating AI support chat widget on every page ---
+(function loadChatWidget() {
+  var s = document.createElement('script');
+  s.src = '/js/chat-widget.js';
+  s.defer = true;
+  (document.head || document.documentElement).appendChild(s);
+})();
+
 // --- Footer legal links (Privacy Policy / Terms) on every page ---
+// Runs synchronously (main.js is at the end of <body>, so the DOM is ready).
+// No DOMContentLoaded deferral, so these land in the FIRST paint — no pop-in.
 (function addFooterLegal() {
-  document.addEventListener('DOMContentLoaded', function () {
-    var fb = document.querySelector('.footer-bottom');
-    if (fb && !fb.querySelector('.footer-legal')) {
-      var span = document.createElement('span');
-      span.className = 'footer-legal';
-      span.innerHTML = ' | <a href="/privacy/" style="color:#bbb;text-decoration:underline">Privacy Policy</a> &middot; <a href="/terms/" style="color:#bbb;text-decoration:underline">Terms of Service</a>';
-      fb.appendChild(span);
-    }
-  });
+  var fb = document.querySelector('.footer-bottom');
+  if (fb && !fb.querySelector('.footer-legal')) {
+    var span = document.createElement('span');
+    span.className = 'footer-legal';
+    span.innerHTML = ' | <a href="/privacy/" style="color:#bbb;text-decoration:underline">Privacy Policy</a> &middot; <a href="/terms/" style="color:#bbb;text-decoration:underline">Terms of Service</a>';
+    fb.appendChild(span);
+  }
 })();
 
 // --- Donate link in the navbar + footer on every page ---
+// Synchronous (no DOMContentLoaded) so the Donate link is present in the first
+// paint of the navbar — otherwise it pops in late and shifts the whole menu.
 (function addDonateLinks() {
-  document.addEventListener('DOMContentLoaded', function () {
-    var navLinks = document.querySelector('.nav-links');
-    if (navLinks && !navLinks.querySelector('a[href="/donate/"]')) {
-      var a = document.createElement('a');
-      a.href = '/donate/';
-      a.textContent = 'Donate';
-      var reg = navLinks.querySelector('a.btn');
-      if (reg) { navLinks.insertBefore(a, reg); } else { navLinks.appendChild(a); }
-    }
-    var footUl = document.querySelector('.footer-links ul');
-    if (footUl && !footUl.querySelector('a[href="/donate/"]')) {
-      var li = document.createElement('li');
-      var fa = document.createElement('a');
-      fa.href = '/donate/';
-      fa.textContent = 'Donate';
-      li.appendChild(fa);
-      var regLi = Array.prototype.slice.call(footUl.querySelectorAll('li')).filter(function (l) {
-        var x = l.querySelector('a'); return x && /bikereg/.test(x.href);
-      })[0];
-      if (regLi) { footUl.insertBefore(li, regLi); } else { footUl.appendChild(li); }
-    }
-  });
+  var navLinks = document.querySelector('.nav-links');
+  if (navLinks && !navLinks.querySelector('a[href="/donate/"]')) {
+    var a = document.createElement('a');
+    a.href = '/donate/';
+    a.textContent = 'Donate';
+    var reg = navLinks.querySelector('a.btn');
+    if (reg) { navLinks.insertBefore(a, reg); } else { navLinks.appendChild(a); }
+  }
+  var footUl = document.querySelector('.footer-links ul');
+  if (footUl && !footUl.querySelector('a[href="/donate/"]')) {
+    var li = document.createElement('li');
+    var fa = document.createElement('a');
+    fa.href = '/donate/';
+    fa.textContent = 'Donate';
+    li.appendChild(fa);
+    var regLi = Array.prototype.slice.call(footUl.querySelectorAll('li')).filter(function (l) {
+      var x = l.querySelector('a'); return x && /bikereg/.test(x.href);
+    })[0];
+    if (regLi) { footUl.insertBefore(li, regLi); } else { footUl.appendChild(li); }
+  }
+})();
+
+// --- Shop link in the navbar + footer on every page ---
+// Central injector (like the Donate link above) so reviving the Shop only needed
+// one change here, not an edit to every page's hardcoded nav. Skips pages that
+// already include the Shop link (e.g. the shop + checkout pages themselves).
+(function addShopLinks() {
+  var navLinks = document.querySelector('.nav-links');
+  if (navLinks && !navLinks.querySelector('a[href="/shop/"]')) {
+    var a = document.createElement('a');
+    a.href = '/shop/';
+    a.textContent = 'Shop';
+    var before = navLinks.querySelector('a[href="/blog/"]') || navLinks.querySelector('a[href="/donate/"]') || navLinks.querySelector('a.btn');
+    if (before) { navLinks.insertBefore(a, before); } else { navLinks.appendChild(a); }
+  }
+  var footUl = document.querySelector('.footer-links ul');
+  if (footUl && !footUl.querySelector('a[href="/shop/"]')) {
+    var li = document.createElement('li');
+    var fa = document.createElement('a');
+    fa.href = '/shop/';
+    fa.textContent = 'Shop';
+    li.appendChild(fa);
+    var beforeLi = Array.prototype.slice.call(footUl.querySelectorAll('li')).filter(function (l) {
+      var x = l.querySelector('a'); return x && /\/blog\/$/.test(x.getAttribute('href') || '');
+    })[0];
+    if (beforeLi) { footUl.insertBefore(li, beforeLi); } else { footUl.appendChild(li); }
+  }
+})();
+
+// --- Load the shop cart button + drawer on EVERY page, so the cart persists
+//     across the whole site (not just /shop/). shop.js self-guards against a
+//     double init, so it's safe that the shop pages also include it directly. ---
+(function loadShopCart() {
+  if (window.TDOShop) return;
+  var s = document.createElement('script');
+  s.src = '/js/shop.js?v=8';
+  document.head.appendChild(s);
+})();
+
+// --- Register gate: BikeReg is disabled. Any "Register" link (which points to
+//     bikereg.com) instead opens a popup: registration opens January 1st, with an
+//     email-capture form for launch updates. Works site-wide (nav, footer, hero,
+//     register page). ---
+(function registerGate() {
+  var injected = false, overlay = null;
+  function inject() {
+    if (injected) return; injected = true;
+    var css = document.createElement('style');
+    css.textContent = [
+      '.reg-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:center;justify-content:center;z-index:3000;padding:20px}',
+      '.reg-modal-overlay.open{display:flex}',
+      '.reg-modal{position:relative;background:#fff;color:#222;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.35);width:420px;max-width:94vw;padding:30px 28px;text-align:center;font-family:"Open Sans",Arial,sans-serif}',
+      '.reg-modal-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.7rem;line-height:1;color:#999;cursor:pointer;padding:0}',
+      '.reg-modal-close:hover{color:#333}',
+      '.reg-modal h3{font-family:"Oswald",Arial,sans-serif;font-size:1.55rem;margin:0 0 10px;color:#cc0000}',
+      '.reg-modal p{font-size:0.96rem;color:#444;line-height:1.5;margin:0 0 18px}',
+      '.reg-modal form{display:flex;gap:8px}',
+      '.reg-modal input{flex:1;padding:12px 14px;border:1px solid #ccc;border-radius:9px;font-size:1rem;font-family:inherit}',
+      '.reg-modal input:focus{outline:none;border-color:#cc0000;box-shadow:0 0 0 2px rgba(204,0,0,0.15)}',
+      '.reg-modal button.go{flex:none;background:#cc0000;color:#fff;border:none;border-radius:9px;padding:0 18px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.95rem}',
+      '.reg-modal button.go:hover{background:#a80000}.reg-modal button.go:disabled{background:#ccc}',
+      '.reg-modal .reg-msg{font-size:0.9rem;margin-top:12px;min-height:18px}',
+      '.reg-modal .reg-msg.err{color:#b71c1c}.reg-modal .reg-msg.ok{color:#1b5e20}'
+    ].join('');
+    document.head.appendChild(css);
+    overlay = document.createElement('div');
+    overlay.className = 'reg-modal-overlay';
+    overlay.innerHTML =
+      '<div class="reg-modal">' +
+        '<button class="reg-modal-close" aria-label="Close">&times;</button>' +
+        '<h3>Registration opens January 1st</h3>' +
+        '<p>Online registration for the Oregon Tour de Outback opens <strong>January 1st</strong>. Leave your email and we\'ll let you know the moment it\'s open.</p>' +
+        '<form id="reg-form"><input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" required><button type="submit" class="go">Notify me</button></form>' +
+        '<div class="reg-msg" id="reg-msg"></div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+    overlay.querySelector('.reg-modal-close').addEventListener('click', close);
+    overlay.querySelector('#reg-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = (overlay.querySelector('#reg-email').value || '').trim();
+      var msg = overlay.querySelector('#reg-msg');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.className = 'reg-msg err'; msg.textContent = 'Please enter a valid email.'; return; }
+      var btn = overlay.querySelector('button.go'); btn.disabled = true;
+      fetch('/api/registration-interest', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, pageUrl: location.href }) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          btn.disabled = false;
+          if (res.ok) { msg.className = 'reg-msg ok'; msg.textContent = "You're on the list — we'll email you when registration opens. 🎉"; overlay.querySelector('#reg-form').style.display = 'none'; }
+          else { msg.className = 'reg-msg err'; msg.textContent = (res.d && res.d.error) || 'Something went wrong. Please try again.'; }
+        })
+        .catch(function () { btn.disabled = false; msg.className = 'reg-msg err'; msg.textContent = 'Network error. Please try again.'; });
+    });
+  }
+  function open() {
+    inject();
+    var f = overlay.querySelector('#reg-form'); if (f) { f.style.display = 'flex'; }
+    overlay.querySelector('#reg-msg').textContent = '';
+    overlay.classList.add('open');
+    setTimeout(function () { var i = overlay.querySelector('#reg-email'); if (i) i.focus(); }, 60);
+  }
+  function close() { if (overlay) overlay.classList.remove('open'); }
+  // Capture-phase so we run before the link's own handlers and block navigation.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[href*="bikereg"]') : null;
+    if (a) { e.preventDefault(); e.stopPropagation(); open(); }
+  }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 })();
