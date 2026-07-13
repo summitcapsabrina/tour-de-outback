@@ -1242,16 +1242,28 @@
             return stripe.confirmPayment({
               elements: elemGroup,
               clientSecret: res.d.clientSecret,
-              confirmParams: { return_url: location.origin + location.pathname + '?thanks=1' },
+              confirmParams: { return_url: location.origin + location.pathname + '?thanks=1&amt=' + amountCents() },
               redirect: 'if_required'
             });
           })
           .then(function (result) { if (result && result.error) { throw result.error; } });
       }
 
+      // Google Ads: report the donation as a conversion. Value = amount charged
+      // (base gift plus any processing-fee top-up), i.e. the real transaction value.
+      function fireDonationConversion(dollars) {
+        if (typeof gtag !== 'function') return;
+        gtag('event', 'conversion', {
+          send_to: 'AW-11006704390/uPyxCJHYgNAcEIb2s4Ap',
+          value: Math.round((parseFloat(dollars) || 0) * 100) / 100,
+          currency: 'USD'
+        });
+      }
+
       // Shared: show the thank-you and (for guests) email a sign-in link.
       function finishSuccess(email) {
         var isGuest = !(window.tdoAuth && window.tdoAuth.isSignedIn && window.tdoAuth.isSignedIn());
+        fireDonationConversion(effectiveAmount());
         showThanks();
         if (isGuest && email && window.tdoAuth && window.tdoAuth.sendGuestLink) {
           window.tdoAuth.sendGuestLink(email).then(function () {
@@ -1312,6 +1324,10 @@
           '<div class="thanks-sub">Your gift helps support the Tour de Outback and the Lake County Search &amp; Rescue. A receipt will be emailed to you. If you have any questions, please reach out to us at <a href="mailto:info@tourdeoutback.org" style="color:#2e7d32;text-decoration:underline;">info@tourdeoutback.org</a>. Thanks again!</div>';
         form.parentNode.insertBefore(banner, form);
         banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Redirect payment methods land here after leaving the page, so the amount
+        // is no longer in memory — read it back from the &amt= (cents) we set on return_url.
+        var amtMatch = location.search.match(/[?&]amt=(\d+)/);
+        fireDonationConversion(amtMatch ? parseInt(amtMatch[1], 10) / 100 : 0);
       }
 
       render();
