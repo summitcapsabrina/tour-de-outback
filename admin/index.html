@@ -4563,7 +4563,11 @@
       } },
       progress: { title: 'Registration Progress', body:
         '<p>Cumulative registrations over time, by event year.</p>' +
-        '<p>Once registration is in-house this updates automatically, so you can see whether you’re ahead of or behind last year’s pace.</p>' }
+        '<p>Once registration is in-house this updates automatically, so you can see whether you’re ahead of or behind last year’s pace.</p>' },
+      avgage: { title: 'Average age by year', body:
+        '<p>The <strong>average age</strong> of each year’s registrants, plotted over time so you can see whether the field is trending older or younger.</p>' +
+        '<p>Only registrants with a <strong>birthdate</strong> on record count toward a year’s average; the point label is the rounded average, and the tooltip shows how many riders it’s based on. A year with no birthdates on file has no point.</p>' +
+        '<p>Click the chart itself to enlarge it.</p>' }
     };
     // Render a chart title that opens its help on click. tag = 'h3' | 'h4'; key ∈ REG_HELP.
     function regHelpTitle(tag, key, extraStyle) {
@@ -4737,6 +4741,13 @@
         .map(function (r) { return r.route || (r.fields && r.fields.route) || ''; });
       return regTally(routes, { top: 10 });
     }
+    // Same as surveyRouteTally, but scoped to a single event year's survey responses.
+    function surveyRouteTallyForYear(year) {
+      var routes = (allActive || [])
+        .filter(function (r) { return rowType(r) === 'rider' && surveyYear(r) === year; })
+        .map(function (r) { return r.route || (r.fields && r.fields.route) || ''; });
+      return regTally(routes, { top: 10 });
+    }
 
     // Returning riders per year, split into four stacked bands (by loyalty):
     //   everyYear     = perfect attendance — rode EVERY event year from the first year through y
@@ -4831,10 +4842,10 @@
     var REG_CHECKIN_TITLE = 'Check-in rate by year';
     function regCheckinRateCard(rows) {
       if (!rows.some(function (d) { return d.rate != null; })) {
-        return '<div class="reg-chart-card" style="max-width:900px;flex:1 1 100%;width:100%;">' + regHelpTitle('h4', 'checkin') +
+        return '<div class="reg-chart-card" style="flex:1 1 380px;min-width:0;max-width:640px;">' + regHelpTitle('h4', 'checkin') +
           '<p class="muted" style="font-size:.85rem;margin:8px 0 0;">No check-in counts recorded yet. Enter them on each year’s <strong>Years</strong> page (the ✏️ next to “Checked in”), and the register-vs-attended rate will chart here.</p></div>';
       }
-      return '<div class="reg-chart-card reg-zoom-card" title="Click to enlarge" style="max-width:900px;flex:1 1 100%;width:100%;cursor:pointer;">' +
+      return '<div class="reg-chart-card reg-zoom-card" title="Click to enlarge" style="flex:1 1 380px;min-width:0;max-width:640px;cursor:pointer;">' +
         regHelpTitle('h4', 'checkin') +
         regCheckinRateBody(rows) + '</div>';
     }
@@ -4847,26 +4858,26 @@
       var axisCol = dark ? '#9aa0a6' : '#888', gridCol = dark ? '#33373d' : '#ececec';
       var barCol = dark ? '#ff6b6b' : '#cc0000';
       var regCol = dark ? '#4a3437' : '#f3d6d6';   // faint "total registered" backdrop
-      var W = 900, H = 316, padL = 44, padR = 18, padT = 34, padB = 56;
+      var W = 900, H = 316, padL = 62, padR = 18, padT = 34, padB = 56;   // padL leaves room for the "100%" label at font-size 16
       var plotW = W - padL - padR, plotH = H - padT - padB, max = 100;
       function Y(v) { return padT + plotH * (1 - v / max); }
-      var n = rows.length, gW = plotW / n, barW = Math.min(70, gW - 26);
+      var n = rows.length, gW = plotW / n, barW = Math.min(120, gW - 20);
       var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" style="width:100%;height:auto;">';
       for (var g = 0; g <= 4; g++) {
         var gv = max * g / 4, gy = Y(gv);
         s += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="' + gridCol + '" stroke-width="1"/>' +
-          '<text x="' + (padL - 8) + '" y="' + (gy + 3.5).toFixed(1) + '" text-anchor="end" font-size="11" fill="' + axisCol + '">' + gv + '%</text>';
+          '<text x="' + (padL - 8) + '" y="' + (gy + 5).toFixed(1) + '" text-anchor="end" font-size="16" fill="' + axisCol + '">' + gv + '%</text>';
       }
       var baseY = Y(0), fullTop = Y(max);
       rows.forEach(function (d, i) {
         var cx = padL + gW * i + gW / 2;
-        s += '<text x="' + cx.toFixed(1) + '" y="' + (H - padB + 22) + '" text-anchor="middle" font-size="12" fill="' + axisCol + '">' + d.year + '</text>';
+        s += '<text x="' + cx.toFixed(1) + '" y="' + (H - padB + 26) + '" text-anchor="middle" font-size="18" fill="' + axisCol + '">' + d.year + '</text>';
         // Faint full-height backdrop = the whole registered cohort for the year,
         // with the registered count labeled just above it.
         s += '<rect x="' + (cx - barW / 2).toFixed(1) + '" y="' + fullTop.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + (baseY - fullTop).toFixed(1) + '" rx="4" fill="' + regCol + '"><title>' + d.year + ': ' + d.registered + ' registered</title></rect>' +
-          '<text x="' + cx.toFixed(1) + '" y="' + (fullTop - 6).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="600" fill="' + axisCol + '">' + d.registered + '</text>';
+          '<text x="' + cx.toFixed(1) + '" y="' + (fullTop - 8).toFixed(1) + '" text-anchor="middle" font-size="16" font-weight="600" fill="' + axisCol + '">' + d.registered + '</text>';
         if (d.rate == null) {
-          s += '<text x="' + cx.toFixed(1) + '" y="' + ((fullTop + baseY) / 2).toFixed(1) + '" text-anchor="middle" font-size="10.5" fill="' + axisCol + '">no check-in data</text>';
+          s += '<text x="' + cx.toFixed(1) + '" y="' + ((fullTop + baseY) / 2).toFixed(1) + '" text-anchor="middle" font-size="15" fill="' + axisCol + '">no check-in data</text>';
           return;
         }
         var top = Y(d.rate), h = Math.max(baseY - top, 1), pct = regFmtPct(d.checkedIn, d.registered);
@@ -4874,20 +4885,93 @@
         // Checked-in label: percentage (bold) + count. Sits inside the solid bar
         // when it's tall enough (so it never collides with the registered count
         // above the backdrop), otherwise just above the short bar.
-        if (h >= 40) {
-          s += '<text x="' + cx.toFixed(1) + '" y="' + (top + 17).toFixed(1) + '" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">' + pct + '</text>' +
-            '<text x="' + cx.toFixed(1) + '" y="' + (top + 31).toFixed(1) + '" text-anchor="middle" font-size="11" fill="#fff">(' + d.checkedIn + ')</text>';
+        if (h >= 56) {
+          s += '<text x="' + cx.toFixed(1) + '" y="' + (top + 26).toFixed(1) + '" text-anchor="middle" font-size="21" font-weight="700" fill="#fff">' + pct + '</text>' +
+            '<text x="' + cx.toFixed(1) + '" y="' + (top + 45).toFixed(1) + '" text-anchor="middle" font-size="16" fill="#fff">(' + d.checkedIn + ')</text>';
         } else {
-          s += '<text x="' + cx.toFixed(1) + '" y="' + (top - 20).toFixed(1) + '" text-anchor="middle" font-size="14" font-weight="700" fill="' + axisCol + '">' + pct + '</text>' +
-            '<text x="' + cx.toFixed(1) + '" y="' + (top - 7).toFixed(1) + '" text-anchor="middle" font-size="11" fill="' + axisCol + '">(' + d.checkedIn + ')</text>';
+          s += '<text x="' + cx.toFixed(1) + '" y="' + (top - 26).toFixed(1) + '" text-anchor="middle" font-size="21" font-weight="700" fill="' + axisCol + '">' + pct + '</text>' +
+            '<text x="' + cx.toFixed(1) + '" y="' + (top - 8).toFixed(1) + '" text-anchor="middle" font-size="16" fill="' + axisCol + '">(' + d.checkedIn + ')</text>';
         }
       });
       // Legend, centered along the bottom: faint swatch = total registered, solid = checked in.
-      var LW = 176, lx = (W - LW) / 2, ly = H - 8;
-      s += '<rect x="' + lx.toFixed(1) + '" y="' + (ly - 10) + '" width="14" height="12" rx="2" fill="' + regCol + '"/>' +
-        '<text x="' + (lx + 20).toFixed(1) + '" y="' + ly + '" font-size="11" fill="' + axisCol + '">Registered</text>' +
-        '<rect x="' + (lx + 96).toFixed(1) + '" y="' + (ly - 10) + '" width="14" height="12" rx="2" fill="' + barCol + '"/>' +
-        '<text x="' + (lx + 116).toFixed(1) + '" y="' + ly + '" font-size="11" fill="' + axisCol + '">Checked in</text>';
+      var LW = 268, lx = (W - LW) / 2, ly = H - 6;
+      s += '<rect x="' + lx.toFixed(1) + '" y="' + (ly - 14) + '" width="18" height="16" rx="2" fill="' + regCol + '"/>' +
+        '<text x="' + (lx + 25).toFixed(1) + '" y="' + ly + '" font-size="15" fill="' + axisCol + '">Registered</text>' +
+        '<rect x="' + (lx + 140).toFixed(1) + '" y="' + (ly - 14) + '" width="18" height="16" rx="2" fill="' + barCol + '"/>' +
+        '<text x="' + (lx + 165).toFixed(1) + '" y="' + ly + '" font-size="15" fill="' + axisCol + '">Checked in</text>';
+      return s + '</svg>';
+    }
+
+    // Average registrant age for each event year, ascending. avgAge is null for a year
+    // with no birthdates on file; n = how many riders that year's average is based on.
+    // Uses the same current-age basis as the "Average age" stat tiles, so each year's
+    // point matches that year's tile on its Years page.
+    function regAvgAgeByYearRows() {
+      if (!regAdminData) return [];
+      var yset = {};
+      regAdminData.forEach(function (r) { (r.years || []).forEach(function (y) { yset[y] = 1; }); });
+      return Object.keys(yset).map(Number).sort(function (a, b) { return a - b; }).map(function (y) {
+        var riders = regAdminData.filter(function (r) { return (r.years || []).indexOf(y) !== -1; });
+        var withDob = riders.filter(function (r) { return regAgeFromDob(r.dob) != null; });
+        return { year: y, avgAge: regAvgAge(riders), n: withDob.length };
+      });
+    }
+    var REG_AVGAGE_TITLE = 'Average age by year';
+    function regAvgAgeCard(rows) {
+      var withData = rows.filter(function (d) { return d.avgAge != null; });
+      if (withData.length < 2) {
+        return '<div class="reg-chart-card" style="flex:1 1 380px;min-width:0;max-width:640px;">' + regHelpTitle('h4', 'avgage') +
+          '<p class="muted" style="font-size:.85rem;margin:8px 0 0;">Need at least two years with registrant birthdates to chart the average-age trend.</p></div>';
+      }
+      return '<div class="reg-chart-card reg-zoom-card" title="Click to enlarge" style="flex:1 1 380px;min-width:0;max-width:640px;cursor:pointer;">' +
+        regHelpTitle('h4', 'avgage') + regAvgAgeBody(rows) + '</div>';
+    }
+    // Line chart: one point per year at that year's average registrant age, connected
+    // across years that have data (gaps break the line). Same SVG proportions as the
+    // check-in chart so the two sit level side by side.
+    function regAvgAgeBody(rows) {
+      var dark = document.documentElement.classList.contains('dark');
+      var axisCol = dark ? '#9aa0a6' : '#888', gridCol = dark ? '#33373d' : '#ececec';
+      var lineCol = dark ? '#ff6b6b' : '#cc0000';
+      var W = 900, H = 316, padL = 44, padR = 18, padT = 34, padB = 56;
+      var plotW = W - padL - padR, plotH = H - padT - padB;
+      var vals = rows.filter(function (d) { return d.avgAge != null; }).map(function (d) { return d.avgAge; });
+      var lo, hi;
+      if (vals.length) {
+        var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+        lo = Math.floor((mn - 2) / 5) * 5; hi = Math.ceil((mx + 2) / 5) * 5;
+        if (hi <= lo) { lo = mn - 5; hi = mn + 5; }
+      } else { lo = 20; hi = 60; }
+      function Y(v) { return padT + plotH * (1 - (v - lo) / (hi - lo)); }
+      var n = rows.length, gW = plotW / n;
+      var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" style="width:100%;height:auto;">';
+      for (var g = 0; g <= 4; g++) {
+        var gv = lo + (hi - lo) * g / 4, gy = Y(gv);
+        s += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="' + gridCol + '" stroke-width="1"/>' +
+          '<text x="' + (padL - 8) + '" y="' + (gy + 5).toFixed(1) + '" text-anchor="end" font-size="16" fill="' + axisCol + '">' + Math.round(gv) + '</text>';
+      }
+      // Year labels along the bottom.
+      rows.forEach(function (d, i) {
+        var cx = padL + gW * i + gW / 2;
+        s += '<text x="' + cx.toFixed(1) + '" y="' + (H - padB + 26) + '" text-anchor="middle" font-size="18" fill="' + axisCol + '">' + d.year + '</text>';
+      });
+      // Points, then the line drawn across contiguous runs (a null year breaks it).
+      var pts = rows.map(function (d, i) { return { x: padL + gW * i + gW / 2, y: d.avgAge != null ? Y(d.avgAge) : null, d: d }; });
+      var run = [];
+      function flush() {
+        if (run.length >= 2) {
+          var dp = run.map(function (p, i) { return (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1); }).join(' ');
+          s += '<path d="' + dp + '" fill="none" stroke="' + lineCol + '" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>';
+        }
+        run = [];
+      }
+      pts.forEach(function (p) { if (p.y == null) flush(); else run.push(p); });
+      flush();
+      pts.forEach(function (p) {
+        if (p.y == null) return;
+        s += '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="7" fill="' + lineCol + '"><title>' + p.d.year + ': avg age ' + p.d.avgAge + ' (' + p.d.n + ' with birthdate)</title></circle>' +
+          '<text x="' + p.x.toFixed(1) + '" y="' + (p.y - 15).toFixed(1) + '" text-anchor="middle" font-size="19" font-weight="700" fill="' + axisCol + '">' + p.d.avgAge + '</text>';
+      });
       return s + '</svg>';
     }
 
@@ -4932,7 +5016,7 @@
       for (var g = 0; g <= 4; g++) {
         var gv = yMax * g / 4, gy = Y(gv);
         grid += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + gy.toFixed(1) + '" stroke="' + gridCol + '" stroke-width="1"/>' +
-          '<text x="' + (padL - 8) + '" y="' + (gy + 3.5).toFixed(1) + '" text-anchor="end" font-size="11" fill="' + axisCol + '">' + Math.round(gv) + '</text>';
+          '<text x="' + (padL - 8) + '" y="' + (gy + 4.5).toFixed(1) + '" text-anchor="end" font-size="14" fill="' + axisCol + '">' + Math.round(gv) + '</text>';
       }
 
       // Four stacked bands (bottom → top, most loyal first): every year, last-year-and-more,
@@ -4961,15 +5045,15 @@
         // (every + last + new + earlier = total), out of that year's registrants.
         dots += '<circle cx="' + x.toFixed(1) + '" cy="' + Y(d.total).toFixed(1) + '" r="3.2" fill="' + EARLIER_COL + '" stroke="#fff" stroke-width="1"><title>' + d.year + ': ' + d.total + ' returning of ' + d.registrants + ' registrants — ' + d.everyYear + ' every year, ' + d.repeatLast + ' last year & more, ' + d.newReturn + ' new returning, ' + d.returnEarlier + ' earlier</title></circle>';
         // Total returning count — larger, bold, above the top point.
-        if (d.total > 0) dots += '<text x="' + x.toFixed(1) + '" y="' + (Y(d.total) - 9).toFixed(1) + '" text-anchor="middle" font-size="15" font-weight="700" fill="' + axisCol + '">' + d.total + '</text>';
+        if (d.total > 0) dots += '<text x="' + x.toFixed(1) + '" y="' + (Y(d.total) - 11).toFixed(1) + '" text-anchor="middle" font-size="20" font-weight="700" fill="' + axisCol + '">' + d.total + '</text>';
         // Per-band count — centered white inside the band when tall enough; otherwise queue a side
         // callout so thin slivers still show their value.
         var callouts = [];
         function bandLabel(count, below, color) {
           if (count <= 0) return;
           var midY = Y(below + count / 2);
-          if (plotH * count / yMax >= 15) {
-            dots += '<text x="' + x.toFixed(1) + '" y="' + (midY + 3.5).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">' + count + '</text>';
+          if (plotH * count / yMax >= 19) {
+            dots += '<text x="' + x.toFixed(1) + '" y="' + (midY + 5).toFixed(1) + '" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">' + count + '</text>';
           } else {
             callouts.push({ y: midY, count: count, color: color });
           }
@@ -4982,16 +5066,16 @@
         // several thin slivers in one column don't overlap. Last year points left (avoids clipping).
         if (callouts.length) {
           callouts.sort(function (a, b) { return a.y - b.y; });
-          var side = (i === n - 1) ? -1 : 1, lx = x + side * 30, anchor = side < 0 ? 'end' : 'start', prev = -Infinity;
+          var side = (i === n - 1) ? -1 : 1, lx = x + side * 32, anchor = side < 0 ? 'end' : 'start', prev = -Infinity;
           var labelCol = dark ? '#fff' : '#222';   // high-contrast against the chart background, not the band
           callouts.forEach(function (c) {
-            var ly = Math.max(c.y, prev + 13); prev = ly;
+            var ly = Math.max(c.y, prev + 16); prev = ly;
             dots += '<line x1="' + x.toFixed(1) + '" y1="' + c.y.toFixed(1) + '" x2="' + lx.toFixed(1) + '" y2="' + ly.toFixed(1) + '" stroke="' + c.color + '" stroke-width="1" stroke-opacity="0.7"/>' +
               '<circle cx="' + x.toFixed(1) + '" cy="' + c.y.toFixed(1) + '" r="1.8" fill="' + c.color + '"/>' +
-              '<text x="' + (lx + side * 3).toFixed(1) + '" y="' + (ly + 3.5).toFixed(1) + '" text-anchor="' + anchor + '" font-size="10" font-weight="700" fill="' + labelCol + '">' + c.count + '</text>';
+              '<text x="' + (lx + side * 3).toFixed(1) + '" y="' + (ly + 4.5).toFixed(1) + '" text-anchor="' + anchor + '" font-size="13" font-weight="700" fill="' + labelCol + '">' + c.count + '</text>';
           });
         }
-        xlabels += '<text x="' + x.toFixed(1) + '" y="' + (H - padB + 20) + '" text-anchor="middle" font-size="12" fill="' + axisCol + '">' + d.year + '</text>';
+        xlabels += '<text x="' + x.toFixed(1) + '" y="' + (H - padB + 24) + '" text-anchor="middle" font-size="16" fill="' + axisCol + '">' + d.year + '</text>';
       });
 
       var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="max-width:100%;height:auto;display:block;" preserveAspectRatio="xMidYMid meet">' +
@@ -5161,7 +5245,7 @@
       var stats = '<div class="reg-stats">' +
         regStat(all.length, 'Total registrants', true) +
         regStat(avgCheckin != null ? avgCheckin + '%' : '—', 'Avg. check-in rate') +
-        regStat(returning + ' <span style="font-size:.55em;font-weight:600;color:#999;">(' + returningPct + '%)</span>', 'Returning (2+ yrs)') +
+        regStat(returningPct + '%<span style="font-size:.55em;font-weight:600;color:#999;"> (' + returning + ')</span>', 'Returning (2+ yrs)') +
         regStat(avgAge != null ? avgAge : '—', 'Average age') +
         '</div>';
       var yearsCount = regTally(all.map(function (r) { return (r.years || []).length + ' year' + ((r.years || []).length === 1 ? '' : 's'); }));
@@ -5175,9 +5259,12 @@
       var loyalty = regLoyaltyCard();
       var yoy = regReturningYoYCard(regReturningYoY());
       var checkin = regCheckinRateCard(crRows);
+      var avgAgeChart = regAvgAgeCard(regAvgAgeByYearRows());
       // Lifetime-loyalty (vertical) sits to the left of the per-year chart; they wrap on narrow screens.
       var returningRow = '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;">' + loyalty + yoy + '</div>';
-      el.innerHTML = stats + '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;">' + charts + '</div>' + returningRow + checkin;
+      // Check-in rate and average-age trend share a row (age to the right); they wrap on narrow screens.
+      var checkinRow = '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;margin-top:14px;">' + checkin + avgAgeChart + '</div>';
+      el.innerHTML = stats + '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;">' + charts + '</div>' + returningRow + checkinRow;
     }
 
     // ---- Rider location map (Registration → Overview) ----
@@ -5271,26 +5358,27 @@
         return ' <span style="font-size:.55em;font-weight:600;color:#999;">(' + regFmtPct(n, riders.length) + ')</span>';
       }
       var chk = regCheckinCount(year);   // checked in on ride day, or null if not recorded
-      // Wider cap than the shared default so all six tiles sit on one row when there's
+      // Wider cap than the shared default so the tiles sit on one row when there's
       // room; auto-fit still wraps them on narrower screens.
       var stats = '<div class="reg-stats" style="max-width:960px;">' +
-        regStat(riders.length, year + ' registrants', true) +
+        regStat(riders.length, 'Registered', true) +
         regStat(chk != null ? (chk + returnPct(chk)) : '—', 'Checked in') +
-        regStat(returnLast + returnPct(returnLast), 'Returning (last year)') +
-        regStat(returnAny + returnPct(returnAny), 'Returning (any year)') +
-        regStat(newRiders, 'First-time') +
+        regStat(returnAny + returnPct(returnAny), 'Returning Riders') +
         regStat(avgAge != null ? avgAge : '—', 'Average age') +
         '</div>';
       var routes = regTally(riders.map(function (r) { return r.rideTypeByYear && r.rideTypeByYear[year]; }), { top: 12 });
       // New vs returning composition of this year's field (sums to total registrants).
+      // Returning is split into last-year vs earlier-only; the three slices together
+      // equal total registrants (returnAny = returnLast + earlier-only = riders.length - newRiders).
       var retention = [
         { label: 'Returning (last year)', count: returnLast },
         { label: 'Returning (earlier only)', count: returnAny - returnLast },
         { label: 'First-time', count: newRiders }
       ].filter(function (e) { return e.count > 0; });
       var charts =
-        regPieCard('New vs returning (' + year + ')', retention) +
-        regPieCard('Ride type / route (' + year + ')', routes) +
+        regPieCard('Ride Type', routes) +
+        regPieCardOr('Route ridden (survey)', surveyRouteTallyForYear(year), 'No survey route responses yet — riders report the route they actually rode on the post-event survey.') +
+        regPieCard('New vs Returning', retention) +
         regPieCard('Bike type', regTally(riders.map(function (r) { return r.bikeType; }), { top: 8 })) +
         regPieCard('Dietary restrictions', regTally(riders.map(function (r) { return r.dietary; }), { blankLabel: 'None', top: 8 })) +
         regPieCard('Age', regAgeBrackets(riders));
@@ -5312,14 +5400,9 @@
       function showView() {
         var derived = regCheckinDerived(year);
         if (derived != null) {
-          // Authoritative per-rider record — no manual edit; fix it by re-uploading.
-          var noShow = Math.max(0, registered - derived);
-          host.innerHTML =
-            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-              '<span><strong>Checked in:</strong> ' + esc(derived + ' of ' + registered + ' registered') +
-                ' <span style="color:#cc0000;font-weight:700;">(' + regFmtPct(derived, registered) + ' showed up)</span>' +
-                ' <span class="muted">· ' + noShow + ' no-show' + (noShow === 1 ? '' : 's') + '</span></span>' +
-            '</div>';
+          // Authoritative per-rider record is already summarized by the "Checked in"
+          // stat card above, so nothing to show here (no manual edit — fix by re-uploading).
+          host.innerHTML = '';
           return;
         }
         var n = regCheckinManual(year);
