@@ -4516,8 +4516,13 @@
         '<h4>' + esc(title) + '</h4><p class="muted" style="font-size:.85rem;margin:8px 0 0;">' + esc(emptyMsg || 'No data yet.') + '</p></div>';
     }
 
-    // Enlarge modal.
-    function openPieModal(title, entries) {
+    // Enlarge modal. The donuts in a section (Overview, or a single Year) form a
+    // navigable group, so Prev/Next flips through them without closing the modal.
+    var regPieGroup = [], regPieIdx = 0;
+    function openPieModal(idx) {
+      if (!regPieGroup.length) return;
+      regPieIdx = (idx + regPieGroup.length) % regPieGroup.length; // wrap around
+      var cur = regPieGroup[regPieIdx];
       var m = $('reg-pie-modal');
       if (!m) {
         m = document.createElement('div'); m.id = 'reg-pie-modal';
@@ -4529,17 +4534,37 @@
       var dark = document.documentElement.classList.contains('dark');
       var box = $('reg-pie-modal-box');
       box.style.cssText = 'background:' + (dark ? '#1e2126' : '#fff') + ';color:' + (dark ? '#e8e8e8' : '#222') + ';border-radius:12px;padding:24px 28px;max-width:680px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,0.45);';
+      var multi = regPieGroup.length > 1;
       box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;">' +
-        '<h3 style="margin:0;font-family:\'Oswald\',sans-serif;">' + esc(title) + '</h3>' +
+        '<h3 style="margin:0;font-family:\'Oswald\',sans-serif;">' + esc(cur.t) + '</h3>' +
         '<button class="adm-btn small" id="reg-pie-close" style="background:#888;">Close</button></div>' +
-        regPieRender(entries, 320, '1rem', true);
+        regPieRender(cur.e, 320, '1rem', true) +
+        (multi ? '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid ' + (dark ? '#333842' : '#eee') + ';">' +
+          '<button class="adm-btn small" id="reg-pie-prev" style="background:#666;">&#8249; Prev</button>' +
+          '<span class="muted" style="font-size:.85rem;">' + (regPieIdx + 1) + ' of ' + regPieGroup.length + '</span>' +
+          '<button class="adm-btn small" id="reg-pie-next">Next &#8250;</button></div>' : '');
       m.style.display = 'flex';
       $('reg-pie-close').addEventListener('click', function () { m.style.display = 'none'; });
+      if (multi) {
+        $('reg-pie-prev').addEventListener('click', function () { openPieModal(regPieIdx - 1); });
+        $('reg-pie-next').addEventListener('click', function () { openPieModal(regPieIdx + 1); });
+      }
     }
     document.addEventListener('click', function (e) {
       var card = e.target.closest && e.target.closest('.reg-pie-card');
       if (!card) return;
-      try { var d = JSON.parse(decodeURIComponent(card.getAttribute('data-pie'))); openPieModal(d.t, d.e); } catch (x) {}
+      // Build the navigable group from the sibling pie cards in the same section.
+      // Empty-placeholder cards lack `.reg-pie-card`, so they're skipped cleanly.
+      var siblings = card.parentNode ? card.parentNode.querySelectorAll(':scope > .reg-pie-card') : [card];
+      regPieGroup = []; var startIdx = 0;
+      Array.prototype.forEach.call(siblings, function (c) {
+        try {
+          var d = JSON.parse(decodeURIComponent(c.getAttribute('data-pie')));
+          if (c === card) startIdx = regPieGroup.length;
+          regPieGroup.push({ t: d.t, e: d.e });
+        } catch (x) {}
+      });
+      if (regPieGroup.length) openPieModal(startIdx);
     });
 
     // ---- Chart "what is this?" help: title-click reveals the explanation ----
@@ -5056,7 +5081,7 @@
         var x = X(i);
         // Marker + full-breakdown tooltip on the top (cumulative) line — all counts of actual riders
         // (every + last + new + earlier = total), out of that year's registrants.
-        dots += '<circle cx="' + x.toFixed(1) + '" cy="' + Y(d.total).toFixed(1) + '" r="3.2" fill="' + EARLIER_COL + '" stroke="#fff" stroke-width="1"><title>' + d.year + ': ' + d.total + ' returning of ' + d.registrants + ' registrants — ' + d.everyYear + ' every year, ' + d.repeatLast + ' last year & more, ' + d.newReturn + ' new returning, ' + d.returnEarlier + ' earlier</title></circle>';
+        dots += '<circle cx="' + x.toFixed(1) + '" cy="' + Y(d.total).toFixed(1) + '" r="3.4" fill="#fff" stroke="' + EARLIER_COL + '" stroke-width="1.6"><title>' + d.year + ': ' + d.total + ' returning of ' + d.registrants + ' registrants — ' + d.everyYear + ' every year, ' + d.repeatLast + ' last year & more, ' + d.newReturn + ' new returning, ' + d.returnEarlier + ' earlier</title></circle>';
         // Total returning count — larger, bold, above the top point — with the share of that
         // year's registrants shown smaller and grayer on a line underneath it.
         if (d.total > 0) {
@@ -5071,7 +5096,13 @@
           if (count <= 0) return;
           var midY = Y(below + count / 2);
           if (plotH * count / yMax >= 19) {
-            dots += '<text x="' + x.toFixed(1) + '" y="' + (midY + 5).toFixed(1) + '" text-anchor="middle" font-size="14" font-weight="600" fill="#fff">' + count + '</text>';
+            // Centered on the point, except edge columns: the last/first column's
+            // number is anchored to its inner side and nudged in so it never clips
+            // the right/left edge of the plot.
+            var lbx = x, lba = 'middle';
+            if (i === n - 1) { lbx = x - 6; lba = 'end'; }
+            else if (i === 0) { lbx = x + 6; lba = 'start'; }
+            dots += '<text x="' + lbx.toFixed(1) + '" y="' + (midY + 5).toFixed(1) + '" text-anchor="' + lba + '" font-size="14" font-weight="600" fill="#fff">' + count + '</text>';
           } else {
             callouts.push({ y: midY, count: count, color: color });
           }
@@ -5085,12 +5116,12 @@
         if (callouts.length) {
           callouts.sort(function (a, b) { return a.y - b.y; });
           var side = (i === n - 1) ? -1 : 1, lx = x + side * 32, anchor = side < 0 ? 'end' : 'start', prev = -Infinity;
-          var labelCol = dark ? '#fff' : '#222';   // high-contrast against the chart background, not the band
+          // White count, matching the in-band labels.
           callouts.forEach(function (c) {
             var ly = Math.max(c.y, prev + 16); prev = ly;
             dots += '<line x1="' + x.toFixed(1) + '" y1="' + c.y.toFixed(1) + '" x2="' + lx.toFixed(1) + '" y2="' + ly.toFixed(1) + '" stroke="' + c.color + '" stroke-width="1" stroke-opacity="0.7"/>' +
               '<circle cx="' + x.toFixed(1) + '" cy="' + c.y.toFixed(1) + '" r="1.8" fill="' + c.color + '"/>' +
-              '<text x="' + (lx + side * 3).toFixed(1) + '" y="' + (ly + 4.5).toFixed(1) + '" text-anchor="' + anchor + '" font-size="13" font-weight="700" fill="' + labelCol + '">' + c.count + '</text>';
+              '<text x="' + (lx + side * 3).toFixed(1) + '" y="' + (ly + 4.5).toFixed(1) + '" text-anchor="' + anchor + '" font-size="13" font-weight="700" fill="#fff">' + c.count + '</text>';
           });
         }
         xlabels += '<text x="' + x.toFixed(1) + '" y="' + (H - padB + 24) + '" text-anchor="middle" font-size="16" fill="' + axisCol + '">' + d.year + '</text>';
