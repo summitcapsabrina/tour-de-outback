@@ -393,7 +393,14 @@
 
       // ---- Post-redirect success (wallet/redirect payment methods) ----
       var qs = new URLSearchParams(location.search);
-      if (qs.get('redirect_status') === 'succeeded') { showThanks(); return; }
+      if (qs.get('redirect_status') === 'succeeded') {
+        // Redirect payment methods land here after leaving the page, so `order` is
+        // gone — read the total (cents) back from the &amt= we set on return_url.
+        var amtRaw = qs.get('amt');
+        fireApparelConversion(amtRaw ? parseInt(amtRaw, 10) / 100 : 0);
+        showThanks();
+        return;
+      }
 
       // Populate country select.
       var sel = document.getElementById('fCountry');
@@ -423,6 +430,17 @@
         var el = document.getElementById(id);
         if (el) { el.addEventListener('input', saveShipping); el.addEventListener('change', saveShipping); }
       });
+
+      // Google Ads: report the apparel order as a conversion. Value = order total
+      // (order.total is in CENTS — see Shop.money — so callers pass dollars).
+      function fireApparelConversion(dollars) {
+        if (typeof gtag !== 'function') return;
+        gtag('event', 'conversion', {
+          send_to: 'AW-11006704390/i2kdCMq1gtAcEIb2s4Ap',
+          value: Math.round((parseFloat(dollars) || 0) * 100) / 100,
+          currency: 'USD'
+        });
+      }
 
       function showThanks() {
         Shop.cart.clear();
@@ -629,11 +647,12 @@
           .then(function (r) { if (r.error) throw r.error; return stripe.confirmPayment({
             elements: elements,
             clientSecret: order.clientSecret,
-            confirmParams: { return_url: location.origin + '/shop/checkout/' },
+            confirmParams: { return_url: location.origin + '/shop/checkout/?amt=' + Math.round(order.total || 0) },
             redirect: 'if_required'
           }); })
           .then(function (result) {
             if (result && result.error) throw result.error;
+            fireApparelConversion(order ? order.total / 100 : 0);
             showThanks();
           })
           .catch(function (err) {
