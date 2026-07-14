@@ -390,8 +390,14 @@
     /* Clickable visuals + enlarge modal */
     .viz-card { cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
     .viz-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-1px); }
-    #viz-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    #viz-modal .viz-modal-box { background: #fff; border-radius: 12px; max-width: 660px; width: 100%; max-height: 90vh; overflow: auto; padding: 28px 30px; position: relative; }
+    /* z-index sits above the fixed site navbar (1000) and cart (1200) so the modal
+       and its backdrop cover them — otherwise the chart title clips behind the nav. */
+    #viz-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    #viz-modal .viz-modal-box { background: #fff; border-radius: 12px; max-width: 920px; width: 100%; max-height: 90vh; overflow: auto; padding: 28px 30px; position: relative; }
+    /* Donut scales to the viewport (width AND height) so the whole visual fits at
+       any browser zoom; the box still scrolls if the legend runs long. */
+    #viz-modal .viz-donut-wrap { display: inline-block; width: min(320px, 46vh, 82vw); max-width: 100%; }
+    #viz-modal-body svg { width: 100%; height: auto; display: block; }
     #viz-modal .viz-modal-close { position: absolute; top: 10px; right: 14px; border: none; background: none; font-size: 1.8rem; line-height: 1; color: #999; cursor: pointer; }
     #viz-modal .viz-modal-close:hover { color: #222; }
     html.dark #viz-modal .viz-modal-box { background: #1e2126; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
@@ -3232,14 +3238,21 @@
       var d = vizStore[idx];
       if (!d) return;
       var P = survPal();
+      var legend = vizLegend(d.entries, d.total, true, true);
+      // Likert: the horizontal stacked bar is already full-width, so the legend
+      // reads best stacked beneath it. Donut: sit the legend to the RIGHT of the
+      // chart so it uses the modal's horizontal space instead of running tall.
+      // Both wrap to a stacked layout on narrow / zoomed-in viewports.
       var chart = d.type === 'likert'
-        ? barDiv(d.entries, d.total, 44)
-        : '<div style="text-align:center;">' + donutSvg(d.entries, d.total, 320, 8) + '</div>';
+        ? barDiv(d.entries, d.total, 44) + legend
+        : '<div style="display:flex;gap:30px;align-items:center;justify-content:center;flex-wrap:wrap;">' +
+            '<div class="viz-donut-wrap">' + donutSvg(d.entries, d.total, 320, 8) + '</div>' +
+            '<div style="flex:1 1 260px;min-width:240px;">' + legend + '</div></div>';
       $('viz-modal-body').innerHTML =
         '<h2 style="font-family:\'Oswald\',sans-serif;font-size:1.5rem;margin:0 30px 4px 0;color:' + P.ink + ';">' + esc(d.title) + '</h2>' +
         '<p class="sub" style="margin:0 0 18px;">' + d.total + ' response' + (d.total === 1 ? '' : 's') +
         ' &middot; <span style="color:' + P.muted + ';">click an answer below to see who responded that way</span></p>' +
-        chart + vizLegend(d.entries, d.total, true, true) +
+        chart +
         '<div id="viz-people"></div>' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:14px;border-top:1px solid ' + P.rule + ';">' +
         '<button class="adm-btn" id="viz-prev" style="background:#666;">&#8249; Prev</button>' +

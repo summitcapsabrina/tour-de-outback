@@ -247,7 +247,18 @@ import {
 
   // Bridge so other widgets (e.g. the chat widget) can read auth state and react
   // to sign-in/out. `resolved` flips true once Firebase has determined the state.
-  window.tdoAuth = window.tdoAuth || { currentUser: null, resolved: false };
+  window.tdoAuth = window.tdoAuth || { currentUser: null, resolved: false, isAdmin: false };
+
+  // Lightweight admin check for UI gating (e.g. hiding the chat widget). Reads
+  // only the CACHED token claim — no force-refresh — so non-admin visitors incur
+  // no extra network. A just-promoted admin picks this up on their next reload.
+  function cachedIsAdmin(user) {
+    if (!user || !user.emailVerified) return Promise.resolve(false);
+    if (isAdminUser(user)) return Promise.resolve(true);
+    return user.getIdTokenResult()
+      .then(function (r) { return !!(r.claims && r.claims.admin === true); })
+      .catch(function () { return false; });
+  }
 
   onAuthStateChanged(auth, function (user) {
     currentUser = user;
@@ -260,12 +271,18 @@ import {
     } catch (e) { /* storage disabled */ }
     if (user) { renderSignedIn(user); closeModal(); }
     else { menu.innerHTML = ''; closeMenu(); }
-    window.tdoAuth.currentUser = user
-      ? { uid: user.uid, displayName: user.displayName || '', email: user.email || '' }
-      : null;
-    window.tdoAuth.resolved = true;
-    try {
-      window.dispatchEvent(new CustomEvent('tdo-auth-changed', { detail: window.tdoAuth.currentUser }));
-    } catch (e) { /* older browsers */ }
+    // Resolve the admin flag before publishing state, so listeners (the chat
+    // widget) see a consistent view. The cached-claim read resolves in a
+    // microtask for non-admins, so gate dismissal isn't meaningfully delayed.
+    cachedIsAdmin(user).then(function (isAdmin) {
+      window.tdoAuth.currentUser = user
+        ? { uid: user.uid, displayName: user.displayName || '', email: user.email || '' }
+        : null;
+      window.tdoAuth.isAdmin = !!isAdmin;
+      window.tdoAuth.resolved = true;
+      try {
+        window.dispatchEvent(new CustomEvent('tdo-auth-changed', { detail: window.tdoAuth.currentUser }));
+      } catch (e) { /* older browsers */ }
+    });
   });
 })();

@@ -636,4 +636,23 @@
 
   // If a human was already helping (returning visitor), keep polling in background.
   if (state.cid) ensurePolling();
+
+  // ----------------------------------------------------------- admin gate
+  // The floating widget is for visitors and riders — admins don't need it. We
+  // hide it for any signed-in admin, and leave it untouched for everyone else.
+  // Auth state is resolved asynchronously by auth-widget.js and shared via
+  // window.tdoAuth, which carries an `isAdmin` flag it derives from the cached
+  // token claim (no extra network for non-admins). We re-check on every
+  // `tdo-auth-changed` so this stays correct across sign-in / sign-out.
+  function applyAdminGate() {
+    if (window.tdoAuth && window.tdoAuth.isAdmin) {
+      if (state.open) closePanel();
+      if (state.polling) { clearInterval(state.polling); state.polling = null; }
+      root.style.display = 'none';
+    } else {
+      root.style.display = '';
+    }
+  }
+  window.addEventListener('tdo-auth-changed', applyAdminGate);
+  applyAdminGate(); // in case auth resolved before this script loaded
 })();
