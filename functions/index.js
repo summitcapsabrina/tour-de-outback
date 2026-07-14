@@ -84,6 +84,14 @@ const PRINTIFY_SHOP_ID = defineSecret('PRINTIFY_SHOP_ID');
 // trust incoming shipment webhooks. Set with: firebase functions:secrets:set PRINTIFY_WEBHOOK_TOKEN
 const PRINTIFY_WEBHOOK_TOKEN = defineSecret('PRINTIFY_WEBHOOK_TOKEN');
 
+// EmailOctopus API key (v2 API, Bearer auth) for subscribing consented account
+// signups to the mailing list. The newsletter's own embed form is keyless; this
+// key is only used by subscribeNewsletter. Set with:
+//   firebase functions:secrets:set EMAILOCTOPUS_API_KEY
+const EMAILOCTOPUS_API_KEY = defineSecret('EMAILOCTOPUS_API_KEY');
+// The EmailOctopus list new contacts are added to (same list the newsletter form feeds).
+const EMAILOCTOPUS_LIST_ID = '35e53e2a-1812-11f1-bdf7-2131ac6e0118';
+
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 
 // Origins allowed to call create-donation from the browser. Same-origin calls
@@ -1835,6 +1843,47 @@ exports.registrationInterest = onRequest(
       return res.json({ ok: true });
     } catch (err) {
       logger.error('registrationInterest failed', err);
+      return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/subscribe-newsletter  — add a consented email to the EmailOctopus
+// mailing list. Called from the "My Account" signup when the consent box is
+// checked (the newsletter SECTION uses EmailOctopus's own keyless embed form).
+// body: { email }  ->  { ok: true, created: true|false }
+//   created:true  → newly subscribed (EO 201); the client then fires the Email sign-up conversion
+//   created:false → already on the list (EO 409); no conversion (not a new signup)
+// ---------------------------------------------------------------------------
+exports.subscribeNewsletter = onRequest(
+  { secrets: [EMAILOCTOPUS_API_KEY], cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const email = String((req.body || {}).email || '').trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 160) {
+      return res.status(400).json({ error: 'Please enter a valid email.' });
+    }
+    try {
+      // EmailOctopus v2 API: POST /lists/{id}/contacts, Bearer auth. Node 22 has global fetch.
+      const resp = await fetch(
+        'https://api.emailoctopus.com/lists/' + EMAILOCTOPUS_LIST_ID + '/contacts',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + EMAILOCTOPUS_API_KEY.value(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email_address: email, status: 'subscribed' }),
+        }
+      );
+      if (resp.status === 201) return res.json({ ok: true, created: true });
+      if (resp.status === 409) return res.json({ ok: true, created: false }); // already subscribed
+      const detail = await resp.text().catch(function () { return ''; });
+      logger.error('subscribeNewsletter EO error', resp.status, detail.slice(0, 500));
+      return res.status(502).json({ error: 'Could not subscribe right now.' });
+    } catch (err) {
+      logger.error('subscribeNewsletter failed', err);
       return res.status(500).json({ error: 'Something went wrong. Please try again.' });
     }
   }

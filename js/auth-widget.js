@@ -5,7 +5,7 @@
 import { auth, isAdminUser } from "/js/firebase-init.js";
 import {
   onAuthStateChanged, signOut,
-  GoogleAuthProvider, signInWithPopup,
+  GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   sendSignInLinkToEmail
 } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
@@ -135,6 +135,32 @@ import {
     el.textContent = text;
   }
 
+  // ---- Google Ads conversions ----
+  // Account signup fires on every genuinely-new account. The Email sign-up
+  // conversion is separate and additional: it fires only when a consented email
+  // is newly added to EmailOctopus (see subscribeAndTrack).
+  var CONV_ACCOUNT_SIGNUP = 'AW-11006704390/9clOCOrB6c8cEIb2s4Ap';
+  var CONV_EMAIL_SIGNUP = 'AW-11006704390/-3_RCM7OgdAcEIb2s4Ap';
+  function fireConversion(sendTo) {
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'conversion', { send_to: sendTo });
+    }
+  }
+  // Subscribe a consented email to EmailOctopus, then fire the Email sign-up
+  // conversion only if they were newly added (created:true) — not if already listed.
+  function subscribeAndTrack(email) {
+    if (!email) return;
+    fetch('/api/subscribe-newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    }).then(function (r) {
+      return r.json().then(function (d) { return { ok: r.ok, d: d }; });
+    }).then(function (res) {
+      if (res.ok && res.d && res.d.created) { fireConversion(CONV_EMAIL_SIGNUP); }
+    }).catch(function () {});
+  }
+
   // ---- Login form (rendered into the modal) ----
   function renderLogin() {
     signupMode = false;
@@ -145,25 +171,45 @@ import {
       '<div class="tdo-div">or</div>' +
       '<div class="tdo-field"><label>Email</label><input type="email" id="tdo-email" autocomplete="email" placeholder="you@example.com"></div>' +
       '<div class="tdo-field"><label>Password</label><input type="password" id="tdo-pw" autocomplete="current-password" placeholder="Your password"></div>' +
+      '<div class="tdo-consent" id="tdo-consent-field" style="display:none;margin:2px 0 14px">' +
+        '<label style="display:flex;align-items:flex-start;gap:8px;font-size:0.82rem;line-height:1.4;font-weight:400;cursor:pointer;color:#555">' +
+          '<input type="checkbox" id="tdo-consent" checked style="margin-top:2px;flex:none">' +
+          '<span>Email me Tour de Outback updates — routes, registration, and event news. Unsubscribe anytime.</span>' +
+        '</label>' +
+      '</div>' +
       '<button class="tdo-btn tdo-btn-primary" id="tdo-email-submit">Sign in</button>' +
       '<p class="tdo-foot"><span id="tdo-mode-hint">New here?</span> <button class="tdo-link" id="tdo-toggle">Create an account</button></p>' +
       '<p class="tdo-foot">Prefer no password? <button class="tdo-link" id="tdo-emaillink">Email me a link</button></p>';
 
     modalBody.querySelector('#tdo-google').addEventListener('click', function () {
-      signInWithPopup(auth, new GoogleAuthProvider()).catch(function (e) { msg('err', friendly(e)); });
+      signInWithPopup(auth, new GoogleAuthProvider()).then(function (result) {
+        // First-ever Google sign-in creates an account → count it (no email consent box shown here).
+        var info = getAdditionalUserInfo(result);
+        if (info && info.isNewUser) { fireConversion(CONV_ACCOUNT_SIGNUP); }
+      }).catch(function (e) { msg('err', friendly(e)); });
     });
     modalBody.querySelector('#tdo-toggle').addEventListener('click', function () {
       signupMode = !signupMode;
       modalBody.querySelector('#tdo-email-submit').textContent = signupMode ? 'Create account' : 'Sign in';
       modalBody.querySelector('#tdo-mode-hint').textContent = signupMode ? 'Have an account?' : 'New here?';
       modalBody.querySelector('#tdo-toggle').textContent = signupMode ? 'Sign in instead' : 'Create an account';
+      var cf = modalBody.querySelector('#tdo-consent-field');
+      if (cf) cf.style.display = signupMode ? 'block' : 'none';
     });
     modalBody.querySelector('#tdo-email-submit').addEventListener('click', function () {
       var email = modalBody.querySelector('#tdo-email').value.trim();
       var pw = modalBody.querySelector('#tdo-pw').value;
       if (!email || !pw) { msg('err', 'Enter your email and password.'); return; }
-      var fn = signupMode ? createUserWithEmailAndPassword : signInWithEmailAndPassword;
-      fn(auth, email, pw).catch(function (e) { msg('err', friendly(e)); });
+      if (signupMode) {
+        var consentBox = modalBody.querySelector('#tdo-consent');
+        var wantsEmail = !!(consentBox && consentBox.checked);
+        createUserWithEmailAndPassword(auth, email, pw).then(function () {
+          fireConversion(CONV_ACCOUNT_SIGNUP);
+          if (wantsEmail) { subscribeAndTrack(email); }
+        }).catch(function (e) { msg('err', friendly(e)); });
+      } else {
+        signInWithEmailAndPassword(auth, email, pw).catch(function (e) { msg('err', friendly(e)); });
+      }
     });
     modalBody.querySelector('#tdo-emaillink').addEventListener('click', function () {
       var email = modalBody.querySelector('#tdo-email').value.trim();

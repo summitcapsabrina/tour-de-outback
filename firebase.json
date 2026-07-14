@@ -93,6 +93,10 @@
         "function": { "functionId": "registrationInterest", "region": "us-central1" }
       },
       {
+        "source": "/api/subscribe-newsletter",
+        "function": { "functionId": "subscribeNewsletter", "region": "us-central1" }
+      },
+      {
         "source": "/api/submit-survey",
         "function": { "functionId": "submitSurvey", "region": "us-central1" }
       },

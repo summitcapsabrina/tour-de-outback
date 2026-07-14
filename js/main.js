@@ -108,10 +108,20 @@ function setActiveNav() {
 }
 
 // --- Newsletter Form (EmailOctopus Embedded) ---
-// EmailOctopus handles form submission via their embedded script.
-// No custom JS needed — the EO script manages submit, validation, and reCAPTCHA.
+// EmailOctopus handles the form itself via its embedded script (submit, validation,
+// reCAPTCHA). On a successful signup EO redirects to ?eo_subscribed=1 (configured in
+// the EO form settings) — we fire the Google Ads "Email sign-up" conversion on return,
+// then strip the flag so a reload/bookmark can't re-fire it.
 function initNewsletter() {
-  // Placeholder — EO script handles everything
+  if (!/[?&]eo_subscribed=1/.test(location.search)) return;
+  if (typeof gtag === 'function') {
+    gtag('event', 'conversion', { 'send_to': 'AW-11006704390/-3_RCM7OgdAcEIb2s4Ap' });
+  }
+  try {
+    var url = new URL(location.href);
+    url.searchParams.delete('eo_subscribed');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  } catch (e) {}
 }
 
 // --- Register Button Click Tracking (GA4 + Google Ads + Meta Pixel) ---
