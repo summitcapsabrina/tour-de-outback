@@ -5044,8 +5044,13 @@
         // Marker + full-breakdown tooltip on the top (cumulative) line — all counts of actual riders
         // (every + last + new + earlier = total), out of that year's registrants.
         dots += '<circle cx="' + x.toFixed(1) + '" cy="' + Y(d.total).toFixed(1) + '" r="3.2" fill="' + EARLIER_COL + '" stroke="#fff" stroke-width="1"><title>' + d.year + ': ' + d.total + ' returning of ' + d.registrants + ' registrants — ' + d.everyYear + ' every year, ' + d.repeatLast + ' last year & more, ' + d.newReturn + ' new returning, ' + d.returnEarlier + ' earlier</title></circle>';
-        // Total returning count — larger, bold, above the top point.
-        if (d.total > 0) dots += '<text x="' + x.toFixed(1) + '" y="' + (Y(d.total) - 11).toFixed(1) + '" text-anchor="middle" font-size="20" font-weight="700" fill="' + axisCol + '">' + d.total + '</text>';
+        // Total returning count — larger, bold, above the top point — with the share of that
+        // year's registrants shown smaller and grayer alongside it.
+        if (d.total > 0) {
+          var retPct = Math.round(d.total / d.registrants * 100);
+          dots += '<text x="' + x.toFixed(1) + '" y="' + (Y(d.total) - 11).toFixed(1) + '" text-anchor="middle" font-size="20" font-weight="700" fill="' + axisCol + '">' + d.total +
+            '<tspan font-size="12" font-weight="600" fill="#999" dx="3">' + retPct + '%</tspan></text>';
+        }
         // Per-band count — centered white inside the band when tall enough; otherwise queue a side
         // callout so thin slivers still show their value.
         var callouts = [];
