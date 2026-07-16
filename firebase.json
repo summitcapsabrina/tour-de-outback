@@ -261,12 +261,16 @@
         "function": { "functionId": "adminRiderCounts", "region": "us-central1" }
       },
       {
-        "source": "/api/admin-accounting-add-expense",
-        "function": { "functionId": "adminAccountingAddExpense", "region": "us-central1" }
+        "source": "/api/admin-accounting-add-line",
+        "function": { "functionId": "adminAccountingAddLine", "region": "us-central1" }
       },
       {
-        "source": "/api/admin-accounting-delete-expense",
-        "function": { "functionId": "adminAccountingDeleteExpense", "region": "us-central1" }
+        "source": "/api/admin-accounting-update-line",
+        "function": { "functionId": "adminAccountingUpdateLine", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-delete-line",
+        "function": { "functionId": "adminAccountingDeleteLine", "region": "us-central1" }
       },
       {
         "source": "/api/admin-receipt",

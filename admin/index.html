@@ -501,20 +501,20 @@
     html.dark #acct-viz-modal .acct-viz-modal-close { color: #9aa0a6; }
     html.dark #acct-viz-modal .acct-viz-modal-close:hover { color: #ececec; }
     html.dark #acct-viz-modal-body h4 { color: #ececec; }
-    /* ---- Expenses: read-only rows (immutable; click a row to view/delete) ---- */
-    #acct-exp-table.acct-readonly td { padding: 7px 5px; }
-    #acct-exp-table.acct-readonly tbody tr { cursor: pointer; }
-    #acct-exp-table.acct-readonly tbody tr:hover td { background: #faf6f6; }
-    html.dark #acct-exp-table.acct-readonly tbody tr:hover td { background: #262024; }
-    #acct-exp-table.acct-readonly td.acct-name, #acct-exp-table.acct-readonly td.acct-cat { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #acct-exp-table.acct-readonly td.amt { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; }
-    #acct-exp-table.acct-readonly td.num { text-align: right; font-variant-numeric: tabular-nums; }
-    #acct-exp-table.acct-readonly .acct-rcpt { text-align: center; }
-    #acct-exp-table.acct-readonly .acct-rcpt .has { color: #cc0000; }
-    #acct-exp-table.acct-readonly .acct-rcpt .none { color: #c9c9c9; }
-    #acct-exp-table .acct-empty-row td { color: #999; font-style: italic; cursor: default; }
-    html.dark #acct-exp-table .acct-empty-row td { color: #8a8f96; }
-    #acct-exp-table.acct-readonly th:nth-child(6), #acct-exp-table.acct-readonly td:nth-child(6) { width: 60px; text-align: center; }
+    /* ---- Ledger: read-only line rows (click a row to edit / delete) ---- */
+    .acct-table.acct-readonly td { padding: 7px 5px; }
+    .acct-table.acct-readonly tbody tr { cursor: pointer; }
+    .acct-table.acct-readonly tbody tr:hover td { background: #faf6f6; }
+    html.dark .acct-table.acct-readonly tbody tr:hover td { background: #262024; }
+    .acct-table.acct-readonly td.acct-name, .acct-table.acct-readonly td.acct-cat { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .acct-table.acct-readonly td.amt { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; }
+    .acct-table.acct-readonly td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .acct-table.acct-readonly .acct-rcpt { text-align: center; }
+    .acct-table.acct-readonly .acct-rcpt .has { color: #cc0000; }
+    .acct-table.acct-readonly .acct-rcpt .none { color: #c9c9c9; }
+    .acct-table .acct-empty-row td { color: #999; font-style: italic; cursor: default; }
+    html.dark .acct-table .acct-empty-row td { color: #8a8f96; }
+    .acct-table.acct-readonly th:nth-child(6), .acct-table.acct-readonly td:nth-child(6) { width: 60px; text-align: center; }
     .acct-exp-hint { font-size: .82rem; color: #888; margin: 6px 0 0; }
     html.dark .acct-exp-hint { color: #9aa0a6; }
     /* ---- Expense modal (add / view+delete) ---- */
@@ -800,14 +800,15 @@
                         <span class="acct-side-total" id="acct-rev-total">$0.00</span>
                       </div>
                       <div style="overflow-x:auto;">
-                        <table class="acct-table" id="acct-rev-table">
+                        <table class="acct-table acct-readonly" id="acct-rev-table">
                           <thead><tr>
-                            <th>Source</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th></th>
+                            <th>Source</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
                           </tr></thead>
                           <tbody></tbody>
                         </table>
                       </div>
-                      <button class="adm-btn small acct-add-row" data-side="rev" style="background:#666;margin-top:8px;">+ Add revenue line</button>
+                      <button class="adm-btn small" id="acct-add-revenue" style="background:#666;margin-top:8px;">+ Add revenue line</button>
+                      <p class="acct-exp-hint">Click any line to edit it, attach a receipt, or delete it.</p>
                     </div>
 
                     <div class="acct-side">
@@ -824,7 +825,7 @@
                         </table>
                       </div>
                       <button class="adm-btn small" id="acct-add-expense" style="background:#666;margin-top:8px;">+ Add expense</button>
-                      <p class="acct-exp-hint">Click any expense to view its receipt or delete it. Entered expenses can’t be edited.</p>
+                      <p class="acct-exp-hint">Click any line to edit it, attach a receipt, or delete it.</p>
                     </div>
                   </div>
 
@@ -5841,54 +5842,23 @@
         if (acctDirty && !confirm('Discard unsaved changes to ' + acctCurYear + '?')) { this.value = String(acctCurYear); return; }
         acctCurYear = y; acctDirty = false; acctRenderLedger();
       });
-      // Revenue: add a blank inline row (revenue stays freely editable).
-      document.querySelectorAll('.acct-add-row').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var tbody = $('acct-rev-table').querySelector('tbody');
-          tbody.insertAdjacentHTML('beforeend', acctRowHtml('rev', {}));
-          var inp = tbody.lastElementChild.querySelector('.a-name'); if (inp) inp.focus();
-          acctDirty = true; acctRecalc();
+      // Every revenue and expense line is entered and edited through the modal;
+      // rows are read-only. "+ Add" opens the modal in Add mode; clicking a row
+      // opens it in Edit mode (edit fields, swap the receipt, or delete).
+      $('acct-add-revenue').addEventListener('click', function () { acctOpenLineModal('revenue', 'add', null); });
+      $('acct-add-expense').addEventListener('click', function () { acctOpenLineModal('expenses', 'add', null); });
+      [['acct-rev-table', 'revenue'], ['acct-exp-table', 'expenses']].forEach(function (pair) {
+        $(pair[0]).querySelector('tbody').addEventListener('click', function (e) {
+          var tr = e.target.closest('tr'); if (!tr || tr.classList.contains('acct-empty-row')) return;
+          var idx = parseInt(tr.getAttribute('data-idx'), 10);
+          if (!isNaN(idx)) acctOpenLineModal(pair[1], 'edit', idx);
         });
       });
-      // Expenses: a new one is entered through a modal (with receipt upload); a
-      // row is read-only — clicking it opens the view/delete modal. Existing
-      // expenses can never be edited in place.
-      $('acct-add-expense').addEventListener('click', function () { acctOpenExpenseAdd(); });
-      $('acct-exp-table').querySelector('tbody').addEventListener('click', function (e) {
-        var tr = e.target.closest('tr'); if (!tr || tr.classList.contains('acct-empty-row')) return;
-        var idx = parseInt(tr.getAttribute('data-idx'), 10);
-        if (!isNaN(idx)) acctOpenExpenseView(idx);
-      });
-      // Expense-modal close (button, backdrop, Escape).
-      $('acct-exp-modal-close').addEventListener('click', acctCloseExpenseModal);
-      $('acct-exp-modal').addEventListener('click', function (e) { if (e.target === $('acct-exp-modal')) acctCloseExpenseModal(); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('acct-exp-modal').hidden) acctCloseExpenseModal(); });
-      // One delegated listener on the REVENUE table handles edits + delete + auto-math.
-      (function () {
-        var tbody = $('acct-rev-table').querySelector('tbody');
-        tbody.addEventListener('input', function (e) { acctOnCellInput(e); });
-        tbody.addEventListener('change', function (e) {
-          if (e.target.classList.contains('a-cat')) acctOnCatChange(e.target);
-          acctDirty = true; acctRecalc();
-        });
-        // Amount fields show a formatted "1,234.56" at rest; on focus swap to the raw
-        // number (and select) for easy editing, then re-format on blur.
-        tbody.addEventListener('focusin', function (e) {
-          if (e.target.classList.contains('a-amt')) {
-            var n = acctParse(e.target.value); e.target.value = (n == null ? '' : String(n));
-            if (e.target.select) e.target.select();
-          }
-        });
-        tbody.addEventListener('focusout', function (e) {
-          if (e.target.classList.contains('a-amt')) e.target.value = acctFmtAmount(acctParse(e.target.value));
-        });
-        tbody.addEventListener('click', function (e) {
-          if (e.target.classList.contains('acct-del')) {
-            var tr = e.target.closest('tr'); if (tr) tr.remove();
-            acctDirty = true; acctRecalc();
-          }
-        });
-      })();
+      // Line-modal close (button, backdrop, Escape) + clipboard-paste receipt.
+      $('acct-exp-modal-close').addEventListener('click', acctCloseLineModal);
+      $('acct-exp-modal').addEventListener('click', function (e) { if (e.target === $('acct-exp-modal')) acctCloseLineModal(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('acct-exp-modal').hidden) acctCloseLineModal(); });
+      $('acct-exp-modal-body').addEventListener('paste', acctPasteReceipt);
       // Live data
       onSnapshot(collection(db, 'accounting_years'), function (snap) {
         acctYears = {};
@@ -6089,36 +6059,7 @@
       h += '<option value="__new__">+ Add category…</option>';
       return h;
     }
-    function acctRowHtml(side, line) {
-      var cats = side === 'rev' ? ACCT_INCOME_CATS : ACCT_EXPENSE_CATS;
-      var count = (line.count != null ? line.count : '');
-      var unit = (line.unit != null ? line.unit : '');
-      var amt = (line.amount != null && line.amount !== '') ? acctFmtAmount(line.amount) : '';
-      return '<tr>' +
-        '<td class="acct-name"><input type="text" class="a-name" value="' + esc(line.name || '') + '" placeholder="' + (side === 'rev' ? 'Income source' : 'Expense name') + '"></td>' +
-        '<td class="acct-cat"><select class="a-cat">' + acctCatOptions(cats, line.category || '') + '</select></td>' +
-        '<td class="num"><input type="text" inputmode="decimal" class="a-count" value="' + count + '"></td>' +
-        '<td class="num"><input type="text" inputmode="decimal" class="a-unit" value="' + unit + '"></td>' +
-        '<td class="num amt"><input type="text" inputmode="decimal" class="a-amt" value="' + amt + '"></td>' +
-        '<td class="del"><button type="button" class="acct-del" title="Remove line">&times;</button></td></tr>';
-    }
-    function acctOnCellInput(e) {
-      var t = e.target, tr = t.closest('tr');
-      if (!tr) return;
-      if (t.classList.contains('a-count') || t.classList.contains('a-unit')) {
-        var c = acctParse(tr.querySelector('.a-count').value), u = acctParse(tr.querySelector('.a-unit').value);
-        if (c != null && u != null) tr.querySelector('.a-amt').value = acctFmtAmount(acctR2(c * u));
-      }
-      acctDirty = true; acctRecalc();
-    }
-    function acctOnCatChange(selEl) {
-      if (selEl.value !== '__new__') return;
-      var name = (prompt('New category name:') || '').trim();
-      var tr = selEl.closest('tr');
-      var isRev = !!selEl.closest('#acct-rev-table');
-      var cats = isRev ? ACCT_INCOME_CATS : ACCT_EXPENSE_CATS;
-      selEl.innerHTML = acctCatOptions(cats, name || '');
-    }
+    function acctSideCats(side) { return side === 'revenue' ? ACCT_INCOME_CATS : ACCT_EXPENSE_CATS; }
 
     function acctRenderLedger() {
       var y = acctCurYear, d = acctYears[y] || {};
@@ -6134,12 +6075,9 @@
       // Rider count is read-only, straight from registration history.
       var regC = acctRiderCounts[y];
       $('acct-riders-display').textContent = 'Riders: ' + (regC != null ? regC : '—');
-      // rows
-      var rt = $('acct-rev-table').querySelector('tbody'), et = $('acct-exp-table').querySelector('tbody');
-      var rev = (d.revenue && d.revenue.length) ? d.revenue : [{}];
-      var exp = (d.expenses && d.expenses.length) ? d.expenses : [{}];
-      rt.innerHTML = rev.map(function (l) { return acctRowHtml('rev', l); }).join('');
-      et.innerHTML = exp.map(function (l) { return acctRowHtml('exp', l); }).join('');
+      // Both sides are read-only rows; add/edit/delete all happen in the modal.
+      acctRenderLines('revenue');
+      acctRenderLines('expenses');
       // stat grid (built once per year; recalc only updates the numbers)
       var chain = acctChain();
       var opening = isEarliest ? (+d.openingBalance || 0) : (chain[y] ? chain[y].opening : 0);
@@ -6164,31 +6102,44 @@
       acctRecalc();
     }
 
-    function acctReadEditor() {
-      function readSide(tid) {
-        var out = [];
-        $(tid).querySelectorAll('tbody tr').forEach(function (tr) {
-          var name = tr.querySelector('.a-name').value.trim();
-          var cat = tr.querySelector('.a-cat').value;
-          if (cat === '__new__') cat = '';
-          var c = acctParse(tr.querySelector('.a-count').value);
-          var u = acctParse(tr.querySelector('.a-unit').value);
-          var a = acctParse(tr.querySelector('.a-amt').value);
-          if (a == null && c != null && u != null) a = acctR2(c * u);
-          if (a == null) a = 0;
-          if (!name && !a) return;
-          var obj = { name: name, category: cat, amount: acctR2(a) };
-          if (c != null && u != null && acctR2(c * u) === acctR2(a)) { obj.count = c; obj.unit = u; }
-          out.push(obj);
-        });
-        return out;
+    // The current year's saved lines for a side (shallow copy so callers can't
+    // mutate the live snapshot). Add/edit/delete commit immediately through their
+    // own endpoints, so the saved snapshot is always the source of truth.
+    function acctWorkingLines(side) {
+      var d = acctYears[acctCurYear] || {};
+      return (Array.isArray(d[side]) ? d[side] : []).slice();
+    }
+
+    // Read-only table for a side, rendered straight from the saved snapshot.
+    function acctRenderLines(side) {
+      var tid = side === 'revenue' ? 'acct-rev-table' : 'acct-exp-table';
+      var tb = $(tid).querySelector('tbody');
+      var lines = acctWorkingLines(side);
+      if (!lines.length) {
+        var label = side === 'revenue' ? '+ Add revenue line' : '+ Add expense';
+        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="6">Nothing yet — click “' + label + '”.</td></tr>';
+        return;
       }
-      return { revenue: readSide('acct-rev-table'), expenses: readSide('acct-exp-table') };
+      tb.innerHTML = lines.map(function (l, i) { return acctLineRowHtml(l, i); }).join('');
+    }
+
+    function acctLineRowHtml(line, idx) {
+      var count = (line.count != null && line.count !== '') ? line.count : '';
+      var unit = (line.unit != null && line.unit !== '') ? line.unit : '';
+      var rcpt = (line.receipt && line.receipt.id)
+        ? '<span class="has" title="Receipt attached">📎</span>'
+        : '<span class="none" title="No receipt">—</span>';
+      return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
+        '<td class="acct-name">' + esc(line.name || '—') + '</td>' +
+        '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
+        '<td class="num">' + (count === '' ? '' : esc(String(count))) + '</td>' +
+        '<td class="num">' + (unit === '' ? '' : esc(String(unit))) + '</td>' +
+        '<td class="amt">' + acctMoney(+line.amount || 0) + '</td>' +
+        '<td class="acct-rcpt">' + rcpt + '</td></tr>';
     }
 
     function acctRecalc() {
-      var ed = acctReadEditor();
-      var rev = acctSum(ed.revenue), exp = acctSum(ed.expenses), net = acctR2(rev - exp);
+      var rev = acctSum(acctWorkingLines('revenue')), exp = acctSum(acctWorkingLines('expenses')), net = acctR2(rev - exp);
       var ys = acctSortedYears(), earliest = ys.length ? ys[0] : acctCurYear;
       var isEarliest = (acctCurYear === earliest);
       var chain = acctChain();
@@ -6211,15 +6162,15 @@
       badge.textContent = inProg ? 'In progress' : 'Final';
     }
 
+    // "Save changes" now covers only the year settings — opening balance and the
+    // in-progress/final status. Lines commit on their own through the modal, so
+    // this deliberately sends no revenue/expenses (the server leaves them alone).
     function acctSave() {
       if (acctCurYear == null) return;
       var ys = acctSortedYears(), earliest = ys.length ? ys[0] : acctCurYear;
-      var ed = acctReadEditor();
       var body = {
         year: acctCurYear,
-        status: $('acct-status-toggle').checked ? 'in-progress' : 'final',
-        revenue: ed.revenue,
-        expenses: ed.expenses
+        status: $('acct-status-toggle').checked ? 'in-progress' : 'final'
       };
       if (acctCurYear === earliest) { var oi = $('acct-opening-input'); body.openingBalance = oi ? (acctParse(oi.value) || 0) : 0; }
       else body.openingBalance = null;
@@ -6264,6 +6215,248 @@
         if (r.ok) { res.style.color = '#1b8a3a'; res.textContent = (r.d && r.d.note) || 'Imported.'; }
         else { res.style.color = '#cc0000'; res.textContent = (r.d && r.d.error) || 'Import failed.'; }
       }).catch(function (e) { btn.disabled = false; res.style.color = '#cc0000'; res.textContent = e.message; });
+    }
+
+    // ================= Line modal (add / edit / delete, both sides) =================
+    var acctModalSide = null;         // 'revenue' | 'expenses'
+    var acctModalMode = null;         // 'add' | 'edit'
+    var acctModalIdx = null;          // row index in edit mode
+    var acctModalHadReceipt = false;  // did the edited line start with a receipt?
+    var acctExpReceiptDataUrl = null; // a freshly chosen/pasted receipt (JPEG data URL)
+    var acctModalRemoveReceipt = false; // edit mode: drop the existing receipt on save
+    var acctExpBlobUrl = null;        // object URL for the existing receipt preview (revoked on close)
+
+    // Resize a File/Blob image to a JPEG data URL (max 1600px, quality 0.85) —
+    // keeps receipts legible while staying well under the upload cap.
+    function acctImgToJpeg(fileOrBlob) {
+      return new Promise(function (resolve, reject) {
+        if (!fileOrBlob || !/^image\//.test(fileOrBlob.type || '')) { reject(new Error('That’s not an image.')); return; }
+        var reader = new FileReader();
+        reader.onerror = function () { reject(new Error('Could not read that image.')); };
+        reader.onload = function () {
+          var img = new Image();
+          img.onerror = function () { reject(new Error('That image is not valid.')); };
+          img.onload = function () {
+            var max = 1600, w = img.width, h = img.height;
+            if (w > max || h > max) { var s = Math.min(max / w, max / h); w = Math.round(w * s); h = Math.round(h * s); }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(fileOrBlob);
+      });
+    }
+
+    function acctCloseExpenseModal() {
+      $('acct-exp-modal').hidden = true;
+      $('acct-exp-modal-body').innerHTML = '';
+      acctExpReceiptDataUrl = null;
+      if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} acctExpBlobUrl = null; }
+    }
+
+    // ---- Add ----
+    function acctOpenExpenseAdd() {
+      if (acctCurYear == null) return;
+      acctExpReceiptDataUrl = null;
+      var body = $('acct-exp-modal-body');
+      body.innerHTML =
+        '<h3>Add expense</h3>' +
+        '<p class="em-sub">' + acctCurYear + ' books. Once added, an expense can’t be edited — only deleted.</p>' +
+        '<div class="em-field"><label>Expense</label><input type="text" id="em-name" placeholder="What was it for?"></div>' +
+        '<div class="em-field"><label>Category</label><select id="em-cat">' + acctCatOptions(ACCT_EXPENSE_CATS, '') + '</select></div>' +
+        '<div class="em-row2">' +
+          '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count"></div>' +
+          '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit"></div>' +
+          '<div class="em-field em-amt"><label>Amount ($)</label><input type="text" inputmode="decimal" id="em-amt"></div>' +
+        '</div>' +
+        '<div class="em-field"><label>Note (optional)</label><textarea id="em-note" placeholder="Anything worth remembering"></textarea></div>' +
+        '<div class="em-field"><label>Receipt (optional)</label>' +
+          '<div id="em-drop" class="em-drop"><strong>Choose an image</strong>, drag one here, or paste from the clipboard (⌘/Ctrl+V).</div>' +
+          '<input type="file" id="em-file" accept="image/*" hidden>' +
+          '<div id="em-preview" class="em-preview"></div>' +
+        '</div>' +
+        '<div class="em-actions">' +
+          '<button type="button" class="adm-btn" id="em-add">Add expense</button>' +
+          '<button type="button" class="adm-btn em-ghost" id="em-cancel">Cancel</button>' +
+          '<span class="em-spacer"></span>' +
+        '</div>' +
+        '<div class="em-msg" id="em-msg"></div>';
+      $('acct-exp-modal').hidden = false;
+      $('em-name').focus();
+
+      // Category "+ Add category…"
+      $('em-cat').addEventListener('change', function () {
+        if (this.value !== '__new__') return;
+        var name = (prompt('New category name:') || '').trim();
+        this.innerHTML = acctCatOptions(ACCT_EXPENSE_CATS, name || '');
+      });
+      // Auto-math: count × unit → amount (unless amount was hand-typed).
+      var amtTouched = false;
+      $('em-amt').addEventListener('input', function () { amtTouched = true; });
+      function recompute() {
+        if (amtTouched) return;
+        var c = acctParse($('em-count').value), u = acctParse($('em-unit').value);
+        if (c != null && u != null) $('em-amt').value = acctFmtAmount(acctR2(c * u));
+      }
+      $('em-count').addEventListener('input', recompute);
+      $('em-unit').addEventListener('input', recompute);
+      $('em-amt').addEventListener('blur', function () { var n = acctParse(this.value); this.value = (n == null ? '' : acctFmtAmount(n)); });
+
+      // Receipt: file picker, drag-drop, and clipboard paste.
+      var drop = $('em-drop'), file = $('em-file');
+      drop.addEventListener('click', function () { file.click(); });
+      file.addEventListener('change', function () { if (file.files && file.files[0]) acctSetPendingReceipt(file.files[0]); file.value = ''; });
+      ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('drag'); }); });
+      ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('drag'); }); });
+      drop.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) acctSetPendingReceipt(e.dataTransfer.files[0]); });
+
+      $('em-cancel').addEventListener('click', acctCloseExpenseModal);
+      $('em-add').addEventListener('click', acctSubmitExpenseAdd);
+    }
+
+    function acctPasteReceipt(e) {
+      // Only the Add form accepts a pasted receipt (it has the preview slot).
+      if ($('acct-exp-modal').hidden || !$('em-preview')) return;
+      var items = (e.clipboardData && e.clipboardData.items) || [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type && items[i].type.indexOf('image/') === 0) {
+          var blob = items[i].getAsFile();
+          if (blob) { e.preventDefault(); acctSetPendingReceipt(blob); return; }
+        }
+      }
+    }
+
+    function acctSetPendingReceipt(fileOrBlob) {
+      var msg = $('em-msg'); if (msg) { msg.style.color = ''; msg.textContent = 'Reading image…'; }
+      acctImgToJpeg(fileOrBlob).then(function (dataUrl) {
+        acctExpReceiptDataUrl = dataUrl;
+        if (msg) msg.textContent = '';
+        $('em-preview').innerHTML =
+          '<img src="' + dataUrl + '" alt="Receipt preview">' +
+          '<button type="button" class="em-rcpt-remove" id="em-rcpt-remove" title="Remove receipt">&times;</button>';
+        $('em-rcpt-remove').addEventListener('click', function () {
+          acctExpReceiptDataUrl = null; $('em-preview').innerHTML = '';
+        });
+      }).catch(function (err) {
+        if (msg) { msg.style.color = '#cc0000'; msg.textContent = err.message || 'Could not read that image.'; }
+      });
+    }
+
+    function acctSubmitExpenseAdd() {
+      var name = $('em-name').value.trim();
+      var cat = $('em-cat').value; if (cat === '__new__') cat = '';
+      var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
+      if (a == null && c != null && u != null) a = acctR2(c * u);
+      if (!name && (a == null || a === 0)) {
+        var m0 = $('em-msg'); m0.style.color = '#cc0000'; m0.textContent = 'Give the expense a name or an amount.'; return;
+      }
+      var expense = { name: name, category: cat, amount: (a == null ? 0 : acctR2(a)) };
+      if (c != null && u != null && acctR2(c * u) === acctR2(a == null ? 0 : a)) { expense.count = c; expense.unit = u; }
+      var note = $('em-note').value.trim(); if (note) expense.note = note;
+      var body = { year: acctCurYear, expense: expense };
+      if (acctExpReceiptDataUrl) body.receiptDataUrl = acctExpReceiptDataUrl;
+
+      var btn = $('em-add'), msg = $('em-msg');
+      btn.disabled = true; $('em-cancel').disabled = true;
+      msg.style.color = ''; msg.textContent = acctExpReceiptDataUrl ? 'Uploading receipt & saving…' : 'Saving…';
+      apiPost(API.adminAccountingAddExpense, body).then(function (r) {
+        if (r.ok && r.d && r.d.expenses) {
+          acctYears[acctCurYear] = Object.assign({}, acctYears[acctCurYear], { expenses: r.d.expenses });
+          acctRenderExpenses(); acctRecalc();
+          acctCloseExpenseModal();
+        } else {
+          btn.disabled = false; $('em-cancel').disabled = false;
+          msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not add the expense.';
+        }
+      }).catch(function (e) {
+        btn.disabled = false; $('em-cancel').disabled = false;
+        msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not add the expense.';
+      });
+    }
+
+    // ---- View + delete ----
+    function acctOpenExpenseView(idx) {
+      var exp = acctWorkingExpenses(), line = exp[idx];
+      if (!line) return;
+      var rows = '';
+      var kv = function (k, v) { return '<div class="em-view-field"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; };
+      rows += kv('Expense', esc(line.name || '—'));
+      rows += kv('Category', esc(line.category || '—'));
+      if (line.count != null && line.unit != null) rows += kv('Count × Unit', esc(String(line.count)) + ' × ' + acctMoney(line.unit));
+      rows += '<div class="em-view-field"><div class="k">Amount</div><div class="v big">' + acctMoney(+line.amount || 0) + '</div></div>';
+      if (line.note) rows += kv('Note', esc(line.note));
+
+      var receiptBlock = (line.receipt && line.receipt.id)
+        ? '<div class="em-view-field"><div class="k">Receipt</div><div id="em-rcpt-view" class="em-preview"><div class="em-loading">Loading receipt…</div></div></div>'
+        : '<div class="em-view-field"><div class="k">Receipt</div><div class="v" style="font-size:.9rem;color:#999;">None attached</div></div>';
+
+      var body = $('acct-exp-modal-body');
+      body.innerHTML =
+        '<h3>Expense</h3>' +
+        '<p class="em-sub">' + acctCurYear + ' books. Entered expenses can’t be edited — delete and re-add if it’s wrong.</p>' +
+        rows + receiptBlock +
+        '<div class="em-actions" id="em-view-actions">' +
+          '<button type="button" class="adm-btn em-danger" id="em-del">Delete expense</button>' +
+          '<span class="em-spacer"></span>' +
+          '<button type="button" class="adm-btn em-ghost" id="em-done">Close</button>' +
+        '</div>' +
+        '<div class="em-msg" id="em-msg"></div>';
+      $('acct-exp-modal').hidden = false;
+      $('em-done').addEventListener('click', acctCloseExpenseModal);
+      $('em-del').addEventListener('click', function () { acctConfirmExpenseDelete(idx, line); });
+
+      // Load the receipt image (admin-only endpoint → blob → object URL).
+      if (line.receipt && line.receipt.id) {
+        currentUser.getIdToken().then(function (t) {
+          return fetch(API.adminReceipt + '?id=' + encodeURIComponent(line.receipt.id), { headers: { 'Authorization': 'Bearer ' + t } });
+        }).then(function (r) {
+          if (!r.ok) throw new Error('Receipt unavailable.');
+          return r.blob();
+        }).then(function (blob) {
+          if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} }
+          acctExpBlobUrl = URL.createObjectURL(blob);
+          var host = $('em-rcpt-view');
+          if (host) host.innerHTML = '<a href="' + acctExpBlobUrl + '" target="_blank" rel="noopener"><img src="' + acctExpBlobUrl + '" alt="Receipt"></a>';
+        }).catch(function () {
+          var host = $('em-rcpt-view');
+          if (host) host.innerHTML = '<div class="v" style="font-size:.9rem;color:#cc0000;">Could not load the receipt.</div>';
+        });
+      }
+    }
+
+    function acctConfirmExpenseDelete(idx, line) {
+      var actions = $('em-view-actions');
+      actions.innerHTML =
+        '<span style="font-size:.88rem;color:#cc0000;font-weight:600;flex:1 1 auto;">Delete “' + esc(line.name || 'this expense') + '” (' + acctMoney(+line.amount || 0) + ')? This can’t be undone.</span>' +
+        '<button type="button" class="adm-btn em-danger" id="em-del-yes">Yes, delete</button>' +
+        '<button type="button" class="adm-btn em-ghost" id="em-del-no">Keep it</button>';
+      $('em-del-no').addEventListener('click', function () { acctOpenExpenseView(idx); });
+      $('em-del-yes').addEventListener('click', function () { acctDoExpenseDelete(idx, line); });
+    }
+
+    function acctDoExpenseDelete(idx, line) {
+      var yes = $('em-del-yes'), no = $('em-del-no'), msg = $('em-msg');
+      if (yes) yes.disabled = true; if (no) no.disabled = true;
+      msg.style.color = ''; msg.textContent = 'Deleting…';
+      apiPost(API.adminAccountingDeleteExpense, {
+        year: acctCurYear, index: idx,
+        expected: { name: line.name || '', amount: +line.amount || 0 }
+      }).then(function (r) {
+        if (r.ok && r.d && r.d.expenses) {
+          acctYears[acctCurYear] = Object.assign({}, acctYears[acctCurYear], { expenses: r.d.expenses });
+          acctRenderExpenses(); acctRecalc();
+          acctCloseExpenseModal();
+        } else {
+          if (yes) yes.disabled = false; if (no) no.disabled = false;
+          msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not delete the expense.';
+        }
+      }).catch(function (e) {
+        if (yes) yes.disabled = false; if (no) no.disabled = false;
+        msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not delete the expense.';
+      });
     }
 
     // ---------- Year over Year visuals ----------

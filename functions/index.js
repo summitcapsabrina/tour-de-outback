@@ -4757,11 +4757,14 @@ exports.adminAccountingSave = onRequest(
         openingBalance: opening,
         riders: riders,
         status: status,
-        revenue: acctCleanLines(body.revenue),
-        expenses: acctCleanLines(body.expenses),
         updatedAt: now,
         updatedBy: adminUser.email || adminUser.uid || null,
       };
+      // Only touch the line arrays when the caller actually sends them. Lines are
+      // now managed one at a time through the add/update/delete-line endpoints, so
+      // a settings-only save (opening balance + status) must never wipe them.
+      if (Array.isArray(body.revenue)) data.revenue = acctCleanLines(body.revenue);
+      if (Array.isArray(body.expenses)) data.expenses = acctCleanLines(body.expenses);
       if (typeof body.note === 'string') data.note = body.note.trim().slice(0, 500);
       await db.collection('accounting_years').doc(String(year)).set(data, { merge: true });
       return res.json({ ok: true, year: year });
@@ -4836,15 +4839,28 @@ exports.adminAccountingDelete = onRequest(
   }
 );
 
+// Which stored array a side maps to. Revenue and expense lines share the same
+// shape and the same one-line-at-a-time CRUD.
+function acctSideField(side) {
+  return side === 'revenue' ? 'revenue' : (side === 'expenses' ? 'expenses' : null);
+}
+// Does `expected {name, amount}` still match the line at that position? Guards
+// every update/delete against the array having shifted since the modal opened.
+function acctExpectedMatches(expected, target) {
+  if (!expected) return true;
+  return String(expected.name || '') === String((target || {}).name || '') &&
+    Math.round(Number(expected.amount || 0) * 100) === Math.round(Number((target || {}).amount || 0) * 100);
+}
+
 // ---------------------------------------------------------------------------
-// POST /api/admin-accounting-add-expense  — append ONE expense line to a year,
-// optionally with a receipt image. Existing lines are never touched (a stored,
-// already-clean array is read, the new line pushed, the array written back with
-// merge), so this can't alter historical expenses.
-// body: { year, expense:{name,category,count,unit,amount,note}, receiptDataUrl? }
-// returns: { ok, line, expenses }
+// POST /api/admin-accounting-add-line  — append ONE line (revenue or expense) to
+// a year, optionally with a receipt/attachment image. Existing lines are read,
+// the new one pushed, and the array written back with merge, so nothing else in
+// the books can change.
+// body: { year, side:'revenue'|'expenses', line:{...}, receiptDataUrl? }
+// returns: { ok, side, line, lines }
 // ---------------------------------------------------------------------------
-exports.adminAccountingAddExpense = onRequest(
+exports.adminAccountingAddLine = onRequest(
   { cors: ALLOWED_ORIGINS, invoker: 'public' },
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -4855,43 +4871,46 @@ exports.adminAccountingAddExpense = onRequest(
     if (!Number.isInteger(year) || year < 2000 || year > 2100) {
       return res.status(400).json({ error: 'A valid year (2000-2100) is required.' });
     }
+    const field = acctSideField(body.side);
+    if (!field) return res.status(400).json({ error: 'Bad line type.' });
     const ref = db.collection('accounting_years').doc(String(year));
     try {
       const snap = await ref.get();
       if (!snap.exists) return res.status(404).json({ error: 'That year’s books don’t exist yet.' });
-      const line = acctCleanLine(body.expense || {});
+      const line = acctCleanLine(body.line || {});
       if (!line.name && !line.amount) {
-        return res.status(400).json({ error: 'Give the expense a name or an amount.' });
+        return res.status(400).json({ error: 'Give the line a name or an amount.' });
       }
+      delete line.receipt; // ignore any client-sent receipt; only receiptDataUrl attaches one
       if (body.receiptDataUrl) {
         const r = await saveExpenseReceipt(body.receiptDataUrl, adminUser);
         if (r.error) return res.status(400).json({ error: r.error });
         line.receipt = { id: r.id };
       }
       const data = snap.data() || {};
-      const expenses = Array.isArray(data.expenses) ? data.expenses.slice() : [];
-      expenses.push(line);
+      const lines = Array.isArray(data[field]) ? data[field].slice() : [];
+      lines.push(line);
       await ref.set({
-        expenses: expenses,
+        [field]: lines,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedBy: adminUser.email || adminUser.uid || null,
       }, { merge: true });
-      return res.json({ ok: true, line: line, expenses: expenses });
+      return res.json({ ok: true, side: field, line: line, lines: lines });
     } catch (err) {
-      logger.error('adminAccountingAddExpense failed', err);
-      return res.status(500).json({ error: 'Could not add the expense.' });
+      logger.error('adminAccountingAddLine failed', err);
+      return res.status(500).json({ error: 'Could not add the line.' });
     }
   }
 );
 
 // ---------------------------------------------------------------------------
-// POST /api/admin-accounting-delete-expense  — remove ONE expense line (by its
-// position) and delete its receipt bytes. `expected` guards against deleting the
-// wrong line if the books changed since the admin opened the modal.
-// body: { year, index, expected:{ name, amount } }
-// returns: { ok, expenses }
+// POST /api/admin-accounting-update-line  — replace ONE line at its position.
+// Receipt handling: a new receiptDataUrl replaces (old bytes deleted);
+// removeReceipt:true drops it; otherwise the existing receipt is preserved.
+// body: { year, side, index, line:{...}, receiptDataUrl?, removeReceipt?, expected }
+// returns: { ok, side, line, lines }
 // ---------------------------------------------------------------------------
-exports.adminAccountingDeleteExpense = onRequest(
+exports.adminAccountingUpdateLine = onRequest(
   { cors: ALLOWED_ORIGINS, invoker: 'public' },
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -4900,33 +4919,94 @@ exports.adminAccountingDeleteExpense = onRequest(
     const body = req.body || {};
     const year = parseInt(body.year, 10);
     if (!Number.isInteger(year)) return res.status(400).json({ error: 'A valid year is required.' });
+    const field = acctSideField(body.side);
+    if (!field) return res.status(400).json({ error: 'Bad line type.' });
     const index = parseInt(body.index, 10);
     const ref = db.collection('accounting_years').doc(String(year));
     try {
       const snap = await ref.get();
       if (!snap.exists) return res.status(404).json({ error: 'That year’s books don’t exist.' });
       const data = snap.data() || {};
-      const expenses = Array.isArray(data.expenses) ? data.expenses.slice() : [];
-      if (!Number.isInteger(index) || index < 0 || index >= expenses.length) {
-        return res.status(409).json({ error: 'That expense is no longer there. Please reload and try again.' });
+      const lines = Array.isArray(data[field]) ? data[field].slice() : [];
+      if (!Number.isInteger(index) || index < 0 || index >= lines.length) {
+        return res.status(409).json({ error: 'That line is no longer there. Please reload and try again.' });
       }
-      const target = expenses[index] || {};
-      const exp = body.expected || {};
-      if (exp && (String(exp.name || '') !== String(target.name || '') ||
-                  Math.round(Number(exp.amount || 0) * 100) !== Math.round(Number(target.amount || 0) * 100))) {
+      const target = lines[index] || {};
+      if (!acctExpectedMatches(body.expected, target)) {
         return res.status(409).json({ error: 'The books changed since you opened this. Please reload and try again.' });
       }
-      expenses.splice(index, 1);
+      const line = acctCleanLine(body.line || {});
+      if (!line.name && !line.amount) {
+        return res.status(400).json({ error: 'Give the line a name or an amount.' });
+      }
+      delete line.receipt;
+      const oldReceipt = target.receipt;
+      if (body.receiptDataUrl) {
+        const r = await saveExpenseReceipt(body.receiptDataUrl, adminUser);
+        if (r.error) return res.status(400).json({ error: r.error });
+        line.receipt = { id: r.id };
+        if (oldReceipt) await deleteExpenseReceipt(oldReceipt); // replaced → reclaim old bytes
+      } else if (body.removeReceipt) {
+        if (oldReceipt) await deleteExpenseReceipt(oldReceipt);
+      } else if (oldReceipt && oldReceipt.id) {
+        line.receipt = { id: oldReceipt.id }; // untouched → keep the existing one
+      }
+      lines[index] = line;
       await ref.set({
-        expenses: expenses,
+        [field]: lines,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedBy: adminUser.email || adminUser.uid || null,
+      }, { merge: true });
+      return res.json({ ok: true, side: field, line: line, lines: lines });
+    } catch (err) {
+      logger.error('adminAccountingUpdateLine failed', err);
+      return res.status(500).json({ error: 'Could not save the line.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-accounting-delete-line  — remove ONE line by its position and
+// delete its receipt bytes. `expected` guards against deleting the wrong line.
+// body: { year, side, index, expected:{ name, amount } }
+// returns: { ok, side, lines }
+// ---------------------------------------------------------------------------
+exports.adminAccountingDeleteLine = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    const body = req.body || {};
+    const year = parseInt(body.year, 10);
+    if (!Number.isInteger(year)) return res.status(400).json({ error: 'A valid year is required.' });
+    const field = acctSideField(body.side);
+    if (!field) return res.status(400).json({ error: 'Bad line type.' });
+    const index = parseInt(body.index, 10);
+    const ref = db.collection('accounting_years').doc(String(year));
+    try {
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'That year’s books don’t exist.' });
+      const data = snap.data() || {};
+      const lines = Array.isArray(data[field]) ? data[field].slice() : [];
+      if (!Number.isInteger(index) || index < 0 || index >= lines.length) {
+        return res.status(409).json({ error: 'That line is no longer there. Please reload and try again.' });
+      }
+      const target = lines[index] || {};
+      if (!acctExpectedMatches(body.expected, target)) {
+        return res.status(409).json({ error: 'The books changed since you opened this. Please reload and try again.' });
+      }
+      lines.splice(index, 1);
+      await ref.set({
+        [field]: lines,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedBy: adminUser.email || adminUser.uid || null,
       }, { merge: true });
       await deleteExpenseReceipt(target.receipt);
-      return res.json({ ok: true, expenses: expenses });
+      return res.json({ ok: true, side: field, lines: lines });
     } catch (err) {
-      logger.error('adminAccountingDeleteExpense failed', err);
-      return res.status(500).json({ error: 'Could not delete the expense.' });
+      logger.error('adminAccountingDeleteLine failed', err);
+      return res.status(500).json({ error: 'Could not delete the line.' });
     }
   }
 );
