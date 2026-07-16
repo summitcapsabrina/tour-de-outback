@@ -101,6 +101,39 @@ import {
   var modalBody = overlay.querySelector('#tdo-modal-body');
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  // Resolve the best avatar URL. The top-level user.photoURL is only set from the
+  // provider that last wrote the profile, so an account that also signed in via an
+  // email link can have photoURL === null while the linked Google provider still
+  // carries the photo. Fall back to providerData (Google first) in that case.
+  function photoOf(user) {
+    if (!user) return '';
+    if (user.photoURL) return user.photoURL;
+    var pd = user.providerData || [];
+    for (var i = 0; i < pd.length; i++) {
+      if (pd[i] && pd[i].providerId === 'google.com' && pd[i].photoURL) return pd[i].photoURL;
+    }
+    for (var j = 0; j < pd.length; j++) {
+      if (pd[j] && pd[j].photoURL) return pd[j].photoURL;
+    }
+    return '';
+  }
+  // <img> for an avatar, with a no-referrer policy (Google's CDN 403s on a referrer).
+  // The .tdo-photo class lets wirePhotoFallback() attach an onerror that degrades a
+  // stale/rotated URL to the default person glyph instead of a broken-image box.
+  function avatarImg(url) {
+    return '<img class="tdo-photo" src="' + esc(url) + '" alt="" referrerpolicy="no-referrer">';
+  }
+  // Fall back to the default icon if a photo fails to load (403/404/rotated URL).
+  function wirePhotoFallback(root) {
+    var imgs = (root || document).querySelectorAll('img.tdo-photo');
+    for (var i = 0; i < imgs.length; i++) {
+      imgs[i].onerror = function () {
+        var box = this.parentNode;
+        if (box) box.innerHTML = HEAD_SVG;
+        try { localStorage.removeItem('tdoAvatarPhoto'); } catch (e) {}
+      };
+    }
+  }
   function openMenu() { menu.classList.add('open'); avatarBtn.setAttribute('aria-expanded', 'true'); }
   function closeMenu() { menu.classList.remove('open'); avatarBtn.setAttribute('aria-expanded', 'false'); }
   function openModal() { renderLogin(); overlay.classList.add('open'); }
@@ -224,9 +257,8 @@ import {
 
   // ---- Signed-in account dropdown ----
   function renderSignedIn(user) {
-    var pic = user.photoURL
-      ? '<img src="' + esc(user.photoURL) + '" alt="" referrerpolicy="no-referrer">'
-      : HEAD_SVG;
+    var photo = photoOf(user);
+    var pic = photo ? avatarImg(photo) : HEAD_SVG;
     menu.innerHTML =
       '<div class="tdo-profile"><div class="pic">' + pic + '</div><div class="who">' +
       '<div class="nm">' + esc(user.displayName || 'Your account') + '</div>' +
@@ -234,15 +266,16 @@ import {
       '<a class="tdo-btn tdo-btn-primary" href="/account/">My Account</a>' +
       (isAdminUser(user) ? '<a class="tdo-btn" style="background:#222;color:#fff" href="/admin/">Admin</a>' : '') +
       '<button class="tdo-btn" style="background:#f0f0f0;color:#333" id="tdo-signout">Sign out</button>';
+    wirePhotoFallback(menu);
     menu.querySelector('#tdo-signout').addEventListener('click', function () {
       signOut(auth).then(closeMenu);
     });
   }
 
   function setAvatar(user) {
-    avatarBtn.innerHTML = (user && user.photoURL)
-      ? '<img src="' + esc(user.photoURL) + '" alt="" referrerpolicy="no-referrer">'
-      : HEAD_SVG;
+    var photo = user ? photoOf(user) : '';
+    avatarBtn.innerHTML = photo ? avatarImg(photo) : HEAD_SVG;
+    wirePhotoFallback(avatarBtn);
   }
 
   // Bridge so other widgets (e.g. the chat widget) can read auth state and react
@@ -266,7 +299,8 @@ import {
     // Cache the photo so the next page can paint it synchronously (no flash).
     // Cleared on sign-out or for accounts without a photo (both show the icon).
     try {
-      if (user && user.photoURL) localStorage.setItem('tdoAvatarPhoto', user.photoURL);
+      var cachePhoto = photoOf(user);
+      if (cachePhoto) localStorage.setItem('tdoAvatarPhoto', cachePhoto);
       else localStorage.removeItem('tdoAvatarPhoto');
     } catch (e) { /* storage disabled */ }
     if (user) { renderSignedIn(user); closeModal(); }

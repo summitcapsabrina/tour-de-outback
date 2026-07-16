@@ -359,18 +359,48 @@
     .disc-row button { border: none; background: none; cursor: pointer; font-size: 0.85rem; color: #666; padding: 4px 6px; }
     .disc-row button.del { color: #b71c1c; }
     /* Discounts & Credits tab */
-    .dc-section { max-width: 760px; }
-    .dc-section + .dc-section { margin-top: 30px; }
+    .dc-section { max-width: 1000px; }
+    .dc-section + .dc-section { margin-top: 34px; }
+    /* Form layout — a single flex row so key fields (Max uses, Amount) never wrap
+       onto their own line; long fields (Label, Note) grow and wrap last. */
+    .dc-form { max-width: 1000px; }
+    .dc-fields { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-end; }
+    .dc-fields label { display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; font-weight: 600; color: #444; }
+    html.dark .dc-fields label { color: #c8ccd0; }
+    .dc-fields input, .dc-fields select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 7px; font-size: 0.95rem; box-sizing: border-box; }
+    .dc-fields .f-code input { width: 150px; }
+    .dc-fields .f-type select { width: 190px; }
+    .dc-fields .f-value input { width: 120px; }
+    .dc-fields .f-max input { width: 150px; }
+    .dc-fields .f-label { flex: 1 1 220px; min-width: 200px; }
+    .dc-fields .f-label input { width: 100%; }
+    .dc-fields .f-email { flex: 1 1 260px; min-width: 220px; }
+    .dc-fields .f-email input { width: 100%; }
+    .dc-fields .f-amount input { width: 150px; }
+    .dc-fields .f-note { flex: 1 1 240px; min-width: 200px; }
+    .dc-fields .f-note input { width: 100%; }
     .disc-row .duses { font-size: 0.72rem; font-weight: 700; color: #555; background: #f0f0f0; border-radius: 10px; padding: 2px 8px; }
-    .disc-row .cbal { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.05rem; color: #1b5e20; }
-    .disc-row .cemail { font-weight: 600; flex: 1; min-width: 160px; word-break: break-all; }
-    .disc-row .cnote { font-size: 0.8rem; color: #777; width: 100%; }
-    .cred-history { width: 100%; margin-top: 6px; border-top: 1px dashed #e3e3e3; padding-top: 6px; }
-    .cred-history summary { cursor: pointer; font-size: 0.78rem; color: #666; list-style: none; }
-    .cred-history summary::-webkit-details-marker { display: none; }
-    .cred-history .ch-line { font-size: 0.76rem; color: #666; padding: 3px 0; display: flex; justify-content: space-between; gap: 10px; }
-    .cred-history .ch-line .up { color: #1b5e20; }
-    .cred-history .ch-line .dn { color: #b71c1c; }
+    html.dark .disc-row .duses { background: #2b2f35; color: #c8ccd0; }
+    /* Credits table */
+    .cred-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    .cred-table th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .5px; color: #888; font-weight: 700; padding: 6px 12px; border-bottom: 2px solid #eee; }
+    .cred-table th.num, .cred-table td.num { text-align: right; }
+    .cred-table td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+    html.dark .cred-table th { border-color: #33373d; }
+    html.dark .cred-table td { border-color: #2a2e34; }
+    .cred-table .c-email { font-weight: 600; word-break: break-all; }
+    .cred-table .c-total { font-family: 'Oswald', sans-serif; font-weight: 700; }
+    .cred-table .c-remain { font-family: 'Oswald', sans-serif; font-weight: 700; color: #1b5e20; }
+    html.dark .cred-table .c-remain { color: #6fce8a; }
+    .cred-table .c-note { color: #777; }
+    .cred-table .c-actions button { border: none; background: none; cursor: pointer; font-size: 0.85rem; color: #666; padding: 4px 6px; }
+    .cred-table .c-actions button.del { color: #b71c1c; }
+    .cred-hist { margin-top: 4px; }
+    .cred-hist summary { cursor: pointer; font-size: 0.76rem; color: #888; list-style: none; }
+    .cred-hist summary::-webkit-details-marker { display: none; }
+    .cred-hist .ch-line { font-size: 0.76rem; color: #777; padding: 2px 0; display: flex; gap: 12px; }
+    .cred-hist .ch-line .up { color: #1b5e20; font-weight: 600; min-width: 64px; }
+    html.dark .cred-hist .ch-line .up { color: #6fce8a; }
     /* Photos */
     .ph-upload { border: 2px dashed #cfcfcf; border-radius: 12px; padding: 22px; text-align: center; max-width: 760px; transition: border-color .15s, background .15s; }
     .ph-upload.drag { border-color: #cc0000; background: #fff5f5; }
@@ -1132,33 +1162,33 @@
               <div class="dc-section">
                 <h3 style="font-family:'Oswald',sans-serif;margin:14px 0 6px;">Registration discount codes</h3>
                 <p class="sub" style="margin-bottom:14px;">A rider enters a code at checkout. <strong>Free registration</strong> takes the whole fee off; you can also give a <strong>percentage</strong> or a <strong>dollar amount</strong> off. Set <strong>Max uses</strong> to limit how many times a code can be redeemed (use 1 for a one-time free registration, or leave it blank for unlimited). Codes are not case-sensitive.</p>
-                <div class="disc-form" style="border:1px solid #e2e2e2;border-radius:10px;padding:16px;max-width:640px;margin-bottom:16px;">
-                  <div class="disc-grid">
-                    <label>Code
+                <div class="disc-form dc-form" style="border:1px solid #e2e2e2;border-radius:10px;padding:18px;margin-bottom:16px;">
+                  <div class="dc-fields">
+                    <label class="f-code">Code
                       <input type="text" id="rdisc-code" placeholder="FREERIDE" autocomplete="off" maxlength="40">
                     </label>
-                    <label>Type
+                    <label class="f-type">Type
                       <select id="rdisc-type">
                         <option value="free">Free registration</option>
                         <option value="percent">Percentage off</option>
                         <option value="amount">Dollar amount off</option>
                       </select>
                     </label>
-                    <label id="rdisc-value-wrap" hidden>Value
+                    <label class="f-value" id="rdisc-value-wrap" hidden>Value
                       <div style="display:flex;align-items:center;gap:6px;">
                         <span id="rdisc-value-pre" hidden>$</span>
                         <input type="number" id="rdisc-value" min="1" step="1" style="width:110px;">
                         <span id="rdisc-value-suf" hidden>%</span>
                       </div>
                     </label>
-                    <label>Max uses <span class="muted" style="font-weight:400;">(blank = unlimited)</span>
-                      <input type="number" id="rdisc-maxuses" min="1" step="1" placeholder="unlimited" style="width:130px;">
+                    <label class="f-max">Max uses <span class="muted" style="font-weight:400;">(blank = unlimited)</span>
+                      <input type="number" id="rdisc-maxuses" min="1" step="1" placeholder="unlimited">
                     </label>
-                    <label>Label <span class="muted" style="font-weight:400;">(optional, shown to rider)</span>
+                    <label class="f-label">Label <span class="muted" style="font-weight:400;">(optional, shown to rider)</span>
                       <input type="text" id="rdisc-label" placeholder="Board comp" maxlength="60">
                     </label>
                   </div>
-                  <button class="adm-btn dark" id="rdisc-save" style="margin-top:12px;">Save code</button>
+                  <button class="adm-btn dark" id="rdisc-save" style="margin-top:14px;">Save code</button>
                   <div id="rdisc-result" style="margin-top:10px;font-size:.92rem;"></div>
                 </div>
                 <div id="rdisc-list"><p class="sub">Loading codes…</p></div>
@@ -1167,27 +1197,20 @@
               <!-- ===== Account credits ===== -->
               <div class="dc-section">
                 <h3 style="font-family:'Oswald',sans-serif;margin:0 0 6px;">Account credits</h3>
-                <p class="sub" style="margin-bottom:14px;">Tie a credit to an <strong>email address</strong> — including riders who haven't made an account yet (for example, credit carried over from the old system). When someone checks out with that same email, the credit comes off their registration fee automatically. Credit is applied <strong>after</strong> any discount code, and anything left over stays on the account for next time.</p>
-                <div class="disc-form" style="border:1px solid #e2e2e2;border-radius:10px;padding:16px;max-width:640px;margin-bottom:16px;">
-                  <div class="disc-grid">
-                    <label>Email
+                <p class="sub" style="margin-bottom:14px;">Tie a credit to an <strong>email address</strong> — including riders who haven't made an account yet (for example, credit carried over from the old system). Enter the dollar amount they should be credited. When someone checks out with that same email, the credit comes off their registration fee automatically. Credit is applied <strong>after</strong> any discount code, and anything left over stays on the account for next time. Enter more for the same email to add to their credit; to correct a mistake, remove the credit and re-enter it.</p>
+                <div class="disc-form dc-form" style="border:1px solid #e2e2e2;border-radius:10px;padding:18px;margin-bottom:16px;">
+                  <div class="dc-fields">
+                    <label class="f-email">Email
                       <input type="email" id="cred-email" placeholder="rider@example.com" autocomplete="off" maxlength="120">
                     </label>
-                    <label>Action
-                      <select id="cred-mode">
-                        <option value="set">Set balance to</option>
-                        <option value="adjust">Add / subtract</option>
-                      </select>
+                    <label class="f-amount">Credit amount ($)
+                      <input type="number" id="cred-amount" min="0" step="0.01" placeholder="50.00">
                     </label>
-                    <label>Amount ($) <span class="muted" style="font-weight:400;" id="cred-amt-hint">total credit</span>
-                      <input type="number" id="cred-amount" step="0.01" placeholder="50.00" style="width:130px;">
-                    </label>
-                    <label>Note <span class="muted" style="font-weight:400;">(optional)</span>
+                    <label class="f-note">Note <span class="muted" style="font-weight:400;">(optional — what it's for)</span>
                       <input type="text" id="cred-note" placeholder="Migrated from old system" maxlength="120">
                     </label>
                   </div>
-                  <p class="sub" style="margin:10px 0 0;">To subtract, choose <strong>Add / subtract</strong> and enter a negative amount (e.g. −25).</p>
-                  <button class="adm-btn dark" id="cred-save" style="margin-top:12px;">Save credit</button>
+                  <button class="adm-btn dark" id="cred-save" style="margin-top:14px;">Add credit</button>
                   <div id="cred-result" style="margin-top:10px;font-size:.92rem;"></div>
                 </div>
                 <div id="cred-list"><p class="sub">Loading credits…</p></div>
@@ -1977,40 +2000,42 @@
       var listEl = document.getElementById('cred-list');
       if (!listEl) return;
       var emailEl = document.getElementById('cred-email');
-      var modeEl = document.getElementById('cred-mode');
       var amtEl = document.getElementById('cred-amount');
       var noteEl = document.getElementById('cred-note');
-      var hintEl = document.getElementById('cred-amt-hint');
       var saveBtn = document.getElementById('cred-save');
       var resultEl = document.getElementById('cred-result');
 
       function money(c) { return '$' + (((c || 0)) / 100).toFixed(2); }
-      function signed(c) { return (c < 0 ? '−' : '+') + '$' + (Math.abs(c || 0) / 100).toFixed(2); }
       function when(ms) { if (!ms) return ''; try { return new Date(ms).toLocaleDateString(); } catch (e) { return ''; } }
-      function syncMode() { hintEl.textContent = modeEl.value === 'set' ? 'total credit' : '+ add / − subtract'; }
-      modeEl.addEventListener('change', syncMode);
-      syncMode();
 
+      // Per-grant history: each "what was credited" line (amount, note, date).
       function historyHtml(h) {
         if (!h || !h.length) return '';
         var lines = h.slice().reverse().map(function (e) {
-          return '<div class="ch-line"><span class="' + (e.delta < 0 ? 'dn' : 'up') + '">' + esc(signed(e.delta)) +
-            '</span><span>' + esc(e.reason || '') + '</span><span>' + esc(when(e.at)) + '</span></div>';
+          return '<div class="ch-line"><span class="up">+' + esc(money(e.delta)) + '</span>' +
+            '<span>' + esc(e.reason || 'Credit added') + '</span><span>' + esc(when(e.at)) + '</span></div>';
         }).join('');
-        return '<details class="cred-history"><summary>History (' + h.length + ')</summary>' + lines + '</details>';
+        return '<details class="cred-hist"><summary>Credit history (' + h.length + ')</summary>' + lines + '</details>';
       }
       function render(credits) {
         if (!credits.length) { listEl.innerHTML = '<p class="sub">No account credits yet.</p>'; return; }
-        listEl.innerHTML = credits.map(function (c) {
-          return '<div class="disc-row">' +
-            '<span class="cemail">' + esc(c.email) + '</span>' +
-            '<span class="cbal">' + esc(money(c.balance)) + '</span>' +
-            '<button class="edit" data-email="' + esc(c.email) + '" data-balance="' + c.balance + '">Edit</button>' +
-            '<button class="del" data-email="' + esc(c.email) + '">Delete</button>' +
-            (c.note ? '<span class="cnote">' + esc(c.note) + '</span>' : '') +
-            historyHtml(c.history) +
-            '</div>';
+        var rows = credits.map(function (c) {
+          var total = (typeof c.totalCredited === 'number') ? c.totalCredited : c.balance;
+          return '<tr>' +
+            '<td class="c-email">' + esc(c.email) + '</td>' +
+            '<td class="num c-total">' + esc(money(total)) + '</td>' +
+            '<td class="num c-remain">' + esc(money(c.balance)) + '</td>' +
+            '<td class="c-note">' + esc(c.note || '') + historyHtml(c.history) + '</td>' +
+            '<td class="c-actions"><button class="add" data-email="' + esc(c.email) + '">Add</button>' +
+              '<button class="del" data-email="' + esc(c.email) + '">Remove</button></td>' +
+            '</tr>';
         }).join('');
+        listEl.innerHTML =
+          '<table class="cred-table"><thead><tr>' +
+            '<th>Credited to</th><th class="num">Total credited</th><th class="num">Remaining</th>' +
+            '<th>Note &amp; history</th><th></th>' +
+          '</tr></thead><tbody>' + rows + '</tbody></table>' +
+          '<p class="sub" style="margin-top:10px;">“Remaining” draws down as riders spend credit at registration checkout. Until then it matches “Total credited.”</p>';
         Array.prototype.forEach.call(listEl.querySelectorAll('button.del'), function (b) {
           b.addEventListener('click', function () {
             if (!confirm('Remove all credit for ' + b.getAttribute('data-email') + '?')) return;
@@ -2019,12 +2044,10 @@
             });
           });
         });
-        Array.prototype.forEach.call(listEl.querySelectorAll('button.edit'), function (b) {
+        Array.prototype.forEach.call(listEl.querySelectorAll('button.add'), function (b) {
           b.addEventListener('click', function () {
             emailEl.value = b.getAttribute('data-email');
-            modeEl.value = 'set'; syncMode();
-            amtEl.value = (parseInt(b.getAttribute('data-balance'), 10) / 100).toFixed(2);
-            noteEl.value = '';
+            amtEl.value = ''; noteEl.value = '';
             emailEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
             amtEl.focus();
           });
@@ -2045,20 +2068,20 @@
         var email = (emailEl.value || '').trim();
         if (!email) { resultEl.textContent = 'Enter an email.'; return; }
         var raw = parseFloat(amtEl.value);
-        if (isNaN(raw)) { resultEl.textContent = 'Enter a dollar amount.'; return; }
-        var payload = { email: email, mode: modeEl.value, amount: Math.round(raw * 100), note: (noteEl.value || '').trim() };
+        if (isNaN(raw) || raw <= 0) { resultEl.textContent = 'Enter a credit amount greater than zero.'; return; }
+        var payload = { email: email, amount: Math.round(raw * 100), note: (noteEl.value || '').trim() };
         saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
         apiPost(API.adminSaveRegistrationCredit, payload).then(function (r) {
           if (r.ok) {
             resultEl.style.color = '#1b7a2e';
-            resultEl.textContent = esc(r.d.email || email) + ' now has ' + money(r.d.balance) + ' credit.';
-            amtEl.value = ''; noteEl.value = '';
+            resultEl.textContent = 'Credited ' + money(payload.amount) + ' to ' + (r.d.email || email) + '. They now have ' + money(r.d.balance) + ' available.';
+            emailEl.value = ''; amtEl.value = ''; noteEl.value = '';
             load();
           } else {
             resultEl.textContent = (r.d && r.d.error) || 'Could not save.';
           }
         }).catch(function () { resultEl.textContent = 'Could not save.'; })
-          .then(function () { saveBtn.disabled = false; saveBtn.textContent = 'Save credit'; });
+          .then(function () { saveBtn.disabled = false; saveBtn.textContent = 'Add credit'; });
       });
 
       var discTab = document.querySelector('.admin-tab[data-tab="discounts"]');

@@ -4160,6 +4160,8 @@ exports.adminDeleteRegistrationDiscount = onRequest(
 );
 
 // GET /api/admin-registration-credits — list every email with a credit balance.
+// Returns both `totalCredited` (lifetime granted, only grows) and `balance`
+// (remaining spendable, drawn down at checkout in Phase 2).
 exports.adminRegistrationCredits = onRequest(
   { cors: ALLOWED_ORIGINS, invoker: 'public' },
   async (req, res) => {
@@ -4169,12 +4171,18 @@ exports.adminRegistrationCredits = onRequest(
       const snap = await db.collection('registration_credits').orderBy('updatedAt', 'desc').get();
       const credits = snap.docs.map(function (doc) {
         const o = doc.data() || {};
-        const history = Array.isArray(o.history) ? o.history.slice(-20).map(function (h) {
+        const balance = Math.max(0, Math.round(Number(o.balance) || 0));
+        const history = Array.isArray(o.history) ? o.history.slice(-30).map(function (h) {
           return { delta: Math.round(Number(h.delta) || 0), balanceAfter: Math.round(Number(h.balanceAfter) || 0), reason: h.reason || '', by: h.by || '', at: Number(h.at) || null };
         }) : [];
+        // Older docs predate totalCredited: fall back to the current balance.
+        const totalCredited = (typeof o.totalCredited === 'number')
+          ? Math.max(0, Math.round(o.totalCredited))
+          : balance;
         return {
           email: doc.id,
-          balance: Math.max(0, Math.round(Number(o.balance) || 0)),
+          balance: balance,
+          totalCredited: totalCredited,
           note: o.note || '',
           history: history,
           updatedAt: o.updatedAt && o.updatedAt.toMillis ? o.updatedAt.toMillis() : null,
@@ -4188,10 +4196,11 @@ exports.adminRegistrationCredits = onRequest(
   }
 );
 
-// POST /api/admin-save-registration-credit — set or adjust an email's credit.
-// body: { email, mode:'set'|'adjust', amount (cents), note }
-//   set    -> balance becomes `amount` (amount >= 0)
-//   adjust -> balance += `amount` (amount may be negative; floored at 0)
+// POST /api/admin-save-registration-credit — grant credit to an email.
+// body: { email, amount (cents, > 0), note }
+// Purely additive: adds `amount` to both the lifetime `totalCredited` and the
+// spendable `balance`, and logs the grant in `history`. To correct a mistake,
+// delete the email's credit and re-enter it.
 exports.adminSaveRegistrationCredit = onRequest(
   { cors: ALLOWED_ORIGINS, invoker: 'public' },
   async (req, res) => {
@@ -4202,36 +4211,38 @@ exports.adminSaveRegistrationCredit = onRequest(
       const b = req.body || {};
       const email = normEmail(b.email);
       if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
-      const mode = b.mode === 'set' ? 'set' : 'adjust';
       const amount = Math.round(Number(b.amount));
-      if (!Number.isFinite(amount)) return res.status(400).json({ error: 'Enter a dollar amount.' });
-      if (mode === 'set' && amount < 0) return res.status(400).json({ error: 'A set balance cannot be negative.' });
-      if (mode === 'adjust' && amount === 0) return res.status(400).json({ error: 'Enter an amount to add or subtract.' });
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return res.status(400).json({ error: 'Enter a credit amount greater than zero.' });
+      }
       const note = String(b.note || '').trim().slice(0, 120);
       const adminEmail = adminUser.email || 'admin';
 
       const ref = db.collection('registration_credits').doc(email);
       const result = await db.runTransaction(async function (tx) {
         const s = await tx.get(ref);
-        const cur = s.exists ? Math.max(0, Math.round(Number(s.data().balance) || 0)) : 0;
-        const newBalance = mode === 'set' ? amount : Math.max(0, cur + amount);
-        const delta = newBalance - cur;
+        const d = s.exists ? (s.data() || {}) : {};
+        const curBalance = Math.max(0, Math.round(Number(d.balance) || 0));
+        // Older docs may lack totalCredited — seed it from the current balance.
+        const curTotal = (typeof d.totalCredited === 'number')
+          ? Math.max(0, Math.round(d.totalCredited)) : curBalance;
+        const newBalance = curBalance + amount;
+        const newTotal = curTotal + amount;
         const entry = {
-          delta: delta, balanceAfter: newBalance,
-          reason: note || (mode === 'set' ? 'Balance set' : (delta >= 0 ? 'Credit added' : 'Credit removed')),
-          by: adminEmail, at: Date.now(),
+          delta: amount, balanceAfter: newBalance,
+          reason: note || 'Credit added', by: adminEmail, at: Date.now(),
         };
         const data = {
-          email: email, balance: newBalance, note: note,
+          email: email, balance: newBalance, totalCredited: newTotal, note: note,
           updatedBy: adminEmail,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           history: admin.firestore.FieldValue.arrayUnion(entry),
         };
         if (!s.exists) data.createdAt = admin.firestore.FieldValue.serverTimestamp();
         tx.set(ref, data, { merge: true });
-        return { balance: newBalance };
+        return { balance: newBalance, totalCredited: newTotal };
       });
-      return res.json({ ok: true, email: email, balance: result.balance });
+      return res.json({ ok: true, email: email, balance: result.balance, totalCredited: result.totalCredited });
     } catch (err) {
       logger.error('adminSaveRegistrationCredit failed', (err && err.message) || err);
       return res.status(500).json({ error: 'Could not save the credit.' });

@@ -797,7 +797,9 @@ document.addEventListener('DOMContentLoaded', () => {
       var inner = HEAD;
       if (cachedPhoto) {
         var safe = cachedPhoto.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        inner = '<img src="' + safe + '" alt="" referrerpolicy="no-referrer">';
+        // A broken/rotated cached URL hides itself (auth-widget.js re-renders the
+        // avatar with the person-icon fallback once Firebase resolves the session).
+        inner = '<img class="tdo-photo" src="' + safe + '" alt="" referrerpolicy="no-referrer" onerror="this.style.display=&quot;none&quot;">';
       }
       slot.innerHTML =
         '<button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false">' + inner + '</button>' +
