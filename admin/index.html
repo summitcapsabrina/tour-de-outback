@@ -501,6 +501,64 @@
     html.dark #acct-viz-modal .acct-viz-modal-close { color: #9aa0a6; }
     html.dark #acct-viz-modal .acct-viz-modal-close:hover { color: #ececec; }
     html.dark #acct-viz-modal-body h4 { color: #ececec; }
+    /* ---- Expenses: read-only rows (immutable; click a row to view/delete) ---- */
+    #acct-exp-table.acct-readonly td { padding: 7px 5px; }
+    #acct-exp-table.acct-readonly tbody tr { cursor: pointer; }
+    #acct-exp-table.acct-readonly tbody tr:hover td { background: #faf6f6; }
+    html.dark #acct-exp-table.acct-readonly tbody tr:hover td { background: #262024; }
+    #acct-exp-table.acct-readonly td.acct-name, #acct-exp-table.acct-readonly td.acct-cat { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #acct-exp-table.acct-readonly td.amt { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; }
+    #acct-exp-table.acct-readonly td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    #acct-exp-table.acct-readonly .acct-rcpt { text-align: center; }
+    #acct-exp-table.acct-readonly .acct-rcpt .has { color: #cc0000; }
+    #acct-exp-table.acct-readonly .acct-rcpt .none { color: #c9c9c9; }
+    #acct-exp-table .acct-empty-row td { color: #999; font-style: italic; cursor: default; }
+    html.dark #acct-exp-table .acct-empty-row td { color: #8a8f96; }
+    #acct-exp-table.acct-readonly th:nth-child(6), #acct-exp-table.acct-readonly td:nth-child(6) { width: 60px; text-align: center; }
+    .acct-exp-hint { font-size: .82rem; color: #888; margin: 6px 0 0; }
+    html.dark .acct-exp-hint { color: #9aa0a6; }
+    /* ---- Expense modal (add / view+delete) ---- */
+    #acct-exp-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100002; display: flex; align-items: center; justify-content: center; padding: 22px; }
+    #acct-exp-modal[hidden] { display: none; }
+    #acct-exp-modal .em-box { background: #fff; border-radius: 12px; width: min(94vw, 560px); max-height: 92vh; overflow: auto; padding: 24px 26px; position: relative; box-shadow: 0 14px 50px rgba(0,0,0,0.4); }
+    #acct-exp-modal .em-close { position: absolute; top: 10px; right: 14px; border: none; background: none; font-size: 1.9rem; line-height: 1; color: #999; cursor: pointer; }
+    #acct-exp-modal .em-close:hover { color: #222; }
+    #acct-exp-modal h3 { font-family: 'Oswald', sans-serif; font-size: 1.35rem; margin: 0 0 4px; }
+    #acct-exp-modal .em-sub { font-size: .85rem; color: #888; margin: 0 0 18px; }
+    #acct-exp-modal .em-field { margin-bottom: 13px; }
+    #acct-exp-modal .em-field label { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: #888; font-weight: 600; margin-bottom: 4px; }
+    #acct-exp-modal .em-row2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    #acct-exp-modal input[type=text], #acct-exp-modal select, #acct-exp-modal textarea {
+      width: 100%; box-sizing: border-box; border: 1px solid #ddd; background: #fff; border-radius: 6px; padding: 8px 9px; font: inherit; font-size: .9rem;
+    }
+    #acct-exp-modal input:focus, #acct-exp-modal select:focus, #acct-exp-modal textarea:focus { border-color: #cc0000; outline: none; }
+    #acct-exp-modal textarea { resize: vertical; min-height: 46px; }
+    #acct-exp-modal .em-amt input { font-weight: 700; text-align: right; }
+    #acct-exp-modal .em-num input { text-align: right; }
+    /* Receipt dropzone */
+    #acct-exp-modal .em-drop { border: 2px dashed #d5d5d5; border-radius: 10px; padding: 16px; text-align: center; color: #888; font-size: .86rem; cursor: pointer; transition: border-color .15s, background .15s; }
+    #acct-exp-modal .em-drop:hover, #acct-exp-modal .em-drop.drag { border-color: #cc0000; background: #fdf5f5; color: #a33; }
+    #acct-exp-modal .em-drop strong { color: #cc0000; }
+    #acct-exp-modal .em-preview { position: relative; margin-top: 4px; }
+    #acct-exp-modal .em-preview img { max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #e3e3e3; display: block; margin: 0 auto; }
+    #acct-exp-modal .em-preview .em-rcpt-remove { position: absolute; top: 6px; right: 6px; background: rgba(20,20,22,.82); color: #fff; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 1rem; line-height: 1; cursor: pointer; }
+    #acct-exp-modal .em-view-field { margin-bottom: 11px; }
+    #acct-exp-modal .em-view-field .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: #888; font-weight: 600; }
+    #acct-exp-modal .em-view-field .v { font-size: 1rem; font-variant-numeric: tabular-nums; }
+    #acct-exp-modal .em-view-field .v.big { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.4rem; }
+    #acct-exp-modal .em-actions { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+    #acct-exp-modal .em-spacer { flex: 1 1 auto; }
+    #acct-exp-modal .em-msg { font-size: .85rem; min-height: 1em; margin-top: 10px; }
+    #acct-exp-modal .em-danger { background: #cc0000; }
+    #acct-exp-modal .em-ghost { background: #eee; color: #333; }
+    html.dark #acct-exp-modal .em-ghost { background: #33373d; color: #dcdfe3; }
+    #acct-exp-modal .em-loading { color: #888; font-size: .86rem; text-align: center; padding: 20px; }
+    html.dark #acct-exp-modal .em-box { background: #1e2126; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+    html.dark #acct-exp-modal .em-close { color: #9aa0a6; } html.dark #acct-exp-modal .em-close:hover { color: #ececec; }
+    html.dark #acct-exp-modal h3, html.dark #acct-exp-modal .em-view-field .v { color: #ececec; }
+    html.dark #acct-exp-modal input, html.dark #acct-exp-modal select, html.dark #acct-exp-modal textarea { background: #24272d; border-color: #3a3e44; color: #e8e8e8; }
+    html.dark #acct-exp-modal .em-drop { border-color: #3a3e44; color: #9aa0a6; }
+    html.dark #acct-exp-modal .em-drop:hover, html.dark #acct-exp-modal .em-drop.drag { border-color: #ff6b6b; background: #2a2020; color: #e5a7a7; }
     /* Hover tooltip (Expense Comparison, inline + expanded) */
     #acct-tip { position: fixed; z-index: 100001; background: rgba(20,20,22,0.95); color: #fff; font-size: .8rem; padding: 6px 9px; border-radius: 6px; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.3); }
     #acct-tip[hidden] { display: none; }
@@ -758,14 +816,15 @@
                         <span class="acct-side-total" id="acct-exp-total">$0.00</span>
                       </div>
                       <div style="overflow-x:auto;">
-                        <table class="acct-table" id="acct-exp-table">
+                        <table class="acct-table acct-readonly" id="acct-exp-table">
                           <thead><tr>
-                            <th>Expense</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th></th>
+                            <th>Expense</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
                           </tr></thead>
                           <tbody></tbody>
                         </table>
                       </div>
-                      <button class="adm-btn small acct-add-row" data-side="exp" style="background:#666;margin-top:8px;">+ Add expense line</button>
+                      <button class="adm-btn small" id="acct-add-expense" style="background:#666;margin-top:8px;">+ Add expense</button>
+                      <p class="acct-exp-hint">Click any expense to view its receipt or delete it. Entered expenses can’t be edited.</p>
                     </div>
                   </div>
 
@@ -856,6 +915,14 @@
                 <div class="acct-viz-modal-box">
                   <button type="button" class="acct-viz-modal-close" id="acct-viz-modal-close" aria-label="Close">&times;</button>
                   <div id="acct-viz-modal-body"></div>
+                </div>
+              </div>
+
+              <!-- Expense add / view+delete modal -->
+              <div id="acct-exp-modal" hidden>
+                <div class="em-box">
+                  <button type="button" class="em-close" id="acct-exp-modal-close" aria-label="Close">&times;</button>
+                  <div id="acct-exp-modal-body"></div>
                 </div>
               </div>
               <div id="acct-tip" hidden></div>
@@ -5774,18 +5841,31 @@
         if (acctDirty && !confirm('Discard unsaved changes to ' + acctCurYear + '?')) { this.value = String(acctCurYear); return; }
         acctCurYear = y; acctDirty = false; acctRenderLedger();
       });
+      // Revenue: add a blank inline row (revenue stays freely editable).
       document.querySelectorAll('.acct-add-row').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          var side = btn.getAttribute('data-side');
-          var tbody = $(side === 'rev' ? 'acct-rev-table' : 'acct-exp-table').querySelector('tbody');
-          tbody.insertAdjacentHTML('beforeend', acctRowHtml(side, {}));
+          var tbody = $('acct-rev-table').querySelector('tbody');
+          tbody.insertAdjacentHTML('beforeend', acctRowHtml('rev', {}));
           var inp = tbody.lastElementChild.querySelector('.a-name'); if (inp) inp.focus();
           acctDirty = true; acctRecalc();
         });
       });
-      // One delegated listener per table body handles edits + delete + auto-math.
-      ['acct-rev-table', 'acct-exp-table'].forEach(function (tid) {
-        var tbody = $(tid).querySelector('tbody');
+      // Expenses: a new one is entered through a modal (with receipt upload); a
+      // row is read-only — clicking it opens the view/delete modal. Existing
+      // expenses can never be edited in place.
+      $('acct-add-expense').addEventListener('click', function () { acctOpenExpenseAdd(); });
+      $('acct-exp-table').querySelector('tbody').addEventListener('click', function (e) {
+        var tr = e.target.closest('tr'); if (!tr || tr.classList.contains('acct-empty-row')) return;
+        var idx = parseInt(tr.getAttribute('data-idx'), 10);
+        if (!isNaN(idx)) acctOpenExpenseView(idx);
+      });
+      // Expense-modal close (button, backdrop, Escape).
+      $('acct-exp-modal-close').addEventListener('click', acctCloseExpenseModal);
+      $('acct-exp-modal').addEventListener('click', function (e) { if (e.target === $('acct-exp-modal')) acctCloseExpenseModal(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('acct-exp-modal').hidden) acctCloseExpenseModal(); });
+      // One delegated listener on the REVENUE table handles edits + delete + auto-math.
+      (function () {
+        var tbody = $('acct-rev-table').querySelector('tbody');
         tbody.addEventListener('input', function (e) { acctOnCellInput(e); });
         tbody.addEventListener('change', function (e) {
           if (e.target.classList.contains('a-cat')) acctOnCatChange(e.target);
@@ -5808,7 +5888,7 @@
             acctDirty = true; acctRecalc();
           }
         });
-      });
+      })();
       // Live data
       onSnapshot(collection(db, 'accounting_years'), function (snap) {
         acctYears = {};

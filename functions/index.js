@@ -4675,7 +4675,51 @@ function acctCleanLine(raw) {
   }
   const note = String(r.note == null ? '' : r.note).trim().slice(0, 300);
   if (note) line.note = note;
+  // Preserve an attached receipt (an image stored in Storage under a receipt id).
+  // Carried through untouched so a whole-year Save never drops it.
+  if (r.receipt && typeof r.receipt === 'object' &&
+      typeof r.receipt.id === 'string' && /^rc_[a-z0-9]+$/i.test(r.receipt.id)) {
+    line.receipt = { id: r.receipt.id };
+  }
   return line;
+}
+
+// --- Expense receipts ------------------------------------------------------
+// Receipts are private financial records: stored in Storage under a locked-down
+// path (storage.rules deny all reads there — only the Admin SDK reaches them),
+// and served solely through /api/admin-receipt to verified admins. The client
+// normalizes every receipt to a JPEG (like the About gallery), so the object
+// path is deterministic from the id: expense-receipts/<id>.jpg.
+const EXPENSE_RECEIPT_PREFIX = 'expense-receipts/';
+const EXPENSE_RECEIPT_MAX_BYTES = 6 * 1024 * 1024; // client resizes; generous cap.
+
+// Store a receipt image (data URL, JPEG) and return { id } or { error }.
+async function saveExpenseReceipt(dataUrl, adminUser) {
+  const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m) return { error: 'That receipt could not be read as an image. Try a JPEG/PNG photo or a screenshot.' };
+  const buf = Buffer.from(m[1], 'base64');
+  if (!buf.length) return { error: 'That receipt image was empty.' };
+  if (buf.length > EXPENSE_RECEIPT_MAX_BYTES) return { error: 'That receipt image is too large. Please use a smaller one.' };
+  const id = 'rc_' + crypto.randomUUID().replace(/-/g, '');
+  const file = admin.storage().bucket(STORAGE_BUCKET).file(EXPENSE_RECEIPT_PREFIX + id + '.jpg');
+  await file.save(buf, {
+    resumable: false,
+    metadata: {
+      contentType: 'image/jpeg',
+      cacheControl: 'private, max-age=31536000, immutable',
+      metadata: { kind: 'expense-receipt', uploadedBy: adminUser.email || '' },
+    },
+  });
+  return { id: id };
+}
+
+// Best-effort delete of a receipt's bytes when its expense line goes away.
+async function deleteExpenseReceipt(receipt) {
+  const id = receipt && receipt.id;
+  if (typeof id !== 'string' || !/^rc_[a-z0-9]+$/i.test(id)) return;
+  try {
+    await admin.storage().bucket(STORAGE_BUCKET).file(EXPENSE_RECEIPT_PREFIX + id + '.jpg').delete();
+  } catch (e) { /* already gone / never uploaded — ignore */ }
 }
 
 /** Drop fully-empty rows (no name and no amount) so blank editor rows aren't saved. */
@@ -4788,6 +4832,128 @@ exports.adminAccountingDelete = onRequest(
     } catch (err) {
       logger.error('adminAccountingDelete failed', err);
       return res.status(500).json({ error: 'Could not delete.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-accounting-add-expense  — append ONE expense line to a year,
+// optionally with a receipt image. Existing lines are never touched (a stored,
+// already-clean array is read, the new line pushed, the array written back with
+// merge), so this can't alter historical expenses.
+// body: { year, expense:{name,category,count,unit,amount,note}, receiptDataUrl? }
+// returns: { ok, line, expenses }
+// ---------------------------------------------------------------------------
+exports.adminAccountingAddExpense = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    const body = req.body || {};
+    const year = parseInt(body.year, 10);
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+      return res.status(400).json({ error: 'A valid year (2000-2100) is required.' });
+    }
+    const ref = db.collection('accounting_years').doc(String(year));
+    try {
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'That year’s books don’t exist yet.' });
+      const line = acctCleanLine(body.expense || {});
+      if (!line.name && !line.amount) {
+        return res.status(400).json({ error: 'Give the expense a name or an amount.' });
+      }
+      if (body.receiptDataUrl) {
+        const r = await saveExpenseReceipt(body.receiptDataUrl, adminUser);
+        if (r.error) return res.status(400).json({ error: r.error });
+        line.receipt = { id: r.id };
+      }
+      const data = snap.data() || {};
+      const expenses = Array.isArray(data.expenses) ? data.expenses.slice() : [];
+      expenses.push(line);
+      await ref.set({
+        expenses: expenses,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedBy: adminUser.email || adminUser.uid || null,
+      }, { merge: true });
+      return res.json({ ok: true, line: line, expenses: expenses });
+    } catch (err) {
+      logger.error('adminAccountingAddExpense failed', err);
+      return res.status(500).json({ error: 'Could not add the expense.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-accounting-delete-expense  — remove ONE expense line (by its
+// position) and delete its receipt bytes. `expected` guards against deleting the
+// wrong line if the books changed since the admin opened the modal.
+// body: { year, index, expected:{ name, amount } }
+// returns: { ok, expenses }
+// ---------------------------------------------------------------------------
+exports.adminAccountingDeleteExpense = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    const body = req.body || {};
+    const year = parseInt(body.year, 10);
+    if (!Number.isInteger(year)) return res.status(400).json({ error: 'A valid year is required.' });
+    const index = parseInt(body.index, 10);
+    const ref = db.collection('accounting_years').doc(String(year));
+    try {
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'That year’s books don’t exist.' });
+      const data = snap.data() || {};
+      const expenses = Array.isArray(data.expenses) ? data.expenses.slice() : [];
+      if (!Number.isInteger(index) || index < 0 || index >= expenses.length) {
+        return res.status(409).json({ error: 'That expense is no longer there. Please reload and try again.' });
+      }
+      const target = expenses[index] || {};
+      const exp = body.expected || {};
+      if (exp && (String(exp.name || '') !== String(target.name || '') ||
+                  Math.round(Number(exp.amount || 0) * 100) !== Math.round(Number(target.amount || 0) * 100))) {
+        return res.status(409).json({ error: 'The books changed since you opened this. Please reload and try again.' });
+      }
+      expenses.splice(index, 1);
+      await ref.set({
+        expenses: expenses,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedBy: adminUser.email || adminUser.uid || null,
+      }, { merge: true });
+      await deleteExpenseReceipt(target.receipt);
+      return res.json({ ok: true, expenses: expenses });
+    } catch (err) {
+      logger.error('adminAccountingDeleteExpense failed', err);
+      return res.status(500).json({ error: 'Could not delete the expense.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/admin-receipt?id=rc_...  — serve a receipt image to a verified admin
+// only. Private (no CDN caching for other users): the bytes never leave the
+// admin session.
+// ---------------------------------------------------------------------------
+exports.adminReceipt = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    const id = String((req.query && req.query.id) || '').trim();
+    if (!/^rc_[a-z0-9]+$/i.test(id)) return res.status(400).json({ error: 'Bad receipt id.' });
+    try {
+      const file = admin.storage().bucket(STORAGE_BUCKET).file(EXPENSE_RECEIPT_PREFIX + id + '.jpg');
+      const [exists] = await file.exists();
+      if (!exists) return res.status(404).send('Not found');
+      const [buf] = await file.download();
+      res.set('Content-Type', 'image/jpeg');
+      res.set('Cache-Control', 'private, max-age=3600');
+      return res.status(200).send(buf);
+    } catch (err) {
+      logger.error('adminReceipt failed', err);
+      return res.status(500).send('Error');
     }
   }
 );

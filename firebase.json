@@ -259,6 +259,18 @@
       {
         "source": "/api/admin-rider-counts",
         "function": { "functionId": "adminRiderCounts", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-add-expense",
+        "function": { "functionId": "adminAccountingAddExpense", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-delete-expense",
+        "function": { "functionId": "adminAccountingDeleteExpense", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-receipt",
+        "function": { "functionId": "adminReceipt", "region": "us-central1" }
       }
     ],
     "headers": [
