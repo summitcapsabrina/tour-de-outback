@@ -546,7 +546,7 @@
     #acct-exp-modal .em-view-field .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: #888; font-weight: 600; }
     #acct-exp-modal .em-view-field .v { font-size: 1rem; font-variant-numeric: tabular-nums; }
     #acct-exp-modal .em-view-field .v.big { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.4rem; }
-    #acct-exp-modal .em-actions { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+    #acct-exp-modal .em-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 20px; }
     #acct-exp-modal .em-spacer { flex: 1 1 auto; }
     #acct-exp-modal .em-msg { font-size: .85rem; min-height: 1em; margin-top: 10px; }
     #acct-exp-modal .em-danger { background: #cc0000; }
@@ -6221,6 +6221,7 @@
     var acctModalSide = null;         // 'revenue' | 'expenses'
     var acctModalMode = null;         // 'add' | 'edit'
     var acctModalIdx = null;          // row index in edit mode
+    var acctModalExpected = null;     // {name, amount} the modal opened on (server race guard)
     var acctModalHadReceipt = false;  // did the edited line start with a receipt?
     var acctExpReceiptDataUrl = null; // a freshly chosen/pasted receipt (JPEG data URL)
     var acctModalRemoveReceipt = false; // edit mode: drop the existing receipt on save
@@ -6250,51 +6251,70 @@
       });
     }
 
-    function acctCloseExpenseModal() {
+    function acctCloseLineModal() {
       $('acct-exp-modal').hidden = true;
       $('acct-exp-modal-body').innerHTML = '';
-      acctExpReceiptDataUrl = null;
+      acctModalSide = acctModalMode = acctModalIdx = acctModalExpected = null;
+      acctModalHadReceipt = false; acctModalRemoveReceipt = false; acctExpReceiptDataUrl = null;
       if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} acctExpBlobUrl = null; }
     }
 
-    // ---- Add ----
-    function acctOpenExpenseAdd() {
+    // Open the modal to add a new line (mode 'add') or edit an existing one
+    // ('edit'), for either side. One form handles all four combinations.
+    function acctOpenLineModal(side, mode, idx) {
       if (acctCurYear == null) return;
-      acctExpReceiptDataUrl = null;
-      var body = $('acct-exp-modal-body');
-      body.innerHTML =
-        '<h3>Add expense</h3>' +
-        '<p class="em-sub">' + acctCurYear + ' books. Once added, an expense can’t be edited — only deleted.</p>' +
-        '<div class="em-field"><label>Expense</label><input type="text" id="em-name" placeholder="What was it for?"></div>' +
-        '<div class="em-field"><label>Category</label><select id="em-cat">' + acctCatOptions(ACCT_EXPENSE_CATS, '') + '</select></div>' +
+      if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} acctExpBlobUrl = null; }
+      acctModalSide = side; acctModalMode = mode; acctModalIdx = (mode === 'edit' ? idx : null);
+      acctExpReceiptDataUrl = null; acctModalRemoveReceipt = false;
+
+      var isRev = side === 'revenue';
+      var line = (mode === 'edit') ? (acctWorkingLines(side)[idx] || {}) : {};
+      // Snapshot what the modal opened on, so the server can reject a save/delete
+      // if the array shifted underneath (another edit, a live update).
+      acctModalExpected = { name: line.name || '', amount: +line.amount || 0 };
+      acctModalHadReceipt = !!(line.receipt && line.receipt.id);
+      var nameLabel = isRev ? 'Source' : 'Expense';
+      var namePh = isRev ? 'Where the money came from' : 'What it was for';
+      var title = (mode === 'add' ? 'Add ' : 'Edit ') + (isRev ? 'revenue line' : 'expense');
+      var cats = acctSideCats(side);
+      var vName = esc(line.name || ''), vCount = (line.count != null ? esc(String(line.count)) : ''),
+          vUnit = (line.unit != null ? esc(String(line.unit)) : ''),
+          vAmt = (line.amount != null && line.amount !== '' ? acctFmtAmount(line.amount) : ''),
+          vNote = esc(line.note || '');
+
+      $('acct-exp-modal-body').innerHTML =
+        '<h3>' + title + '</h3>' +
+        '<p class="em-sub">' + acctCurYear + ' books.</p>' +
+        '<div class="em-field"><label>' + nameLabel + '</label><input type="text" id="em-name" placeholder="' + namePh + '" value="' + vName + '"></div>' +
+        '<div class="em-field"><label>Category</label><select id="em-cat">' + acctCatOptions(cats, line.category || '') + '</select></div>' +
         '<div class="em-row2">' +
-          '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count"></div>' +
-          '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit"></div>' +
-          '<div class="em-field em-amt"><label>Amount ($)</label><input type="text" inputmode="decimal" id="em-amt"></div>' +
+          '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count" value="' + vCount + '"></div>' +
+          '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit" value="' + vUnit + '"></div>' +
+          '<div class="em-field em-amt"><label>Amount ($)</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
         '</div>' +
-        '<div class="em-field"><label>Note (optional)</label><textarea id="em-note" placeholder="Anything worth remembering"></textarea></div>' +
-        '<div class="em-field"><label>Receipt (optional)</label>' +
+        '<div class="em-field"><label>Note (optional)</label><textarea id="em-note" placeholder="Anything worth remembering">' + vNote + '</textarea></div>' +
+        '<div class="em-field"><label>Receipt / attachment (optional)</label>' +
           '<div id="em-drop" class="em-drop"><strong>Choose an image</strong>, drag one here, or paste from the clipboard (⌘/Ctrl+V).</div>' +
           '<input type="file" id="em-file" accept="image/*" hidden>' +
           '<div id="em-preview" class="em-preview"></div>' +
         '</div>' +
         '<div class="em-actions">' +
-          '<button type="button" class="adm-btn" id="em-add">Add expense</button>' +
+          '<button type="button" class="adm-btn" id="em-save">' + (mode === 'add' ? 'Add' : 'Save changes') + '</button>' +
           '<button type="button" class="adm-btn em-ghost" id="em-cancel">Cancel</button>' +
           '<span class="em-spacer"></span>' +
+          (mode === 'edit' ? '<button type="button" class="adm-btn em-danger" id="em-del">Delete</button>' : '') +
         '</div>' +
         '<div class="em-msg" id="em-msg"></div>';
       $('acct-exp-modal').hidden = false;
       $('em-name').focus();
 
-      // Category "+ Add category…"
       $('em-cat').addEventListener('change', function () {
         if (this.value !== '__new__') return;
-        var name = (prompt('New category name:') || '').trim();
-        this.innerHTML = acctCatOptions(ACCT_EXPENSE_CATS, name || '');
+        var nm = (prompt('New category name:') || '').trim();
+        this.innerHTML = acctCatOptions(cats, nm || '');
       });
-      // Auto-math: count × unit → amount (unless amount was hand-typed).
-      var amtTouched = false;
+      // Auto-math: count × unit → amount, unless amount was hand-typed.
+      var amtTouched = (mode === 'edit' && vAmt !== '');
       $('em-amt').addEventListener('input', function () { amtTouched = true; });
       function recompute() {
         if (amtTouched) return;
@@ -6305,7 +6325,7 @@
       $('em-unit').addEventListener('input', recompute);
       $('em-amt').addEventListener('blur', function () { var n = acctParse(this.value); this.value = (n == null ? '' : acctFmtAmount(n)); });
 
-      // Receipt: file picker, drag-drop, and clipboard paste.
+      // Receipt: file picker, drag-drop; paste is wired once at init.
       var drop = $('em-drop'), file = $('em-file');
       drop.addEventListener('click', function () { file.click(); });
       file.addEventListener('change', function () { if (file.files && file.files[0]) acctSetPendingReceipt(file.files[0]); file.value = ''; });
@@ -6313,13 +6333,48 @@
       ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('drag'); }); });
       drop.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) acctSetPendingReceipt(e.dataTransfer.files[0]); });
 
-      $('em-cancel').addEventListener('click', acctCloseExpenseModal);
-      $('em-add').addEventListener('click', acctSubmitExpenseAdd);
+      $('em-cancel').addEventListener('click', acctCloseLineModal);
+      $('em-save').addEventListener('click', acctSubmitLine);
+      if (mode === 'edit') $('em-del').addEventListener('click', function () { acctConfirmLineDelete(line); });
+
+      acctRenderModalReceipt(line);
+    }
+
+    // Draw the receipt slot from current state: a freshly chosen image, the
+    // existing (kept) receipt, or an empty slot. Each state offers a Remove ×.
+    function acctRenderModalReceipt(line) {
+      var host = $('em-preview'); if (!host) return;
+      if (acctExpReceiptDataUrl) {
+        host.innerHTML = '<img src="' + acctExpReceiptDataUrl + '" alt="Receipt preview">' +
+          '<button type="button" class="em-rcpt-remove" id="em-rcpt-remove" title="Remove">&times;</button>';
+        $('em-rcpt-remove').addEventListener('click', function () {
+          acctExpReceiptDataUrl = null; acctRenderModalReceipt(line);
+        });
+        return;
+      }
+      if (acctModalHadReceipt && !acctModalRemoveReceipt && line && line.receipt && line.receipt.id) {
+        host.innerHTML = '<div class="em-loading">Loading receipt…</div>';
+        currentUser.getIdToken().then(function (t) {
+          return fetch(API.adminReceipt + '?id=' + encodeURIComponent(line.receipt.id), { headers: { 'Authorization': 'Bearer ' + t } });
+        }).then(function (r) { if (!r.ok) throw new Error('unavailable'); return r.blob(); }).then(function (blob) {
+          if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} }
+          acctExpBlobUrl = URL.createObjectURL(blob);
+          if (!$('em-preview') || acctExpReceiptDataUrl || acctModalRemoveReceipt) return;
+          host.innerHTML = '<a href="' + acctExpBlobUrl + '" target="_blank" rel="noopener"><img src="' + acctExpBlobUrl + '" alt="Receipt"></a>' +
+            '<button type="button" class="em-rcpt-remove" id="em-rcpt-remove" title="Remove">&times;</button>';
+          $('em-rcpt-remove').addEventListener('click', function () {
+            acctModalRemoveReceipt = true; acctRenderModalReceipt(line);
+          });
+        }).catch(function () {
+          if ($('em-preview')) host.innerHTML = '<div class="v" style="font-size:.85rem;color:#cc0000;">Could not load the current receipt.</div>';
+        });
+        return;
+      }
+      host.innerHTML = ''; // nothing attached (or marked for removal)
     }
 
     function acctPasteReceipt(e) {
-      // Only the Add form accepts a pasted receipt (it has the preview slot).
-      if ($('acct-exp-modal').hidden || !$('em-preview')) return;
+      if ($('acct-exp-modal').hidden || !$('em-preview')) return; // only when the form is open
       var items = (e.clipboardData && e.clipboardData.items) || [];
       for (var i = 0; i < items.length; i++) {
         if (items[i].type && items[i].type.indexOf('image/') === 0) {
@@ -6333,129 +6388,93 @@
       var msg = $('em-msg'); if (msg) { msg.style.color = ''; msg.textContent = 'Reading image…'; }
       acctImgToJpeg(fileOrBlob).then(function (dataUrl) {
         acctExpReceiptDataUrl = dataUrl;
+        acctModalRemoveReceipt = false;
         if (msg) msg.textContent = '';
-        $('em-preview').innerHTML =
-          '<img src="' + dataUrl + '" alt="Receipt preview">' +
-          '<button type="button" class="em-rcpt-remove" id="em-rcpt-remove" title="Remove receipt">&times;</button>';
-        $('em-rcpt-remove').addEventListener('click', function () {
-          acctExpReceiptDataUrl = null; $('em-preview').innerHTML = '';
-        });
+        acctRenderModalReceipt(null);
       }).catch(function (err) {
         if (msg) { msg.style.color = '#cc0000'; msg.textContent = err.message || 'Could not read that image.'; }
       });
     }
 
-    function acctSubmitExpenseAdd() {
+    // Save the modal (add or edit) through the matching endpoint.
+    function acctSubmitLine() {
+      var side = acctModalSide, mode = acctModalMode;
       var name = $('em-name').value.trim();
       var cat = $('em-cat').value; if (cat === '__new__') cat = '';
       var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
       if (a == null && c != null && u != null) a = acctR2(c * u);
       if (!name && (a == null || a === 0)) {
-        var m0 = $('em-msg'); m0.style.color = '#cc0000'; m0.textContent = 'Give the expense a name or an amount.'; return;
+        var m0 = $('em-msg'); m0.style.color = '#cc0000'; m0.textContent = 'Give the line a name or an amount.'; return;
       }
-      var expense = { name: name, category: cat, amount: (a == null ? 0 : acctR2(a)) };
-      if (c != null && u != null && acctR2(c * u) === acctR2(a == null ? 0 : a)) { expense.count = c; expense.unit = u; }
-      var note = $('em-note').value.trim(); if (note) expense.note = note;
-      var body = { year: acctCurYear, expense: expense };
-      if (acctExpReceiptDataUrl) body.receiptDataUrl = acctExpReceiptDataUrl;
+      var line = { name: name, category: cat, amount: (a == null ? 0 : acctR2(a)) };
+      if (c != null && u != null && acctR2(c * u) === acctR2(a == null ? 0 : a)) { line.count = c; line.unit = u; }
+      var note = $('em-note').value.trim(); if (note) line.note = note;
 
-      var btn = $('em-add'), msg = $('em-msg');
-      btn.disabled = true; $('em-cancel').disabled = true;
+      var body = { year: acctCurYear, side: side, line: line };
+      if (acctExpReceiptDataUrl) body.receiptDataUrl = acctExpReceiptDataUrl;
+      var url;
+      if (mode === 'add') { url = API.adminAccountingAddLine; }
+      else {
+        url = API.adminAccountingUpdateLine;
+        body.index = acctModalIdx;
+        body.expected = acctModalExpected;
+        if (!acctExpReceiptDataUrl && acctModalRemoveReceipt) body.removeReceipt = true;
+      }
+
+      var btn = $('em-save'); var msg = $('em-msg');
+      btn.disabled = true; $('em-cancel').disabled = true; if ($('em-del')) $('em-del').disabled = true;
       msg.style.color = ''; msg.textContent = acctExpReceiptDataUrl ? 'Uploading receipt & saving…' : 'Saving…';
-      apiPost(API.adminAccountingAddExpense, body).then(function (r) {
-        if (r.ok && r.d && r.d.expenses) {
-          acctYears[acctCurYear] = Object.assign({}, acctYears[acctCurYear], { expenses: r.d.expenses });
-          acctRenderExpenses(); acctRecalc();
-          acctCloseExpenseModal();
+      apiPost(url, body).then(function (r) {
+        if (r.ok && r.d && r.d.lines) {
+          acctApplyLines(side, r.d.lines);
+          acctCloseLineModal();
         } else {
-          btn.disabled = false; $('em-cancel').disabled = false;
-          msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not add the expense.';
+          btn.disabled = false; $('em-cancel').disabled = false; if ($('em-del')) $('em-del').disabled = false;
+          msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not save the line.';
         }
       }).catch(function (e) {
-        btn.disabled = false; $('em-cancel').disabled = false;
-        msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not add the expense.';
+        btn.disabled = false; $('em-cancel').disabled = false; if ($('em-del')) $('em-del').disabled = false;
+        msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not save the line.';
       });
     }
 
-    // ---- View + delete ----
-    function acctOpenExpenseView(idx) {
-      var exp = acctWorkingExpenses(), line = exp[idx];
-      if (!line) return;
-      var rows = '';
-      var kv = function (k, v) { return '<div class="em-view-field"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; };
-      rows += kv('Expense', esc(line.name || '—'));
-      rows += kv('Category', esc(line.category || '—'));
-      if (line.count != null && line.unit != null) rows += kv('Count × Unit', esc(String(line.count)) + ' × ' + acctMoney(line.unit));
-      rows += '<div class="em-view-field"><div class="k">Amount</div><div class="v big">' + acctMoney(+line.amount || 0) + '</div></div>';
-      if (line.note) rows += kv('Note', esc(line.note));
-
-      var receiptBlock = (line.receipt && line.receipt.id)
-        ? '<div class="em-view-field"><div class="k">Receipt</div><div id="em-rcpt-view" class="em-preview"><div class="em-loading">Loading receipt…</div></div></div>'
-        : '<div class="em-view-field"><div class="k">Receipt</div><div class="v" style="font-size:.9rem;color:#999;">None attached</div></div>';
-
-      var body = $('acct-exp-modal-body');
-      body.innerHTML =
-        '<h3>Expense</h3>' +
-        '<p class="em-sub">' + acctCurYear + ' books. Entered expenses can’t be edited — delete and re-add if it’s wrong.</p>' +
-        rows + receiptBlock +
-        '<div class="em-actions" id="em-view-actions">' +
-          '<button type="button" class="adm-btn em-danger" id="em-del">Delete expense</button>' +
-          '<span class="em-spacer"></span>' +
-          '<button type="button" class="adm-btn em-ghost" id="em-done">Close</button>' +
-        '</div>' +
-        '<div class="em-msg" id="em-msg"></div>';
-      $('acct-exp-modal').hidden = false;
-      $('em-done').addEventListener('click', acctCloseExpenseModal);
-      $('em-del').addEventListener('click', function () { acctConfirmExpenseDelete(idx, line); });
-
-      // Load the receipt image (admin-only endpoint → blob → object URL).
-      if (line.receipt && line.receipt.id) {
-        currentUser.getIdToken().then(function (t) {
-          return fetch(API.adminReceipt + '?id=' + encodeURIComponent(line.receipt.id), { headers: { 'Authorization': 'Bearer ' + t } });
-        }).then(function (r) {
-          if (!r.ok) throw new Error('Receipt unavailable.');
-          return r.blob();
-        }).then(function (blob) {
-          if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} }
-          acctExpBlobUrl = URL.createObjectURL(blob);
-          var host = $('em-rcpt-view');
-          if (host) host.innerHTML = '<a href="' + acctExpBlobUrl + '" target="_blank" rel="noopener"><img src="' + acctExpBlobUrl + '" alt="Receipt"></a>';
-        }).catch(function () {
-          var host = $('em-rcpt-view');
-          if (host) host.innerHTML = '<div class="v" style="font-size:.9rem;color:#cc0000;">Could not load the receipt.</div>';
-        });
-      }
+    // Adopt the server's returned array for a side, then repaint that table + totals.
+    function acctApplyLines(side, lines) {
+      var patch = {}; patch[side] = lines;
+      acctYears[acctCurYear] = Object.assign({}, acctYears[acctCurYear], patch);
+      acctRenderLines(side); acctRecalc();
     }
 
-    function acctConfirmExpenseDelete(idx, line) {
-      var actions = $('em-view-actions');
+    function acctConfirmLineDelete(line) {
+      var actions = $('acct-exp-modal-body').querySelector('.em-actions');
+      var noun = acctModalSide === 'revenue' ? 'revenue line' : 'expense';
       actions.innerHTML =
-        '<span style="font-size:.88rem;color:#cc0000;font-weight:600;flex:1 1 auto;">Delete “' + esc(line.name || 'this expense') + '” (' + acctMoney(+line.amount || 0) + ')? This can’t be undone.</span>' +
+        '<span style="font-size:.86rem;color:#cc0000;font-weight:600;flex:1 1 100%;margin-bottom:8px;">Delete this ' + noun + ' — “' + esc(line.name || 'untitled') + '” (' + acctMoney(+line.amount || 0) + ')? This can’t be undone.</span>' +
         '<button type="button" class="adm-btn em-danger" id="em-del-yes">Yes, delete</button>' +
         '<button type="button" class="adm-btn em-ghost" id="em-del-no">Keep it</button>';
-      $('em-del-no').addEventListener('click', function () { acctOpenExpenseView(idx); });
-      $('em-del-yes').addEventListener('click', function () { acctDoExpenseDelete(idx, line); });
+      $('em-del-no').addEventListener('click', function () { acctOpenLineModal(acctModalSide, 'edit', acctModalIdx); });
+      $('em-del-yes').addEventListener('click', function () { acctDoLineDelete(line); });
     }
 
-    function acctDoExpenseDelete(idx, line) {
+    function acctDoLineDelete(line) {
+      var side = acctModalSide, idx = acctModalIdx;
       var yes = $('em-del-yes'), no = $('em-del-no'), msg = $('em-msg');
       if (yes) yes.disabled = true; if (no) no.disabled = true;
       msg.style.color = ''; msg.textContent = 'Deleting…';
-      apiPost(API.adminAccountingDeleteExpense, {
-        year: acctCurYear, index: idx,
-        expected: { name: line.name || '', amount: +line.amount || 0 }
+      apiPost(API.adminAccountingDeleteLine, {
+        year: acctCurYear, side: side, index: idx,
+        expected: acctModalExpected
       }).then(function (r) {
-        if (r.ok && r.d && r.d.expenses) {
-          acctYears[acctCurYear] = Object.assign({}, acctYears[acctCurYear], { expenses: r.d.expenses });
-          acctRenderExpenses(); acctRecalc();
-          acctCloseExpenseModal();
+        if (r.ok && r.d && r.d.lines) {
+          acctApplyLines(side, r.d.lines);
+          acctCloseLineModal();
         } else {
           if (yes) yes.disabled = false; if (no) no.disabled = false;
-          msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not delete the expense.';
+          msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not delete the line.';
         }
       }).catch(function (e) {
         if (yes) yes.disabled = false; if (no) no.disabled = false;
-        msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not delete the expense.';
+        msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not delete the line.';
       });
     }
 
