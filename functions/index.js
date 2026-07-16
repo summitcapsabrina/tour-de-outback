@@ -3896,6 +3896,369 @@ exports.adminDeleteDiscount = onRequest(
 );
 
 // ===========================================================================
+// REGISTRATION DISCOUNTS & ACCOUNT CREDITS
+// Infrastructure for the in-house registration checkout ("Phase 2", not built
+// yet). Two independent mechanisms, both applied to the registration fee:
+//
+//   1. Discount codes — Firestore `registration_discounts/{CODE}` (doc id is the
+//      uppercased code). Types: 'free' (100% off — one-time free registration),
+//      'percent' (value% off), 'amount' (value cents off). Each code carries its
+//      own `maxUses` cap (null = unlimited); `uses` is incremented on redemption.
+//
+//   2. Account credits — Firestore `registration_credits/{email}` (doc id is the
+//      lowercased email, so credit can be set for a rider who has no account yet).
+//      `balance` is cents of credit; entered/adjusted by admins (e.g. balances
+//      migrated from the old system). At checkout the credit is applied against
+//      the fee AFTER any discount code; leftover credit stays on the account.
+//
+// Order of operations at checkout: fee → minus discount code → minus credit,
+// clamped so the total never goes below $0. resolveRegistrationDiscount() and
+// the compute/commit helpers below are shared with the future checkout so the
+// preview and the charge always agree (mirrors the shop's resolveDiscount).
+// ===========================================================================
+
+function RegError(status, message) { this.status = status; this.message = message; }
+
+function normEmail(e) { return String(e || '').trim().toLowerCase(); }
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+// Compute a discount code against a registration fee (cents). Returns null for a
+// blank code; throws RegError for an unknown/inactive/exhausted code.
+async function resolveRegistrationDiscount(rawCode, feeCents) {
+  const code = String(rawCode || '').trim();
+  if (!code) return null;
+  const id = code.toUpperCase();
+  const snap = await db.collection('registration_discounts').doc(id).get();
+  const d = snap.exists ? snap.data() : null;
+  if (!d || d.active === false) throw new RegError(422, "That code isn't valid.");
+  const maxUses = (typeof d.maxUses === 'number' && d.maxUses > 0) ? Math.round(d.maxUses) : null;
+  const uses = Math.max(0, Math.round(Number(d.uses) || 0));
+  if (maxUses !== null && uses >= maxUses) {
+    throw new RegError(422, "That code has already been used the maximum number of times.");
+  }
+  const fee = Math.max(0, Math.round(Number(feeCents) || 0));
+  let amount = 0, label = d.label || code;
+  if (d.type === 'free') {
+    amount = fee;
+    label = d.label || 'Free registration';
+  } else if (d.type === 'percent') {
+    const pct = Math.max(0, Math.min(100, Number(d.value) || 0));
+    amount = Math.round(fee * pct / 100);
+    label = d.label || (pct + '% off');
+  } else if (d.type === 'amount') {
+    amount = Math.max(0, Math.round(Number(d.value) || 0));
+    label = d.label || ('$' + (amount / 100).toFixed(2) + ' off');
+  } else {
+    throw new RegError(422, "That code isn't valid.");
+  }
+  amount = Math.min(amount, fee);   // never drive the fee negative
+  return { code: id, type: d.type, label: label, amount: amount, feeAfter: fee - amount };
+}
+
+// Read an email's available registration credit (cents). Never throws.
+async function getRegistrationCredit(email) {
+  const key = normEmail(email);
+  if (!key) return { email: '', balance: 0, note: '' };
+  const snap = await db.collection('registration_credits').doc(key).get();
+  const c = snap.exists ? snap.data() : null;
+  return { email: key, balance: c ? Math.max(0, Math.round(Number(c.balance) || 0)) : 0, note: (c && c.note) || '' };
+}
+
+// PHASE 2 helper — price a registration for the in-house checkout. Read-only:
+// returns the full breakdown (fee, discount, credit, total) without consuming
+// anything. Call commitRegistrationRedemption() once the payment succeeds.
+// eslint-disable-next-line no-unused-vars
+async function computeRegistrationTotals(feeCents, rawCode, email) {
+  const fee = Math.max(0, Math.round(Number(feeCents) || 0));
+  const discount = await resolveRegistrationDiscount(rawCode, fee); // may throw RegError
+  const afterCode = discount ? discount.feeAfter : fee;
+  const credit = await getRegistrationCredit(email);
+  const creditApplied = Math.min(credit.balance, afterCode);
+  return {
+    fee: fee,
+    discount: discount ? { code: discount.code, type: discount.type, label: discount.label, amount: discount.amount } : null,
+    credit: { email: credit.email, balance: credit.balance, applied: creditApplied, balanceAfter: credit.balance - creditApplied },
+    total: afterCode - creditApplied,
+  };
+}
+
+// PHASE 2 helper — call ONCE from the registration payment-success webhook to
+// consume what was used: bump the code's `uses` and draw down the account
+// credit. Transactional per document so concurrent checkouts stay consistent.
+// eslint-disable-next-line no-unused-vars
+async function commitRegistrationRedemption(opts) {
+  const o = opts || {};
+  const jobs = [];
+  const code = o.code ? String(o.code).toUpperCase() : '';
+  const email = normEmail(o.email);
+  const creditApplied = Math.max(0, Math.round(Number(o.creditApplied) || 0));
+  if (code) {
+    const ref = db.collection('registration_discounts').doc(code);
+    jobs.push(db.runTransaction(async function (tx) {
+      const s = await tx.get(ref);
+      if (!s.exists) return;
+      tx.update(ref, {
+        uses: admin.firestore.FieldValue.increment(1),
+        lastUsedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }));
+  }
+  if (email && creditApplied > 0) {
+    const ref = db.collection('registration_credits').doc(email);
+    jobs.push(db.runTransaction(async function (tx) {
+      const s = await tx.get(ref);
+      if (!s.exists) return;
+      const bal = Math.max(0, Math.round(Number(s.data().balance) || 0));
+      const applied = Math.min(bal, creditApplied);
+      const after = bal - applied;
+      // serverTimestamp() can't be used inside arrayUnion — stamp with Date.now().
+      const entry = {
+        delta: -applied, balanceAfter: after,
+        reason: 'Applied at registration' + (o.orderId ? ' (' + o.orderId + ')' : ''),
+        by: 'system', at: Date.now(),
+      };
+      tx.update(ref, {
+        balance: after,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        history: admin.firestore.FieldValue.arrayUnion(entry),
+      });
+    }));
+  }
+  await Promise.all(jobs);
+}
+
+// GET /api/validate-registration-discount — preview a code against a fee so the
+// future checkout can show the adjusted price before payment. Public (same as
+// the storefront's validate-shop-discount). body: { code, fee } (fee in cents).
+// Credit is NOT previewed here (it's applied server-side at checkout by email to
+// avoid balance enumeration). returns { valid, code, type, label, discount,
+// fee, feeAfter } or { valid:false, error }.
+exports.validateRegistrationDiscount = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const body = req.body || {};
+    if (!String(body.code || '').trim()) return res.status(400).json({ valid: false, error: 'Enter a code.' });
+    const fee = Math.max(0, Math.round(Number(body.fee) || 0));
+    if (!(fee > 0)) return res.status(400).json({ valid: false, error: 'A registration fee is required to check a code.' });
+    try {
+      const d = await resolveRegistrationDiscount(body.code, fee);
+      return res.json({
+        valid: true, code: d.code, type: d.type, label: d.label,
+        discount: d.amount, fee: fee, feeAfter: d.feeAfter,
+      });
+    } catch (e) {
+      if (e instanceof RegError) return res.status(e.status).json({ valid: false, error: e.message });
+      logger.error('validateRegistrationDiscount failed', (e && e.message) || e);
+      return res.status(500).json({ valid: false, error: 'Could not check that code. Please try again.' });
+    }
+  }
+);
+
+// GET /api/admin-registration-discounts — list all registration discount codes.
+exports.adminRegistrationDiscounts = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const snap = await db.collection('registration_discounts').orderBy('createdAt', 'desc').get();
+      const discounts = snap.docs.map(function (doc) {
+        const o = doc.data() || {};
+        return {
+          code: doc.id,
+          type: o.type || 'percent',
+          value: Math.round(Number(o.value) || 0),
+          label: o.label || '',
+          active: o.active !== false,
+          maxUses: (typeof o.maxUses === 'number' && o.maxUses > 0) ? Math.round(o.maxUses) : null,
+          uses: Math.max(0, Math.round(Number(o.uses) || 0)),
+          createdAt: o.createdAt && o.createdAt.toMillis ? o.createdAt.toMillis() : null,
+        };
+      });
+      return res.json({ discounts: discounts });
+    } catch (err) {
+      logger.error('adminRegistrationDiscounts failed', (err && err.message) || err);
+      return res.status(500).json({ error: 'Could not load registration discount codes.' });
+    }
+  }
+);
+
+// POST /api/admin-save-registration-discount — create or update a code.
+// body: { code, type:'free'|'percent'|'amount', value, label, active, maxUses }
+exports.adminSaveRegistrationDiscount = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const b = req.body || {};
+      const code = String(b.code || '').trim().toUpperCase();
+      if (!/^[A-Z0-9][A-Z0-9_-]{1,39}$/.test(code)) {
+        return res.status(400).json({ error: 'Use a code of 2–40 letters, numbers, dashes, or underscores.' });
+      }
+      const type = b.type;
+      if (['free', 'percent', 'amount'].indexOf(type) === -1) {
+        return res.status(400).json({ error: 'Choose a discount type.' });
+      }
+      let value = 0;
+      if (type === 'percent') {
+        value = Math.round(Number(b.value));
+        if (!(value > 0 && value <= 100)) return res.status(400).json({ error: 'Percentage must be between 1 and 100.' });
+      } else if (type === 'amount') {
+        value = Math.round(Number(b.value)); // cents
+        if (!(value > 0)) return res.status(400).json({ error: 'Enter a dollar amount greater than zero.' });
+      }
+      // maxUses: blank/0/absent => unlimited (null); otherwise a positive integer.
+      let maxUses = null;
+      if (b.maxUses !== '' && b.maxUses !== null && b.maxUses !== undefined) {
+        const m = Math.round(Number(b.maxUses));
+        if (!(m > 0)) return res.status(400).json({ error: 'Max uses must be a positive number, or leave it blank for unlimited.' });
+        maxUses = m;
+      }
+      const active = b.active !== false;
+      const label = String(b.label || '').trim().slice(0, 60);
+      // Preserve the existing use count on edit; only initialise it on create.
+      const ref = db.collection('registration_discounts').doc(code);
+      const existing = await ref.get();
+      const data = {
+        code: code, type: type, value: value, label: label, active: active,
+        maxUses: maxUses, updatedBy: adminUser.email || null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+      if (!existing.exists) {
+        data.uses = 0;
+        data.createdAt = admin.firestore.FieldValue.serverTimestamp();
+      }
+      await ref.set(data, { merge: true });
+      return res.json({ ok: true, code: code });
+    } catch (err) {
+      logger.error('adminSaveRegistrationDiscount failed', (err && err.message) || err);
+      return res.status(500).json({ error: 'Could not save the discount code.' });
+    }
+  }
+);
+
+// POST /api/admin-delete-registration-discount — body: { code }
+exports.adminDeleteRegistrationDiscount = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const code = String((req.body && req.body.code) || '').trim().toUpperCase();
+      if (!code) return res.status(400).json({ error: 'No code given.' });
+      await db.collection('registration_discounts').doc(code).delete();
+      return res.json({ ok: true });
+    } catch (err) {
+      logger.error('adminDeleteRegistrationDiscount failed', (err && err.message) || err);
+      return res.status(500).json({ error: 'Could not delete the discount code.' });
+    }
+  }
+);
+
+// GET /api/admin-registration-credits — list every email with a credit balance.
+exports.adminRegistrationCredits = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const snap = await db.collection('registration_credits').orderBy('updatedAt', 'desc').get();
+      const credits = snap.docs.map(function (doc) {
+        const o = doc.data() || {};
+        const history = Array.isArray(o.history) ? o.history.slice(-20).map(function (h) {
+          return { delta: Math.round(Number(h.delta) || 0), balanceAfter: Math.round(Number(h.balanceAfter) || 0), reason: h.reason || '', by: h.by || '', at: Number(h.at) || null };
+        }) : [];
+        return {
+          email: doc.id,
+          balance: Math.max(0, Math.round(Number(o.balance) || 0)),
+          note: o.note || '',
+          history: history,
+          updatedAt: o.updatedAt && o.updatedAt.toMillis ? o.updatedAt.toMillis() : null,
+        };
+      });
+      return res.json({ credits: credits });
+    } catch (err) {
+      logger.error('adminRegistrationCredits failed', (err && err.message) || err);
+      return res.status(500).json({ error: 'Could not load account credits.' });
+    }
+  }
+);
+
+// POST /api/admin-save-registration-credit — set or adjust an email's credit.
+// body: { email, mode:'set'|'adjust', amount (cents), note }
+//   set    -> balance becomes `amount` (amount >= 0)
+//   adjust -> balance += `amount` (amount may be negative; floored at 0)
+exports.adminSaveRegistrationCredit = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const b = req.body || {};
+      const email = normEmail(b.email);
+      if (!EMAIL_RE.test(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
+      const mode = b.mode === 'set' ? 'set' : 'adjust';
+      const amount = Math.round(Number(b.amount));
+      if (!Number.isFinite(amount)) return res.status(400).json({ error: 'Enter a dollar amount.' });
+      if (mode === 'set' && amount < 0) return res.status(400).json({ error: 'A set balance cannot be negative.' });
+      if (mode === 'adjust' && amount === 0) return res.status(400).json({ error: 'Enter an amount to add or subtract.' });
+      const note = String(b.note || '').trim().slice(0, 120);
+      const adminEmail = adminUser.email || 'admin';
+
+      const ref = db.collection('registration_credits').doc(email);
+      const result = await db.runTransaction(async function (tx) {
+        const s = await tx.get(ref);
+        const cur = s.exists ? Math.max(0, Math.round(Number(s.data().balance) || 0)) : 0;
+        const newBalance = mode === 'set' ? amount : Math.max(0, cur + amount);
+        const delta = newBalance - cur;
+        const entry = {
+          delta: delta, balanceAfter: newBalance,
+          reason: note || (mode === 'set' ? 'Balance set' : (delta >= 0 ? 'Credit added' : 'Credit removed')),
+          by: adminEmail, at: Date.now(),
+        };
+        const data = {
+          email: email, balance: newBalance, note: note,
+          updatedBy: adminEmail,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          history: admin.firestore.FieldValue.arrayUnion(entry),
+        };
+        if (!s.exists) data.createdAt = admin.firestore.FieldValue.serverTimestamp();
+        tx.set(ref, data, { merge: true });
+        return { balance: newBalance };
+      });
+      return res.json({ ok: true, email: email, balance: result.balance });
+    } catch (err) {
+      logger.error('adminSaveRegistrationCredit failed', (err && err.message) || err);
+      return res.status(500).json({ error: 'Could not save the credit.' });
+    }
+  }
+);
+
+// POST /api/admin-delete-registration-credit — body: { email }
+exports.adminDeleteRegistrationCredit = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const email = normEmail((req.body && req.body.email) || '');
+      if (!email) return res.status(400).json({ error: 'No email given.' });
+      await db.collection('registration_credits').doc(email).delete();
+      return res.json({ ok: true });
+    } catch (err) {
+      logger.error('adminDeleteRegistrationCredit failed', (err && err.message) || err);
+      return res.status(500).json({ error: 'Could not delete the credit.' });
+    }
+  }
+);
+
+// ===========================================================================
 // ABOUT-PAGE PHOTO GALLERY — admin-managed uploads + ordering.
 // Firestore: site_content/about_gallery { photos:[{id,url,uploaded}] } is the
 // ordered render list; gallery_photos/{id} { data(base64), contentType } holds

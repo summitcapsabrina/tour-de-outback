@@ -358,6 +358,19 @@
     .disc-row .dstatus.off { background: #f0f0f0; color: #999; }
     .disc-row button { border: none; background: none; cursor: pointer; font-size: 0.85rem; color: #666; padding: 4px 6px; }
     .disc-row button.del { color: #b71c1c; }
+    /* Discounts & Credits tab */
+    .dc-section { max-width: 760px; }
+    .dc-section + .dc-section { margin-top: 30px; }
+    .disc-row .duses { font-size: 0.72rem; font-weight: 700; color: #555; background: #f0f0f0; border-radius: 10px; padding: 2px 8px; }
+    .disc-row .cbal { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.05rem; color: #1b5e20; }
+    .disc-row .cemail { font-weight: 600; flex: 1; min-width: 160px; word-break: break-all; }
+    .disc-row .cnote { font-size: 0.8rem; color: #777; width: 100%; }
+    .cred-history { width: 100%; margin-top: 6px; border-top: 1px dashed #e3e3e3; padding-top: 6px; }
+    .cred-history summary { cursor: pointer; font-size: 0.78rem; color: #666; list-style: none; }
+    .cred-history summary::-webkit-details-marker { display: none; }
+    .cred-history .ch-line { font-size: 0.76rem; color: #666; padding: 3px 0; display: flex; justify-content: space-between; gap: 10px; }
+    .cred-history .ch-line .up { color: #1b5e20; }
+    .cred-history .ch-line .dn { color: #b71c1c; }
     /* Photos */
     .ph-upload { border: 2px dashed #cfcfcf; border-radius: 12px; padding: 22px; text-align: center; max-width: 760px; transition: border-color .15s, background .15s; }
     .ph-upload.drag { border-color: #cc0000; background: #fff5f5; }
@@ -678,6 +691,7 @@
               <button class="admin-tab" data-tab="accounting">Accounting</button>
               <button class="admin-tab" data-tab="analytics">Analytics</button>
               <button class="admin-tab" data-tab="shop">Shop</button>
+              <button class="admin-tab" data-tab="discounts">Discounts &amp; Credits</button>
               <button class="admin-tab" data-tab="photos">Photos</button>
               <button class="admin-tab" data-tab="users">Users</button>
             </div>
@@ -1109,6 +1123,77 @@
               <p class="sub" style="margin-top:22px;">Product designs, prices, colors, and photos are all managed in Printify. <a href="https://printify.com/app/products" target="_blank" rel="noopener">Open Printify &rarr;</a></p>
             </div>
 
+            <!-- Discounts & Credits -->
+            <div class="admin-panel" data-panel="discounts">
+              <h2>Discounts &amp; Credits</h2>
+              <p class="sub" style="max-width:760px;">Set up the discounts and account credits that will apply at <strong>registration checkout</strong>. This is built ahead of the in-house registration flow, so it's ready the day registration opens — nothing here affects riders until then.</p>
+
+              <!-- ===== Registration discount codes ===== -->
+              <div class="dc-section">
+                <h3 style="font-family:'Oswald',sans-serif;margin:14px 0 6px;">Registration discount codes</h3>
+                <p class="sub" style="margin-bottom:14px;">A rider enters a code at checkout. <strong>Free registration</strong> takes the whole fee off; you can also give a <strong>percentage</strong> or a <strong>dollar amount</strong> off. Set <strong>Max uses</strong> to limit how many times a code can be redeemed (use 1 for a one-time free registration, or leave it blank for unlimited). Codes are not case-sensitive.</p>
+                <div class="disc-form" style="border:1px solid #e2e2e2;border-radius:10px;padding:16px;max-width:640px;margin-bottom:16px;">
+                  <div class="disc-grid">
+                    <label>Code
+                      <input type="text" id="rdisc-code" placeholder="FREERIDE" autocomplete="off" maxlength="40">
+                    </label>
+                    <label>Type
+                      <select id="rdisc-type">
+                        <option value="free">Free registration</option>
+                        <option value="percent">Percentage off</option>
+                        <option value="amount">Dollar amount off</option>
+                      </select>
+                    </label>
+                    <label id="rdisc-value-wrap" hidden>Value
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <span id="rdisc-value-pre" hidden>$</span>
+                        <input type="number" id="rdisc-value" min="1" step="1" style="width:110px;">
+                        <span id="rdisc-value-suf" hidden>%</span>
+                      </div>
+                    </label>
+                    <label>Max uses <span class="muted" style="font-weight:400;">(blank = unlimited)</span>
+                      <input type="number" id="rdisc-maxuses" min="1" step="1" placeholder="unlimited" style="width:130px;">
+                    </label>
+                    <label>Label <span class="muted" style="font-weight:400;">(optional, shown to rider)</span>
+                      <input type="text" id="rdisc-label" placeholder="Board comp" maxlength="60">
+                    </label>
+                  </div>
+                  <button class="adm-btn dark" id="rdisc-save" style="margin-top:12px;">Save code</button>
+                  <div id="rdisc-result" style="margin-top:10px;font-size:.92rem;"></div>
+                </div>
+                <div id="rdisc-list"><p class="sub">Loading codes…</p></div>
+              </div>
+
+              <!-- ===== Account credits ===== -->
+              <div class="dc-section">
+                <h3 style="font-family:'Oswald',sans-serif;margin:0 0 6px;">Account credits</h3>
+                <p class="sub" style="margin-bottom:14px;">Tie a credit to an <strong>email address</strong> — including riders who haven't made an account yet (for example, credit carried over from the old system). When someone checks out with that same email, the credit comes off their registration fee automatically. Credit is applied <strong>after</strong> any discount code, and anything left over stays on the account for next time.</p>
+                <div class="disc-form" style="border:1px solid #e2e2e2;border-radius:10px;padding:16px;max-width:640px;margin-bottom:16px;">
+                  <div class="disc-grid">
+                    <label>Email
+                      <input type="email" id="cred-email" placeholder="rider@example.com" autocomplete="off" maxlength="120">
+                    </label>
+                    <label>Action
+                      <select id="cred-mode">
+                        <option value="set">Set balance to</option>
+                        <option value="adjust">Add / subtract</option>
+                      </select>
+                    </label>
+                    <label>Amount ($) <span class="muted" style="font-weight:400;" id="cred-amt-hint">total credit</span>
+                      <input type="number" id="cred-amount" step="0.01" placeholder="50.00" style="width:130px;">
+                    </label>
+                    <label>Note <span class="muted" style="font-weight:400;">(optional)</span>
+                      <input type="text" id="cred-note" placeholder="Migrated from old system" maxlength="120">
+                    </label>
+                  </div>
+                  <p class="sub" style="margin:10px 0 0;">To subtract, choose <strong>Add / subtract</strong> and enter a negative amount (e.g. −25).</p>
+                  <button class="adm-btn dark" id="cred-save" style="margin-top:12px;">Save credit</button>
+                  <div id="cred-result" style="margin-top:10px;font-size:.92rem;"></div>
+                </div>
+                <div id="cred-list"><p class="sub">Loading credits…</p></div>
+              </div>
+            </div>
+
             <!-- Photos -->
             <div class="admin-panel" data-panel="photos">
               <h2>Photos</h2>
@@ -1287,7 +1372,7 @@
     $('open-signin').addEventListener('click', function () { if (window.tdoOpenAuth) window.tdoOpenAuth(); });
 
     // Tab switching
-    var ADMIN_TABS = ['chat', 'registration', 'surveys', 'accounting', 'analytics', 'shop', 'photos', 'users'];
+    var ADMIN_TABS = ['chat', 'registration', 'surveys', 'accounting', 'analytics', 'shop', 'discounts', 'photos', 'users'];
     function activateTab(name) {
       if (ADMIN_TABS.indexOf(name) === -1) return;
       document.querySelectorAll('.admin-tab').forEach(function (t) { t.classList.toggle('active', t.getAttribute('data-tab') === name); });
@@ -1777,6 +1862,214 @@
       var shopTab = document.querySelector('.admin-tab[data-tab="shop"]');
       var loaded = false;
       if (shopTab) shopTab.addEventListener('click', function () { if (!loaded && currentUser) { loaded = true; load(); } });
+    })();
+
+    // Discounts & Credits tab: registration discount codes (create / list / toggle / delete).
+    (function () {
+      var listEl = document.getElementById('rdisc-list');
+      if (!listEl) return;
+      var codeEl = document.getElementById('rdisc-code');
+      var typeEl = document.getElementById('rdisc-type');
+      var valWrap = document.getElementById('rdisc-value-wrap');
+      var valEl = document.getElementById('rdisc-value');
+      var valPre = document.getElementById('rdisc-value-pre');
+      var valSuf = document.getElementById('rdisc-value-suf');
+      var maxEl = document.getElementById('rdisc-maxuses');
+      var labelEl = document.getElementById('rdisc-label');
+      var saveBtn = document.getElementById('rdisc-save');
+      var resultEl = document.getElementById('rdisc-result');
+
+      function money(c) { return '$' + (((c || 0)) / 100).toFixed(2); }
+      function syncType() {
+        var t = typeEl.value;
+        valWrap.hidden = (t === 'free');
+        valPre.hidden = (t !== 'amount');
+        valSuf.hidden = (t !== 'percent');
+        valEl.placeholder = t === 'percent' ? '10' : t === 'amount' ? '25.00' : '';
+        valEl.step = t === 'amount' ? '0.01' : '1';
+      }
+      typeEl.addEventListener('change', syncType);
+      syncType();
+
+      function describe(d) {
+        if (d.type === 'free') return 'Free registration';
+        if (d.type === 'percent') return d.value + '% off';
+        if (d.type === 'amount') return money(d.value) + ' off';
+        return d.type;
+      }
+      function usesText(d) {
+        if (d.maxUses) return d.uses + ' / ' + d.maxUses + ' used';
+        return d.uses + ' used';
+      }
+      function render(codes) {
+        if (!codes.length) { listEl.innerHTML = '<p class="sub">No registration codes yet.</p>'; return; }
+        listEl.innerHTML = codes.map(function (d) {
+          var exhausted = d.maxUses && d.uses >= d.maxUses;
+          return '<div class="disc-row">' +
+            '<span class="dcode">' + esc(d.code) + '</span>' +
+            '<span class="dtype">' + esc(describe(d)) + (d.label ? ' · “' + esc(d.label) + '”' : '') + '</span>' +
+            '<span class="duses">' + esc(usesText(d)) + '</span>' +
+            '<span class="dstatus ' + ((d.active && !exhausted) ? 'on' : 'off') + '">' + (exhausted ? 'Used up' : (d.active ? 'Active' : 'Off')) + '</span>' +
+            '<button class="toggle" data-code="' + esc(d.code) + '" data-active="' + (d.active ? '0' : '1') + '">' + (d.active ? 'Disable' : 'Enable') + '</button>' +
+            '<button class="del" data-code="' + esc(d.code) + '">Delete</button>' +
+            '</div>';
+        }).join('');
+        Array.prototype.forEach.call(listEl.querySelectorAll('button.del'), function (b) {
+          b.addEventListener('click', function () {
+            if (!confirm('Delete code ' + b.getAttribute('data-code') + '?')) return;
+            apiPost(API.adminDeleteRegistrationDiscount, { code: b.getAttribute('data-code') }).then(function (r) {
+              if (r.ok) load(); else alert((r.d && r.d.error) || 'Could not delete.');
+            });
+          });
+        });
+        Array.prototype.forEach.call(listEl.querySelectorAll('button.toggle'), function (b) {
+          b.addEventListener('click', function () {
+            var code = b.getAttribute('data-code');
+            var target = codes.filter(function (c) { return c.code === code; })[0];
+            if (!target) return;
+            apiPost(API.adminSaveRegistrationDiscount, {
+              code: code, type: target.type, value: target.value, label: target.label,
+              active: b.getAttribute('data-active') === '1',
+              maxUses: target.maxUses == null ? '' : target.maxUses,
+            }).then(function (r) { if (r.ok) load(); else alert((r.d && r.d.error) || 'Could not update.'); });
+          });
+        });
+      }
+      function load() {
+        currentUser.getIdToken().then(function (t) {
+          return fetch(API.adminRegistrationDiscounts, { headers: { 'Authorization': 'Bearer ' + t } });
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          if (d.error) throw new Error(d.error);
+          render(d.discounts || []);
+        }).catch(function (e) {
+          listEl.innerHTML = '<p class="sub" style="color:#b00020;">' + esc(e.message || 'Could not load codes.') + '</p>';
+        });
+      }
+      saveBtn.addEventListener('click', function () {
+        resultEl.textContent = ''; resultEl.style.color = '#b00020';
+        var code = (codeEl.value || '').trim();
+        var type = typeEl.value;
+        if (!code) { resultEl.textContent = 'Enter a code.'; return; }
+        var payload = { code: code, type: type, label: (labelEl.value || '').trim() };
+        var maxRaw = (maxEl.value || '').trim();
+        payload.maxUses = maxRaw === '' ? '' : parseInt(maxRaw, 10);
+        if (type === 'percent') payload.value = parseInt(valEl.value, 10);
+        else if (type === 'amount') payload.value = Math.round(parseFloat(valEl.value) * 100); // dollars → cents
+        saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+        apiPost(API.adminSaveRegistrationDiscount, payload).then(function (r) {
+          if (r.ok) {
+            resultEl.style.color = '#1b7a2e';
+            resultEl.textContent = 'Saved “' + (r.d.code || code) + '”.';
+            codeEl.value = ''; valEl.value = ''; maxEl.value = ''; labelEl.value = '';
+            load();
+          } else {
+            resultEl.textContent = (r.d && r.d.error) || 'Could not save.';
+          }
+        }).catch(function () { resultEl.textContent = 'Could not save.'; })
+          .then(function () { saveBtn.disabled = false; saveBtn.textContent = 'Save code'; });
+      });
+
+      window.__loadRegDiscounts = load;   // shared trigger with the credits block below
+    })();
+
+    // Discounts & Credits tab: account credits by email (set / adjust / list / delete).
+    (function () {
+      var listEl = document.getElementById('cred-list');
+      if (!listEl) return;
+      var emailEl = document.getElementById('cred-email');
+      var modeEl = document.getElementById('cred-mode');
+      var amtEl = document.getElementById('cred-amount');
+      var noteEl = document.getElementById('cred-note');
+      var hintEl = document.getElementById('cred-amt-hint');
+      var saveBtn = document.getElementById('cred-save');
+      var resultEl = document.getElementById('cred-result');
+
+      function money(c) { return '$' + (((c || 0)) / 100).toFixed(2); }
+      function signed(c) { return (c < 0 ? '−' : '+') + '$' + (Math.abs(c || 0) / 100).toFixed(2); }
+      function when(ms) { if (!ms) return ''; try { return new Date(ms).toLocaleDateString(); } catch (e) { return ''; } }
+      function syncMode() { hintEl.textContent = modeEl.value === 'set' ? 'total credit' : '+ add / − subtract'; }
+      modeEl.addEventListener('change', syncMode);
+      syncMode();
+
+      function historyHtml(h) {
+        if (!h || !h.length) return '';
+        var lines = h.slice().reverse().map(function (e) {
+          return '<div class="ch-line"><span class="' + (e.delta < 0 ? 'dn' : 'up') + '">' + esc(signed(e.delta)) +
+            '</span><span>' + esc(e.reason || '') + '</span><span>' + esc(when(e.at)) + '</span></div>';
+        }).join('');
+        return '<details class="cred-history"><summary>History (' + h.length + ')</summary>' + lines + '</details>';
+      }
+      function render(credits) {
+        if (!credits.length) { listEl.innerHTML = '<p class="sub">No account credits yet.</p>'; return; }
+        listEl.innerHTML = credits.map(function (c) {
+          return '<div class="disc-row">' +
+            '<span class="cemail">' + esc(c.email) + '</span>' +
+            '<span class="cbal">' + esc(money(c.balance)) + '</span>' +
+            '<button class="edit" data-email="' + esc(c.email) + '" data-balance="' + c.balance + '">Edit</button>' +
+            '<button class="del" data-email="' + esc(c.email) + '">Delete</button>' +
+            (c.note ? '<span class="cnote">' + esc(c.note) + '</span>' : '') +
+            historyHtml(c.history) +
+            '</div>';
+        }).join('');
+        Array.prototype.forEach.call(listEl.querySelectorAll('button.del'), function (b) {
+          b.addEventListener('click', function () {
+            if (!confirm('Remove all credit for ' + b.getAttribute('data-email') + '?')) return;
+            apiPost(API.adminDeleteRegistrationCredit, { email: b.getAttribute('data-email') }).then(function (r) {
+              if (r.ok) load(); else alert((r.d && r.d.error) || 'Could not delete.');
+            });
+          });
+        });
+        Array.prototype.forEach.call(listEl.querySelectorAll('button.edit'), function (b) {
+          b.addEventListener('click', function () {
+            emailEl.value = b.getAttribute('data-email');
+            modeEl.value = 'set'; syncMode();
+            amtEl.value = (parseInt(b.getAttribute('data-balance'), 10) / 100).toFixed(2);
+            noteEl.value = '';
+            emailEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            amtEl.focus();
+          });
+        });
+      }
+      function load() {
+        currentUser.getIdToken().then(function (t) {
+          return fetch(API.adminRegistrationCredits, { headers: { 'Authorization': 'Bearer ' + t } });
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          if (d.error) throw new Error(d.error);
+          render(d.credits || []);
+        }).catch(function (e) {
+          listEl.innerHTML = '<p class="sub" style="color:#b00020;">' + esc(e.message || 'Could not load credits.') + '</p>';
+        });
+      }
+      saveBtn.addEventListener('click', function () {
+        resultEl.textContent = ''; resultEl.style.color = '#b00020';
+        var email = (emailEl.value || '').trim();
+        if (!email) { resultEl.textContent = 'Enter an email.'; return; }
+        var raw = parseFloat(amtEl.value);
+        if (isNaN(raw)) { resultEl.textContent = 'Enter a dollar amount.'; return; }
+        var payload = { email: email, mode: modeEl.value, amount: Math.round(raw * 100), note: (noteEl.value || '').trim() };
+        saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+        apiPost(API.adminSaveRegistrationCredit, payload).then(function (r) {
+          if (r.ok) {
+            resultEl.style.color = '#1b7a2e';
+            resultEl.textContent = esc(r.d.email || email) + ' now has ' + money(r.d.balance) + ' credit.';
+            amtEl.value = ''; noteEl.value = '';
+            load();
+          } else {
+            resultEl.textContent = (r.d && r.d.error) || 'Could not save.';
+          }
+        }).catch(function () { resultEl.textContent = 'Could not save.'; })
+          .then(function () { saveBtn.disabled = false; saveBtn.textContent = 'Save credit'; });
+      });
+
+      var discTab = document.querySelector('.admin-tab[data-tab="discounts"]');
+      var loaded = false;
+      if (discTab) discTab.addEventListener('click', function () {
+        if (!loaded && currentUser) {
+          loaded = true;
+          load();
+          if (window.__loadRegDiscounts) window.__loadRegDiscounts();
+        }
+      });
     })();
 
     // Photos: About-page gallery — upload, reorder (drag / ▲▼), delete, save.

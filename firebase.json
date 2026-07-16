@@ -233,6 +233,34 @@
         "function": { "functionId": "adminDeleteDiscount", "region": "us-central1" }
       },
       {
+        "source": "/api/validate-registration-discount",
+        "function": { "functionId": "validateRegistrationDiscount", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-registration-discounts",
+        "function": { "functionId": "adminRegistrationDiscounts", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-save-registration-discount",
+        "function": { "functionId": "adminSaveRegistrationDiscount", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-delete-registration-discount",
+        "function": { "functionId": "adminDeleteRegistrationDiscount", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-registration-credits",
+        "function": { "functionId": "adminRegistrationCredits", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-save-registration-credit",
+        "function": { "functionId": "adminSaveRegistrationCredit", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-delete-registration-credit",
+        "function": { "functionId": "adminDeleteRegistrationCredit", "region": "us-central1" }
+      },
+      {
         "source": "/api/my-profile",
         "function": { "functionId": "myProfile", "region": "us-central1" }
       },
