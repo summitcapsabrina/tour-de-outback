@@ -441,6 +441,7 @@
     table.acct-table th, table.acct-table td { padding: 4px 5px; border-bottom: 1px solid #eee; text-align: left; }
     table.acct-table th { font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #888; font-weight: 600; }
     table.acct-table th.num, table.acct-table td.num { text-align: right; }
+    table.acct-table th.ctr, table.acct-table td.ctr { text-align: center; }
     table.acct-table input[type=text], table.acct-table input[type=number], table.acct-table select {
       width: 100%; border: 1px solid transparent; background: transparent; border-radius: 5px; padding: 5px 6px; font: inherit; font-size: .86rem; box-sizing: border-box;
     }
@@ -449,15 +450,17 @@
     table.acct-table td.num input { text-align: right; font-variant-numeric: tabular-nums; }
     table.acct-table td.amt input { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
     /* Fixed layout so the Amount column keeps its width — long names never squeeze it.
-       Columns: Name(flex) · Date · Category · Count · Unit · Amount · Receipt. */
-    table.acct-table { table-layout: fixed; width: 100%; min-width: 600px; }
+       Columns: Name(flex) · Date · Category · Count · Unit · Amount · Rcpt. Kept tight
+       so both sides fit side-by-side without the Amount column clipping. */
+    table.acct-table { table-layout: fixed; width: 100%; min-width: 470px; }
     .acct-side { min-width: 0; }
-    table.acct-table th:nth-child(2), table.acct-table td:nth-child(2) { width: 104px; }
-    table.acct-table th:nth-child(3), table.acct-table td:nth-child(3) { width: 112px; }
-    table.acct-table th:nth-child(4), table.acct-table td:nth-child(4) { width: 46px; }
-    table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 52px; }
-    table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 100px; }
-    table.acct-table th:nth-child(7), table.acct-table td:nth-child(7) { width: 56px; }
+    table.acct-table th, table.acct-table td { padding: 4px 4px; }
+    table.acct-table th:nth-child(2), table.acct-table td:nth-child(2) { width: 90px; }
+    table.acct-table th:nth-child(3), table.acct-table td:nth-child(3) { width: 92px; }
+    table.acct-table th:nth-child(4), table.acct-table td:nth-child(4) { width: 54px; }
+    table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 44px; }
+    table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 96px; }
+    table.acct-table th:nth-child(7), table.acct-table td:nth-child(7) { width: 34px; }
     table.acct-table .acct-cat select { max-width: 100%; }
     .acct-del { border: none; background: none; color: #c9c9c9; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 4px; }
     .acct-del:hover { color: #b71c1c; }
@@ -504,13 +507,14 @@
     html.dark #acct-viz-modal .acct-viz-modal-close:hover { color: #ececec; }
     html.dark #acct-viz-modal-body h4 { color: #ececec; }
     /* ---- Ledger: read-only line rows (click a row to edit / delete) ---- */
-    .acct-table.acct-readonly td { padding: 7px 5px; }
+    .acct-table.acct-readonly td { padding: 7px 4px; }
     .acct-table.acct-readonly tbody tr { cursor: pointer; }
     .acct-table.acct-readonly tbody tr:hover td { background: #faf6f6; }
     html.dark .acct-table.acct-readonly tbody tr:hover td { background: #262024; }
     .acct-table.acct-readonly td.acct-name, .acct-table.acct-readonly td.acct-cat { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .acct-table.acct-readonly td.amt { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .acct-table.acct-readonly td.ctr { text-align: center; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly .acct-rcpt { text-align: center; }
     .acct-table.acct-readonly .acct-rcpt .has { color: #cc0000; }
     .acct-table.acct-readonly .acct-rcpt .none { color: #c9c9c9; }
@@ -805,7 +809,7 @@
                       <div style="overflow-x:auto;">
                         <table class="acct-table acct-readonly" id="acct-rev-table">
                           <thead><tr>
-                            <th>Source</th><th>Date</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
+                            <th>Source</th><th>Date</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
                           </tr></thead>
                           <tbody></tbody>
                         </table>
@@ -822,7 +826,7 @@
                       <div style="overflow-x:auto;">
                         <table class="acct-table acct-readonly" id="acct-exp-table">
                           <thead><tr>
-                            <th>Expense</th><th>Date</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
+                            <th>Expense</th><th>Date</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
                           </tr></thead>
                           <tbody></tbody>
                         </table>
@@ -6149,8 +6153,8 @@
         '<td class="acct-name">' + esc(line.name || '—') + '</td>' +
         '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
-        '<td class="num">' + (count === '' ? '' : esc(String(count))) + '</td>' +
-        '<td class="num">' + (unit === '' ? '' : esc(String(unit))) + '</td>' +
+        '<td class="ctr">' + (unit === '' ? '' : esc(String(unit))) + '</td>' +
+        '<td class="ctr">' + (count === '' ? '' : esc(String(count))) + '</td>' +
         '<td class="amt">' + acctMoney(+line.amount || 0) + '</td>' +
         '<td class="acct-rcpt">' + rcpt + '</td></tr>';
     }
@@ -6323,17 +6327,17 @@
         var nm = (prompt('New category name:') || '').trim();
         this.innerHTML = acctCatOptions(cats, nm || '');
       });
-      // Auto-math: count × unit → amount, unless amount was hand-typed.
-      var amtTouched = (mode === 'edit' && vAmt !== '');
-      $('em-amt').addEventListener('input', function () { amtTouched = true; });
-      function recompute() {
-        if (amtTouched) return;
-        var c = acctParse($('em-count').value), u = acctParse($('em-unit').value);
-        if (c != null && u != null) $('em-amt').value = acctFmtAmount(acctR2(c * u));
-      }
-      $('em-count').addEventListener('input', recompute);
-      $('em-unit').addEventListener('input', recompute);
-      $('em-amt').addEventListener('blur', function () { var n = acctParse(this.value); this.value = (n == null ? '' : acctFmtAmount(n)); });
+      // The three fields relate as amount = count × unit. Rather than fill a value,
+      // show the derived one as a PLACEHOLDER in the field the admin left blank, so
+      // a typed value is never clobbered. The server derives + stores it on save:
+      //   count + unit  → Amount placeholder (total)
+      //   count + total → Unit placeholder
+      ['em-count', 'em-unit', 'em-amt'].forEach(function (id) {
+        $(id).addEventListener('input', acctModalDeriveHints);
+      });
+      $('em-amt').addEventListener('blur', function () {
+        var n = acctParse(this.value); this.value = (n == null ? '' : acctFmtAmount(n)); acctModalDeriveHints();
+      });
 
       // Receipt: file picker, drag-drop; paste is wired once at init.
       var drop = $('em-drop'), file = $('em-file');
@@ -6347,7 +6351,18 @@
       $('em-save').addEventListener('click', acctSubmitLine);
       if (mode === 'edit') $('em-del').addEventListener('click', function () { acctConfirmLineDelete(line); });
 
+      acctModalDeriveHints(); // seed placeholders (e.g. editing a total-only line + adding a count)
       acctRenderModalReceipt(line);
+    }
+
+    // Set Amount/Unit placeholders to the value the third field implies, only in a
+    // field the admin left blank (a typed value keeps its own placeholder cleared).
+    function acctModalDeriveHints() {
+      var ce = $('em-count'), ue = $('em-unit'), ae = $('em-amt');
+      if (!ce || !ue || !ae) return;
+      var c = acctParse(ce.value), u = acctParse(ue.value), a = acctParse(ae.value);
+      ae.placeholder = (ae.value.trim() === '' && c != null && u != null) ? acctFmtAmount(acctR2(c * u)) : '$0.00';
+      ue.placeholder = (ue.value.trim() === '' && c != null && c !== 0 && a != null) ? acctFmtAmount(acctR2(a / c)) : '';
     }
 
     // Draw the receipt slot from current state: a freshly chosen image, the
@@ -6412,12 +6427,17 @@
       var name = $('em-name').value.trim();
       var cat = $('em-cat').value; if (cat === '__new__') cat = '';
       var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
-      if (a == null && c != null && u != null) a = acctR2(c * u);
-      if (!name && (a == null || a === 0)) {
+      // The effective amount is what's typed, or count×unit when the total is blank.
+      var effAmt = (a != null) ? a : ((c != null && u != null) ? acctR2(c * u) : null);
+      if (!name && (effAmt == null || effAmt === 0)) {
         var m0 = $('em-msg'); m0.style.color = '#cc0000'; m0.textContent = 'Give the line a name or an amount.'; return;
       }
-      var line = { name: name, category: cat, amount: (a == null ? 0 : acctR2(a)) };
-      if (c != null && u != null && acctR2(c * u) === acctR2(a == null ? 0 : a)) { line.count = c; line.unit = u; }
+      // Send whatever the admin actually entered; the server derives the blank one
+      // (unit from total÷count, or total from count×unit) and stores all present.
+      var line = { name: name, category: cat };
+      if (a != null) line.amount = acctR2(a);
+      if (c != null) line.count = c;
+      if (u != null) line.unit = u;
       var note = $('em-note').value.trim(); if (note) line.note = note;
       var date = ($('em-date') && $('em-date').value || '').trim();
       if (/^\d{4}-\d{2}-\d{2}$/.test(date)) line.date = date;

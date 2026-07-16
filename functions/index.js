@@ -4660,19 +4660,23 @@ function acctCleanLine(raw) {
   const name = String(r.name == null ? '' : r.name).trim().slice(0, 200);
   const category = String(r.category == null ? '' : r.category).trim().slice(0, 60);
   const count = acctNum(r.count);
-  const unit = acctNum(r.unit);
+  let unit = acctNum(r.unit);
   let amount = acctNum(r.amount);
-  // If a count x unit is given and reconciles (or amount is blank), derive amount.
-  if (count !== null && unit !== null) {
-    const derived = Math.round(count * unit * 100) / 100;
-    if (amount === null) amount = derived;
+  // amount = count × unit. Derive whichever single value the admin left blank:
+  //   count + unit  → amount    (total shows on save)
+  //   count + total → unit      (unit shows on save)
+  // A value the admin actually typed always wins — never overwrite it.
+  if (amount === null && count !== null && unit !== null) {
+    amount = Math.round(count * unit * 100) / 100;
+  } else if (unit === null && count !== null && count !== 0 && amount !== null) {
+    unit = Math.round((amount / count) * 100) / 100;
   }
   if (amount === null) amount = 0;
   const line = { name: name, category: category, amount: amount, paid: r.paid !== false };
-  if (count !== null && unit !== null && Math.round(count * unit * 100) / 100 === amount) {
-    line.count = count;
-    line.unit = unit;
-  }
+  // Keep count/unit whenever present (given or derived) — no longer gated on an
+  // exact count×unit===amount match, so a derived unit with rounding still sticks.
+  if (count !== null) line.count = count;
+  if (unit !== null) line.unit = unit;
   const note = String(r.note == null ? '' : r.note).trim().slice(0, 300);
   if (note) line.note = note;
   // Optional line date (ISO YYYY-MM-DD). Drives the on-save sort; lines without
