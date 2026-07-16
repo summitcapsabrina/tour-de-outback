@@ -448,14 +448,16 @@
     table.acct-table input:focus, table.acct-table select:focus { border-color: #cc0000; background: #fff; outline: none; }
     table.acct-table td.num input { text-align: right; font-variant-numeric: tabular-nums; }
     table.acct-table td.amt input { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
-    /* Fixed layout so the Amount column keeps its width — long names never squeeze it. */
-    table.acct-table { table-layout: fixed; width: 100%; min-width: 540px; }
+    /* Fixed layout so the Amount column keeps its width — long names never squeeze it.
+       Columns: Name(flex) · Date · Category · Count · Unit · Amount · Receipt. */
+    table.acct-table { table-layout: fixed; width: 100%; min-width: 600px; }
     .acct-side { min-width: 0; }
-    table.acct-table th:nth-child(2), table.acct-table td:nth-child(2) { width: 132px; }
-    table.acct-table th:nth-child(3), table.acct-table td:nth-child(3) { width: 54px; }
-    table.acct-table th:nth-child(4), table.acct-table td:nth-child(4) { width: 54px; }
-    table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 110px; }
-    table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 28px; }
+    table.acct-table th:nth-child(2), table.acct-table td:nth-child(2) { width: 104px; }
+    table.acct-table th:nth-child(3), table.acct-table td:nth-child(3) { width: 112px; }
+    table.acct-table th:nth-child(4), table.acct-table td:nth-child(4) { width: 46px; }
+    table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 52px; }
+    table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 100px; }
+    table.acct-table th:nth-child(7), table.acct-table td:nth-child(7) { width: 56px; }
     table.acct-table .acct-cat select { max-width: 100%; }
     .acct-del { border: none; background: none; color: #c9c9c9; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 4px; }
     .acct-del:hover { color: #b71c1c; }
@@ -514,7 +516,9 @@
     .acct-table.acct-readonly .acct-rcpt .none { color: #c9c9c9; }
     .acct-table .acct-empty-row td { color: #999; font-style: italic; cursor: default; }
     html.dark .acct-table .acct-empty-row td { color: #8a8f96; }
-    .acct-table.acct-readonly th:nth-child(6), .acct-table.acct-readonly td:nth-child(6) { width: 60px; text-align: center; }
+    .acct-table.acct-readonly th:nth-child(7), .acct-table.acct-readonly td:nth-child(7) { text-align: center; }
+    .acct-table.acct-readonly td.acct-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .acct-table.acct-readonly td.acct-date .none { color: #c9c9c9; }
     .acct-exp-hint { font-size: .82rem; color: #888; margin: 6px 0 0; }
     html.dark .acct-exp-hint { color: #9aa0a6; }
     /* ---- Expense modal (add / view+delete) ---- */
@@ -557,6 +561,7 @@
     html.dark #acct-exp-modal .em-close { color: #9aa0a6; } html.dark #acct-exp-modal .em-close:hover { color: #ececec; }
     html.dark #acct-exp-modal h3, html.dark #acct-exp-modal .em-view-field .v { color: #ececec; }
     html.dark #acct-exp-modal input, html.dark #acct-exp-modal select, html.dark #acct-exp-modal textarea { background: #24272d; border-color: #3a3e44; color: #e8e8e8; }
+    html.dark #acct-exp-modal input[type=date] { color-scheme: dark; }
     html.dark #acct-exp-modal .em-drop { border-color: #3a3e44; color: #9aa0a6; }
     html.dark #acct-exp-modal .em-drop:hover, html.dark #acct-exp-modal .em-drop.drag { border-color: #ff6b6b; background: #2a2020; color: #e5a7a7; }
     /* Hover tooltip (Expense Comparison, inline + expanded) */
@@ -785,10 +790,8 @@
                     </label>
                     <span id="acct-riders-display" style="font-size:.85rem;color:#666;margin-left:6px;" title="Total riders this year, from your registration history. Not editable here — if it's wrong, fix it in Registration.">Riders: —</span>
                     <span style="flex:1 1 auto;"></span>
-                    <button class="adm-btn small" id="acct-delete-year" style="background:#8a8a8a;">Delete year</button>
-                    <button class="adm-btn" id="acct-save-btn">Save changes</button>
+                    <span id="acct-save-result" class="muted" style="font-size:.9rem;min-height:1em;"></span>
                   </div>
-                  <div id="acct-save-result" class="muted" style="font-size:.9rem;margin-bottom:12px;min-height:1em;"></div>
 
                   <!-- Totals -->
                   <div class="stat-grid" id="acct-stat-grid" style="margin-bottom:20px;"></div>
@@ -802,7 +805,7 @@
                       <div style="overflow-x:auto;">
                         <table class="acct-table acct-readonly" id="acct-rev-table">
                           <thead><tr>
-                            <th>Source</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
+                            <th>Source</th><th>Date</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
                           </tr></thead>
                           <tbody></tbody>
                         </table>
@@ -819,7 +822,7 @@
                       <div style="overflow-x:auto;">
                         <table class="acct-table acct-readonly" id="acct-exp-table">
                           <thead><tr>
-                            <th>Expense</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
+                            <th>Expense</th><th>Date</th><th>Category</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Amount</th><th class="num">Receipt</th>
                           </tr></thead>
                           <tbody></tbody>
                         </table>
@@ -5812,9 +5815,7 @@
       });
       // Buttons
       $('acct-seed-btn').addEventListener('click', acctSeed);
-      $('acct-save-btn').addEventListener('click', acctSave);
       $('acct-add-year').addEventListener('click', acctAddYear);
-      $('acct-delete-year').addEventListener('click', acctDeleteYear);
       // Expand any chart into a large centered modal (like Registration Progress).
       document.querySelectorAll('.acct-expand').forEach(function (btn) {
         btn.addEventListener('click', function () { acctExpandCard(btn.closest('.acct-chart-card')); });
@@ -5836,7 +5837,7 @@
         el.addEventListener('mousemove', acctTipMove);
         el.addEventListener('mouseleave', acctTipHide);
       });
-      $('acct-status-toggle').addEventListener('change', function () { acctDirty = true; acctRecalc(); });
+      $('acct-status-toggle').addEventListener('change', function () { acctRecalc(); acctSaveMeta(); });
       $('acct-year-select').addEventListener('change', function () {
         var y = parseInt(this.value, 10);
         if (acctDirty && !confirm('Discard unsaved changes to ' + acctCurYear + '?')) { this.value = String(acctCurYear); return; }
@@ -6092,9 +6093,15 @@
         '<div class="stat-card"><div class="stat-val" id="acct-sv-close">—</div><div class="stat-lbl">Closing balance</div></div>';
       if (isEarliest) {
         var oi = $('acct-opening-input');
+        var oiSaved = acctParse(oi.value); // last-saved value, to skip no-op saves on blur
         oi.addEventListener('input', function () { acctDirty = true; acctRecalc(); });
         oi.addEventListener('focus', function () { var n = acctParse(oi.value); oi.value = (n == null ? '' : String(n)); if (oi.select) oi.select(); });
-        oi.addEventListener('blur', function () { oi.value = acctFmtAmount(acctParse(oi.value)); });
+        oi.addEventListener('blur', function () {
+          oi.value = acctFmtAmount(acctParse(oi.value));
+          var now = acctParse(oi.value);
+          if ((now || 0) !== (oiSaved || 0)) { oiSaved = now; acctSaveMeta(); }
+          else { acctDirty = false; }
+        });
       }
       $('acct-opening-note').textContent = isEarliest
         ? 'This is the earliest year, so its opening balance is set here. Later years open automatically at the previous year’s closing balance.'
@@ -6117,20 +6124,30 @@
       var lines = acctWorkingLines(side);
       if (!lines.length) {
         var label = side === 'revenue' ? '+ Add revenue line' : '+ Add expense';
-        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="6">Nothing yet — click “' + label + '”.</td></tr>';
+        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="7">Nothing yet — click “' + label + '”.</td></tr>';
         return;
       }
       tb.innerHTML = lines.map(function (l, i) { return acctLineRowHtml(l, i); }).join('');
     }
 
+    // 'YYYY-MM-DD' -> "Jun 12, 2027" (parsed by parts to dodge UTC off-by-one).
+    var ACCT_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    function acctFmtDate(iso) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+      if (!m) return '';
+      return ACCT_MON[(+m[2]) - 1] + ' ' + (+m[3]) + ', ' + m[1];
+    }
+
     function acctLineRowHtml(line, idx) {
       var count = (line.count != null && line.count !== '') ? line.count : '';
       var unit = (line.unit != null && line.unit !== '') ? line.unit : '';
+      var dateCell = line.date ? esc(acctFmtDate(line.date)) : '<span class="none">—</span>';
       var rcpt = (line.receipt && line.receipt.id)
         ? '<span class="has" title="Receipt attached">📎</span>'
         : '<span class="none" title="No receipt">—</span>';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
         '<td class="acct-name">' + esc(line.name || '—') + '</td>' +
+        '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
         '<td class="num">' + (count === '' ? '' : esc(String(count))) + '</td>' +
         '<td class="num">' + (unit === '' ? '' : esc(String(unit))) + '</td>' +
@@ -6162,10 +6179,11 @@
       badge.textContent = inProg ? 'In progress' : 'Final';
     }
 
-    // "Save changes" now covers only the year settings — opening balance and the
-    // in-progress/final status. Lines commit on their own through the modal, so
-    // this deliberately sends no revenue/expenses (the server leaves them alone).
-    function acctSave() {
+    // Auto-save the year settings — opening balance and in-progress/final status.
+    // Fires on toggling the status and on blurring the opening-balance field; there
+    // is no Save button. Lines commit on their own through the modal, so this sends
+    // no revenue/expenses (the server leaves the line arrays alone).
+    function acctSaveMeta() {
       if (acctCurYear == null) return;
       var ys = acctSortedYears(), earliest = ys.length ? ys[0] : acctCurYear;
       var body = {
@@ -6174,13 +6192,12 @@
       };
       if (acctCurYear === earliest) { var oi = $('acct-opening-input'); body.openingBalance = oi ? (acctParse(oi.value) || 0) : 0; }
       else body.openingBalance = null;
-      var btn = $('acct-save-btn'), res = $('acct-save-result');
-      btn.disabled = true; res.style.color = ''; res.textContent = 'Saving…';
+      var res = $('acct-save-result');
+      res.style.color = ''; res.textContent = 'Saving…';
       apiPost(API.adminAccountingSave, body).then(function (r) {
-        btn.disabled = false;
-        if (r.ok) { acctDirty = false; res.style.color = '#1b8a3a'; res.textContent = 'Saved ✓'; setTimeout(function () { if (res.textContent === 'Saved ✓') res.textContent = ''; }, 2500); }
+        if (r.ok) { acctDirty = false; res.style.color = '#1b8a3a'; res.textContent = 'Saved ✓'; setTimeout(function () { if (res.textContent === 'Saved ✓') res.textContent = ''; }, 2000); }
         else { res.style.color = '#cc0000'; res.textContent = (r.d && r.d.error) || 'Save failed.'; }
-      }).catch(function (e) { btn.disabled = false; res.style.color = '#cc0000'; res.textContent = e.message; });
+      }).catch(function (e) { res.style.color = '#cc0000'; res.textContent = e.message; });
     }
 
     function acctAddYear() {
@@ -6195,15 +6212,6 @@
       apiPost(API.adminAccountingSave, { year: y, status: 'in-progress', revenue: [], expenses: [], openingBalance: null }).then(function (r) {
         if (r.ok) { acctCurYear = y; acctDirty = false; res.textContent = ''; }
         else { res.style.color = '#cc0000'; res.textContent = (r.d && r.d.error) || 'Could not create year.'; }
-      });
-    }
-
-    function acctDeleteYear() {
-      if (acctCurYear == null) return;
-      if (!confirm('Delete all books for ' + acctCurYear + '? This cannot be undone.')) return;
-      apiPost(API.adminAccountingDelete, { year: acctCurYear }).then(function (r) {
-        if (!r.ok) alert((r.d && r.d.error) || 'Could not delete.');
-        else { acctDirty = false; acctCurYear = null; }
       });
     }
 
@@ -6280,12 +6288,14 @@
       var vName = esc(line.name || ''), vCount = (line.count != null ? esc(String(line.count)) : ''),
           vUnit = (line.unit != null ? esc(String(line.unit)) : ''),
           vAmt = (line.amount != null && line.amount !== '' ? acctFmtAmount(line.amount) : ''),
-          vNote = esc(line.note || '');
+          vNote = esc(line.note || ''),
+          vDate = (typeof line.date === 'string' ? line.date : '');
 
       $('acct-exp-modal-body').innerHTML =
         '<h3>' + title + '</h3>' +
         '<p class="em-sub">' + acctCurYear + ' books.</p>' +
         '<div class="em-field"><label>' + nameLabel + '</label><input type="text" id="em-name" placeholder="' + namePh + '" value="' + vName + '"></div>' +
+        '<div class="em-field"><label>Date (optional)</label><input type="date" id="em-date" value="' + vDate + '"></div>' +
         '<div class="em-field"><label>Category</label><select id="em-cat">' + acctCatOptions(cats, line.category || '') + '</select></div>' +
         '<div class="em-row2">' +
           '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count" value="' + vCount + '"></div>' +
@@ -6409,6 +6419,8 @@
       var line = { name: name, category: cat, amount: (a == null ? 0 : acctR2(a)) };
       if (c != null && u != null && acctR2(c * u) === acctR2(a == null ? 0 : a)) { line.count = c; line.unit = u; }
       var note = $('em-note').value.trim(); if (note) line.note = note;
+      var date = ($('em-date') && $('em-date').value || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) line.date = date;
 
       var body = { year: acctCurYear, side: side, line: line };
       if (acctExpReceiptDataUrl) body.receiptDataUrl = acctExpReceiptDataUrl;

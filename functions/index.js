@@ -4675,6 +4675,11 @@ function acctCleanLine(raw) {
   }
   const note = String(r.note == null ? '' : r.note).trim().slice(0, 300);
   if (note) line.note = note;
+  // Optional line date (ISO YYYY-MM-DD). Drives the on-save sort; lines without
+  // one keep their existing order below the dated lines.
+  if (typeof r.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date)) {
+    line.date = r.date;
+  }
   // Preserve an attached receipt (an image stored in Storage under a receipt id).
   // Carried through untouched so a whole-year Save never drops it.
   if (r.receipt && typeof r.receipt === 'object' &&
@@ -4682,6 +4687,22 @@ function acctCleanLine(raw) {
     line.receipt = { id: r.receipt.id };
   }
   return line;
+}
+
+// Sort lines for storage: dated lines first, earliest date at the top; undated
+// lines keep their original relative order and fall below the dated ones. Stable
+// (index tiebreak), so re-saving never reshuffles same-date or undated rows.
+function acctSortLines(lines) {
+  return (Array.isArray(lines) ? lines : [])
+    .map(function (l, i) { return { l: l, i: i }; })
+    .sort(function (a, b) {
+      const da = a.l && a.l.date, db = b.l && b.l.date;
+      if (da && db) return da === db ? (a.i - b.i) : (da < db ? -1 : 1);
+      if (da) return -1;
+      if (db) return 1;
+      return a.i - b.i;
+    })
+    .map(function (x) { return x.l; });
 }
 
 // --- Expense receipts ------------------------------------------------------
@@ -4888,8 +4909,9 @@ exports.adminAccountingAddLine = onRequest(
         line.receipt = { id: r.id };
       }
       const data = snap.data() || {};
-      const lines = Array.isArray(data[field]) ? data[field].slice() : [];
+      let lines = Array.isArray(data[field]) ? data[field].slice() : [];
       lines.push(line);
+      lines = acctSortLines(lines);
       await ref.set({
         [field]: lines,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -4927,7 +4949,7 @@ exports.adminAccountingUpdateLine = onRequest(
       const snap = await ref.get();
       if (!snap.exists) return res.status(404).json({ error: 'That year’s books don’t exist.' });
       const data = snap.data() || {};
-      const lines = Array.isArray(data[field]) ? data[field].slice() : [];
+      let lines = Array.isArray(data[field]) ? data[field].slice() : [];
       if (!Number.isInteger(index) || index < 0 || index >= lines.length) {
         return res.status(409).json({ error: 'That line is no longer there. Please reload and try again.' });
       }
@@ -4952,6 +4974,7 @@ exports.adminAccountingUpdateLine = onRequest(
         line.receipt = { id: oldReceipt.id }; // untouched → keep the existing one
       }
       lines[index] = line;
+      lines = acctSortLines(lines);
       await ref.set({
         [field]: lines,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
