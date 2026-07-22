@@ -519,7 +519,7 @@
        longer than the mostly-empty Description cells, so Expense won every
        time). Explicit equal widths stay equal at any table width, since
        table-layout:fixed scales all specified columns proportionally. */
-    #acct-exp-table { min-width: 820px; }
+    #acct-exp-table { min-width: 854px; }
     #acct-exp-table th:nth-child(2), #acct-exp-table td:nth-child(2) { width: 173px; }
     #acct-exp-table th:nth-child(3), #acct-exp-table td:nth-child(3) { width: 173px; }
     #acct-exp-table th:nth-child(4), #acct-exp-table td:nth-child(4) { width: 92px; }
@@ -528,9 +528,14 @@
     #acct-exp-table th:nth-child(7), #acct-exp-table td:nth-child(7) { width: 44px; }
     #acct-exp-table th:nth-child(8), #acct-exp-table td:nth-child(8) { width: 96px; }
     #acct-exp-table th:nth-child(9), #acct-exp-table td:nth-child(9) { width: 34px; }
+    #acct-exp-table th:nth-child(10), #acct-exp-table td:nth-child(10) { width: 34px; }
     table.acct-table .acct-cat select { max-width: 100%; }
     .acct-del { border: none; background: none; color: #c9c9c9; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 4px; }
     .acct-del:hover { color: #b71c1c; }
+    .acct-dup-btn { border: none; background: none; color: #999; cursor: pointer; font-size: 1.05rem; line-height: 1; padding: 2px 4px; }
+    .acct-dup-btn:hover { color: #cc0000; }
+    html.dark .acct-dup-btn { color: #9aa0a6; }
+    html.dark .acct-dup-btn:hover { color: #ff6b6b; }
     /* No spinner arrows — amounts are typed, and stray clicks must not change them. */
     table.acct-table input[type=number], #acct-opening-input { -moz-appearance: textfield; }
     table.acct-table input[type=number]::-webkit-outer-spin-button, table.acct-table input[type=number]::-webkit-inner-spin-button,
@@ -915,7 +920,7 @@
                     <div style="overflow-x:auto;">
                       <table class="acct-table acct-readonly" id="acct-exp-table">
                         <thead><tr>
-                          <th>Date</th><th>Expense</th><th>Description</th><th>Category</th><th class="ctr">Check&nbsp;#</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
+                          <th>Date</th><th>Expense</th><th>Description</th><th>Category</th><th class="ctr">Check&nbsp;#</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th><th class="ctr">Copy</th>
                         </tr></thead>
                         <tbody></tbody>
                       </table>
@@ -6233,7 +6238,9 @@
         $(pair[0]).querySelector('tbody').addEventListener('click', function (e) {
           var tr = e.target.closest('tr'); if (!tr || tr.classList.contains('acct-empty-row')) return;
           var idx = parseInt(tr.getAttribute('data-idx'), 10);
-          if (!isNaN(idx)) acctOpenLineModal(pair[1], 'edit', idx);
+          if (isNaN(idx)) return;
+          if (e.target.closest('.acct-dup-btn')) { e.stopPropagation(); acctDuplicateLine(pair[1], idx); return; }
+          acctOpenLineModal(pair[1], 'edit', idx);
         });
       });
       // Line-modal close (button, backdrop, Escape) + clipboard-paste receipt.
@@ -6542,7 +6549,7 @@
     // the right line in the edit modal.
     function acctRenderLines(side) {
       var tid = side === 'revenue' ? 'acct-rev-table' : 'acct-exp-table';
-      var colspan = side === 'revenue' ? 7 : 9;
+      var colspan = side === 'revenue' ? 7 : 10;
       var tb = $(tid).querySelector('tbody');
       var all = acctWorkingLines(side);
       if (!all.length) {
@@ -6591,6 +6598,9 @@
         : '';
       var recurTag = line.recurringId ? ' <span title="Posted automatically from a recurring expense">🔁</span>' : '';
       var refundTag = line.refund ? ' <span class="acct-refund-tag" title="Refund — subtracted from total expenses">↩ Refund</span>' : '';
+      var dupCell = side === 'expenses'
+        ? '<td class="ctr"><button type="button" class="acct-dup-btn" title="Duplicate this expense">⧉</button></td>'
+        : '';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
         '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-name">' + esc(line.name || '—') + recurTag + refundTag + '</td>' +
@@ -6600,7 +6610,8 @@
         '<td class="ctr">' + (unit === '' ? '' : acctMoney(+unit)) + '</td>' +
         '<td class="ctr">' + (count === '' ? '' : esc(String(count))) + '</td>' +
         '<td class="amt' + (line.refund ? ' acct-refund-amt' : '') + '">' + acctMoney(+line.amount || 0) + '</td>' +
-        '<td class="acct-rcpt">' + rcpt + '</td></tr>';
+        '<td class="acct-rcpt">' + rcpt + '</td>' +
+        dupCell + '</tr>';
     }
 
     function acctRecalc() {
@@ -7060,6 +7071,38 @@
       var patch = {}; patch[side] = lines;
       acctYears[acctCurYear] = Object.assign({}, acctYears[acctCurYear], patch);
       acctRenderLines(side); acctRecalc();
+    }
+
+    // Duplicate a line as a brand-new, independent entry — same name, date,
+    // category, amount/count/unit, check #, description, and refund status.
+    // Never copies the receipt (two lines would then share one Storage
+    // object, and deleting either one would delete the image out from under
+    // the other) or the recurringId (a duplicate is a manual one-off, not
+    // something the recurring system generated). Sharing the source line's
+    // date means the normal date-sort naturally lands it right after the
+    // original once the table re-sorts.
+    function acctDuplicateLine(side, idx) {
+      var src = acctWorkingLines(side)[idx]; if (!src) return;
+      // New expenses require a date (see acctSubmitLine) — a duplicate is a
+      // new line, so an old undated import can't be duplicated as-is.
+      if (side === 'expenses' && !src.date) {
+        alert('This expense doesn’t have a date, so it can’t be duplicated — open it and add a date first, then try again.');
+        return;
+      }
+      var line = { name: src.name || '', category: src.category || '' };
+      if (src.amount != null) line.amount = src.amount;
+      if (src.count != null) line.count = src.count;
+      if (src.unit != null) line.unit = src.unit;
+      if (src.date) line.date = src.date;
+      if (src.checkNumber) line.checkNumber = src.checkNumber;
+      if (src.note) line.note = src.note;
+      if (src.refund) line.refund = true;
+      var btn = document.querySelector('#acct-exp-table tr[data-idx="' + idx + '"] .acct-dup-btn');
+      if (btn) btn.disabled = true;
+      apiPost(API.adminAccountingAddLine, { year: acctCurYear, side: side, line: line }).then(function (r) {
+        if (r.ok && r.d && r.d.lines) { acctApplyLines(side, r.d.lines); }
+        else { if (btn) btn.disabled = false; alert((r.d && r.d.error) || 'Could not duplicate that line.'); }
+      }).catch(function (e) { if (btn) btn.disabled = false; alert(e.message || 'Could not duplicate that line.'); });
     }
 
     function acctConfirmLineDelete(line) {
