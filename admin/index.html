@@ -543,6 +543,13 @@
     /* Five totals cards stay on one row (Revenue · Expenses · Net · Opening · Closing). */
     #acct-stat-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     @media (max-width: 760px) { #acct-stat-grid { grid-template-columns: repeat(2, 1fr); } }
+    /* Bank reconciliation: statement opening/closing inputs + computed variance. */
+    #acct-recon-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 760px) { #acct-recon-grid { grid-template-columns: repeat(2, 1fr); } }
+    .acct-recon-ok { color: #1b8a3a !important; }
+    .acct-recon-bad { color: #cc0000 !important; }
+    html.dark .acct-recon-ok { color: #22b322 !important; }
+    html.dark .acct-recon-bad { color: #ff6b6b !important; }
     /* Comparison charts can be wider than a card and scroll sideways if needed. */
     .acct-chart-card.acct-chart-wide { max-width: none; }
     .acct-scroll { overflow-x: auto; }
@@ -884,6 +891,32 @@
                   <!-- Totals -->
                   <div class="stat-grid" id="acct-stat-grid" style="margin-bottom:20px;"></div>
 
+                  <!-- Bank reconciliation: type in what the statement shows for this
+                       year; the two variance cards flag anything the books don't explain. -->
+                  <div style="margin-bottom:20px;max-width:720px;">
+                    <h4 style="font-family:'Oswald',sans-serif;margin:0 0 6px;font-size:1.05rem;">Bank reconciliation</h4>
+                    <p class="sub" style="margin:0 0 10px;">Enter the opening and closing balances from the bank statement — we'll compare them to what the ledger computes.</p>
+                    <div class="stat-grid" id="acct-recon-grid">
+                      <div class="stat-card">
+                        <div class="stat-val"><input type="text" inputmode="decimal" id="acct-stmt-open-input" placeholder="—" style="width:100%;font:inherit;font-family:Oswald,sans-serif;font-size:1.35rem;font-weight:700;border:1px solid #ddd;border-radius:6px;padding:2px 6px;"></div>
+                        <div class="stat-lbl">Statement opening</div>
+                      </div>
+                      <div class="stat-card">
+                        <div class="stat-val"><input type="text" inputmode="decimal" id="acct-stmt-close-input" placeholder="—" style="width:100%;font:inherit;font-family:Oswald,sans-serif;font-size:1.35rem;font-weight:700;border:1px solid #ddd;border-radius:6px;padding:2px 6px;"></div>
+                        <div class="stat-lbl">Statement closing</div>
+                      </div>
+                      <div class="stat-card">
+                        <div class="stat-val" id="acct-recon-open-val">—</div>
+                        <div class="stat-lbl">Opening variance</div>
+                      </div>
+                      <div class="stat-card">
+                        <div class="stat-val" id="acct-recon-close-val">—</div>
+                        <div class="stat-lbl">Closing variance</div>
+                      </div>
+                    </div>
+                    <p class="sub" id="acct-recon-note" style="margin-top:10px;"></p>
+                  </div>
+
                   <!-- Income and Expenses are separate tabs — one shown at a time. -->
                   <div class="acct-ledger-subnav" id="acct-ledger-side-nav">
                     <button type="button" class="acct-ledger-subtab active" data-lside="revenue">Income</button>
@@ -944,6 +977,11 @@
                     <div class="acct-card-head"><h4>Expense Comparison</h4><button type="button" class="acct-expand" title="Expand">⤢</button></div>
                     <div class="acct-scroll" id="acct-chart-expcmp"></div>
                     <div class="acct-legend acct-legend-bottom" id="acct-legend-years"></div>
+                  </div>
+
+                  <div class="acct-chart-card">
+                    <div class="acct-card-head"><h4>Total expenses by year</h4><button type="button" class="acct-expand" title="Expand">⤢</button></div>
+                    <div id="acct-chart-exptotal"></div>
                   </div>
 
                   <div class="acct-chart-card">
@@ -6223,6 +6261,21 @@
         el.addEventListener('mouseleave', acctTipHide);
       });
       $('acct-status-toggle').addEventListener('change', function () { acctRecalc(); acctSaveMeta(); });
+      // Bank reconciliation inputs: bound once (they're static markup, not rebuilt
+      // per render like the opening-balance input), always saving/comparing against
+      // whichever year is currently selected.
+      [['acct-stmt-open-input', 'statementOpening'], ['acct-stmt-close-input', 'statementClosing']].forEach(function (pair) {
+        var el = $(pair[0]), field = pair[1];
+        el.addEventListener('input', function () { acctDirty = true; acctRecalc(); });
+        el.addEventListener('focus', function () { var n = acctParse(el.value); el.value = (n == null ? '' : String(n)); if (el.select) el.select(); });
+        el.addEventListener('blur', function () {
+          el.value = acctFmtAmount(acctParse(el.value));
+          var now = acctParse(el.value);
+          var d = acctYears[acctCurYear] || {};
+          var saved = (d[field] == null ? null : Number(d[field]));
+          if (now !== saved) acctSaveMeta(); else acctDirty = false;
+        });
+      });
       $('acct-year-select').addEventListener('change', function () {
         var y = parseInt(this.value, 10);
         if (acctDirty && !confirm('Discard unsaved changes to ' + acctCurYear + '?')) { this.value = String(acctCurYear); return; }
@@ -6506,6 +6559,10 @@
       $('acct-opening-note').textContent = isEarliest
         ? 'This is the earliest year, so its opening balance is set here. Later years open automatically at the previous year’s closing balance.'
         : 'Opening balance flows in from ' + (y - 1) + '’s closing balance and updates automatically.';
+      // Bank reconciliation fields are static (not rebuilt like openCard above), so
+      // just refresh their values here — listeners are bound once in initAccounting.
+      $('acct-stmt-open-input').value = acctFmtAmount(d.statementOpening);
+      $('acct-stmt-close-input').value = acctFmtAmount(d.statementClosing);
       acctRecalc();
     }
 
@@ -6636,6 +6693,30 @@
       var badge = $('acct-status-badge');
       badge.className = 'acct-status ' + (inProg ? 'in-progress' : 'final');
       badge.textContent = inProg ? 'In progress' : 'Final';
+      // Bank reconciliation — compare the statement balances Dave typed in against
+      // what the ledger computes, so an untracked fee or missing deposit shows up
+      // as a variance instead of silently sitting in the books.
+      var stmtOpen = $('acct-stmt-open-input') ? acctParse($('acct-stmt-open-input').value) : null;
+      var stmtClose = $('acct-stmt-close-input') ? acctParse($('acct-stmt-close-input').value) : null;
+      var openDiff = acctSetRecon('acct-recon-open-val', opening, stmtOpen);
+      var closeDiff = acctSetRecon('acct-recon-close-val', closing, stmtClose);
+      var notes = [];
+      if (openDiff) notes.push('Opening is ' + acctMoney(Math.abs(openDiff)) + (openDiff > 0 ? ' more' : ' less') + ' on the statement than the books show.');
+      if (closeDiff) notes.push('Closing is ' + acctMoney(Math.abs(closeDiff)) + (closeDiff > 0 ? ' more' : ' less') + ' on the statement than the books show.');
+      $('acct-recon-note').textContent = notes.length ? notes.join(' ')
+        : ((stmtOpen != null || stmtClose != null) ? 'Matches the books.' : 'Enter the statement balances above to reconcile against the books.');
+    }
+
+    // Sets a variance stat card from a ledger value vs. a (possibly unset) statement
+    // value. Returns the signed difference (statement − ledger), or null if the
+    // statement field is still blank.
+    function acctSetRecon(id, ledgerVal, stmtVal) {
+      var el = $(id); if (!el) return null;
+      if (stmtVal == null) { el.textContent = '—'; el.className = 'stat-val'; return null; }
+      var diff = acctR2(stmtVal - ledgerVal);
+      el.className = 'stat-val' + (diff === 0 ? ' acct-recon-ok' : ' acct-recon-bad');
+      el.textContent = diff === 0 ? '✓ Matches' : (diff > 0 ? '+' : '−') + acctMoney(Math.abs(diff));
+      return diff;
     }
 
     // Auto-save the year settings — opening balance and in-progress/final status.
@@ -6651,6 +6732,9 @@
       };
       if (acctCurYear === earliest) { var oi = $('acct-opening-input'); body.openingBalance = oi ? (acctParse(oi.value) || 0) : 0; }
       else body.openingBalance = null;
+      var so = $('acct-stmt-open-input'), sc = $('acct-stmt-close-input');
+      body.statementOpening = so ? acctParse(so.value) : null;
+      body.statementClosing = sc ? acctParse(sc.value) : null;
       var res = $('acct-save-result');
       res.style.color = ''; res.textContent = 'Saving…';
       apiPost(API.adminAccountingSave, body).then(function (r) {
@@ -7431,6 +7515,7 @@
         return '<span class="lg"><span class="sw" style="background:' + acctYearColor(y, dark) + '"></span>' + y + '</span>';
       }).join('');
       $('acct-chart-expcmp').innerHTML = acctSvgExpenseComparison(ys, dark);
+      $('acct-chart-exptotal').innerHTML = acctSvgExpenseTotal(ys, chain, C);
       // Income Breakdown — stacked by category per year. incOrder is the stack order
       // (Registration at the bottom); the left-side legend reads top-to-bottom, so it
       // reverses that to match what the eye sees (Sales at the top).
@@ -7573,6 +7658,31 @@
         s += '<text x="' + x + '" y="' + (yc + 16) + '" text-anchor="' + anc + '" font-size="11" fill="' + costCol + '">' + acctMoney(p.cost) + '</text>';
         s += '<text x="' + x + '" y="' + ((yi + yc) / 2 + 4) + '" text-anchor="' + anc + '" font-size="12" font-weight="700" fill="' + ink + '"><title>margin: ' + acctMoney(p.inc - p.cost) + '/rider</title>' + Math.round(p.margin) + '%</text>';
         s += '<text x="' + x + '" y="' + (H - padB + 20) + '" text-anchor="' + anc + '" font-size="12" fill="' + ink + '">' + p.y + '</text>';
+      });
+      return s + '</svg>';
+    }
+
+    // Total expenses per year (single bar per year, expense-red).
+    function acctSvgExpenseTotal(ys, chain, C) {
+      var W = 720, H = 220, padL = 52, padR = 10, padT = 16, padB = 34;
+      var vals = ys.map(function (y) { return chain[y].expTotal; });
+      var max = acctNiceMax(Math.max.apply(null, vals.concat([1])));
+      var plotW = W - padL - padR, plotH = H - padT - padB;
+      var n = ys.length, gW = plotW / n, barW = Math.min(52, gW - 22);
+      var yOf = function (v) { return padT + plotH - (v / max) * plotH; };
+      var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="acct-svg" role="img">';
+      for (var k = 0; k <= 4; k++) {
+        var gv = max * k / 4, gy = yOf(gv);
+        s += '<line x1="' + padL + '" y1="' + gy + '" x2="' + (W - padR) + '" y2="' + gy + '" stroke="' + C.grid + '"/>';
+        s += '<text x="' + (padL - 8) + '" y="' + (gy + 4) + '" text-anchor="end" font-size="11" fill="' + C.ink2 + '">' + acctK(gv) + '</text>';
+      }
+      s += '<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (W - padR) + '" y2="' + (padT + plotH) + '" stroke="' + C.axis + '" stroke-width="1"/>';
+      ys.forEach(function (y, i) {
+        var cx = padL + gW * i + gW / 2, v = chain[y].expTotal, h = (v / max) * plotH;
+        var top = padT + plotH - h;
+        s += '<rect x="' + (cx - barW / 2) + '" y="' + top + '" width="' + barW + '" height="' + Math.max(h, 1) + '" rx="4" fill="' + C.exp + '"><title>' + y + ' expenses: ' + acctMoney(v) + '</title></rect>';
+        s += '<text x="' + cx + '" y="' + (top - 6) + '" text-anchor="middle" font-size="11" fill="' + C.ink + '">' + acctMoney(v) + '</text>';
+        s += '<text x="' + cx + '" y="' + (H - padB + 20) + '" text-anchor="middle" font-size="12" fill="' + C.ink + '">' + y + '</text>';
       });
       return s + '</svg>';
     }

@@ -5167,11 +5167,20 @@ exports.adminAccountingSave = onRequest(
       body.openingBalance === '') ? null : acctNum(body.openingBalance);
     const riders = (body.riders === null || body.riders === undefined || body.riders === '')
       ? null : Math.max(0, Math.round(Number(body.riders) || 0));
+    // Bank-statement balances (optional, per year) — what Dave reads off the actual
+    // statement, kept separate from the ledger's own computed opening/closing so the
+    // YoY/Ledger UI can flag a variance instead of quietly overwriting either one.
+    const statementOpening = (body.statementOpening === null || body.statementOpening === undefined ||
+      body.statementOpening === '') ? null : acctNum(body.statementOpening);
+    const statementClosing = (body.statementClosing === null || body.statementClosing === undefined ||
+      body.statementClosing === '') ? null : acctNum(body.statementClosing);
     try {
       const now = admin.firestore.FieldValue.serverTimestamp();
       const data = {
         year: year,
         openingBalance: opening,
+        statementOpening: statementOpening,
+        statementClosing: statementClosing,
         riders: riders,
         status: status,
         updatedAt: now,
