@@ -462,6 +462,14 @@
     .acct-subtab:hover { color: #222; }
     .acct-subtab.active { color: #cc0000; border-bottom-color: #cc0000; font-weight: 600; }
     .acct-subpanel { display: none; } .acct-subpanel.active { display: block; }
+    /* Ledger: Income / Expenses tab switcher (one side shown at a time, per year) */
+    .acct-ledger-subnav { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 2px solid #eee; margin: 0 0 16px; }
+    .acct-ledger-subtab { background: transparent; border: none; font-family: 'Oswald', sans-serif; font-size: .95rem; padding: 8px 14px; cursor: pointer; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; border-radius: 6px 6px 0 0; }
+    .acct-ledger-subtab:hover { color: #222; }
+    .acct-ledger-subtab.active { color: #cc0000; border-bottom-color: #cc0000; font-weight: 600; }
+    .acct-search { display: block; width: 100%; max-width: 280px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; font: inherit; font-size: .88rem; margin-bottom: 10px; }
+    .acct-search:focus { border-color: #cc0000; outline: none; }
+    html.dark .acct-search { background: #24272d; border-color: #3a3e44; color: #e8e8e8; }
     /* Users tab: Riders / Admins sub-nav (mirrors the accounting sub-nav) */
     .user-subnav { display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 2px solid #eee; margin: 4px 0 20px; }
     .user-subtab { background: transparent; border: none; font-family: 'Oswald', sans-serif; font-size: .95rem; padding: 8px 16px; cursor: pointer; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; border-radius: 6px 6px 0 0; }
@@ -475,8 +483,6 @@
     .acct-status { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; padding: 2px 9px; border-radius: 10px; }
     .acct-status.final { background: #e7f6e9; color: #1b5e20; }
     .acct-status.in-progress { background: #fff3e0; color: #a35200; }
-    .acct-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
-    @media (max-width: 860px) { .acct-cols { grid-template-columns: 1fr; } }
     .acct-side-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
     .acct-side-head h3 { font-family: 'Oswald', sans-serif; margin: 0; font-size: 1.1rem; }
     .acct-side-total { margin-left: auto; font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
@@ -493,8 +499,9 @@
     table.acct-table td.num input { text-align: right; font-variant-numeric: tabular-nums; }
     table.acct-table td.amt input { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
     /* Fixed layout so the Amount column keeps its width — long names never squeeze it.
-       Columns: Name(flex) · Date · Category · Count · Unit · Amount · Rcpt. Kept tight
-       so both sides fit side-by-side without the Amount column clipping. */
+       Revenue columns: Name(flex) · Date · Category · Unit · Count · Amount · Rcpt.
+       Expenses adds a Check # column, so it gets its own (higher-specificity,
+       ID-scoped) widths below — Rcpt shifts from col 7 to col 8 there. */
     table.acct-table { table-layout: fixed; width: 100%; min-width: 470px; }
     .acct-side { min-width: 0; }
     table.acct-table th, table.acct-table td { padding: 4px 4px; }
@@ -504,6 +511,12 @@
     table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 44px; }
     table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 96px; }
     table.acct-table th:nth-child(7), table.acct-table td:nth-child(7) { width: 34px; }
+    #acct-exp-table { min-width: 560px; }
+    #acct-exp-table th:nth-child(4), #acct-exp-table td:nth-child(4) { width: 64px; }
+    #acct-exp-table th:nth-child(5), #acct-exp-table td:nth-child(5) { width: 54px; }
+    #acct-exp-table th:nth-child(6), #acct-exp-table td:nth-child(6) { width: 44px; }
+    #acct-exp-table th:nth-child(7), #acct-exp-table td:nth-child(7) { width: 96px; }
+    #acct-exp-table th:nth-child(8), #acct-exp-table td:nth-child(8) { width: 34px; }
     table.acct-table .acct-cat select { max-width: 100%; }
     .acct-del { border: none; background: none; color: #c9c9c9; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 4px; }
     .acct-del:hover { color: #b71c1c; }
@@ -563,7 +576,9 @@
     .acct-table.acct-readonly .acct-rcpt .none { color: #c9c9c9; }
     .acct-table .acct-empty-row td { color: #999; font-style: italic; cursor: default; }
     html.dark .acct-table .acct-empty-row td { color: #8a8f96; }
-    .acct-table.acct-readonly th:nth-child(7), .acct-table.acct-readonly td:nth-child(7) { text-align: center; }
+    #acct-rev-table.acct-readonly th:nth-child(7) { text-align: center; }
+    #acct-exp-table.acct-readonly th:nth-child(8) { text-align: center; }
+    #acct-exp-table.acct-readonly td.acct-chk { text-align: center; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.acct-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.acct-date .none { color: #c9c9c9; }
     .acct-exp-hint { font-size: .82rem; color: #888; margin: 6px 0 0; }
@@ -647,6 +662,10 @@
     html.dark .acct-subtab { color: #9aa0a6; }
     html.dark .acct-subtab:hover { color: #ececec; }
     html.dark .acct-subtab.active { color: #ff6b6b; border-bottom-color: #cc0000; }
+    html.dark .acct-ledger-subnav { border-bottom-color: #33373d; }
+    html.dark .acct-ledger-subtab { color: #9aa0a6; }
+    html.dark .acct-ledger-subtab:hover { color: #ececec; }
+    html.dark .acct-ledger-subtab.active { color: #ff6b6b; border-bottom-color: #cc0000; }
     html.dark .acct-status.final { background: #1e3a24; color: #7fd68c; }
     html.dark .acct-status.in-progress { background: #3a2c17; color: #e5b567; }
     html.dark table.acct-table th { color: #9aa0a6; }
@@ -844,40 +863,46 @@
                   <!-- Totals -->
                   <div class="stat-grid" id="acct-stat-grid" style="margin-bottom:20px;"></div>
 
-                  <div class="acct-cols">
-                    <div class="acct-side">
-                      <div class="acct-side-head">
-                        <h3>Revenue</h3>
-                        <span class="acct-side-total" id="acct-rev-total">$0.00</span>
-                      </div>
-                      <div style="overflow-x:auto;">
-                        <table class="acct-table acct-readonly" id="acct-rev-table">
-                          <thead><tr>
-                            <th>Source</th><th>Date</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
-                          </tr></thead>
-                          <tbody></tbody>
-                        </table>
-                      </div>
-                      <button class="adm-btn small" id="acct-add-revenue" style="background:#666;margin-top:8px;">+ Add revenue line</button>
-                      <p class="acct-exp-hint">Click any line to edit it, attach a receipt, or delete it.</p>
-                    </div>
+                  <!-- Income and Expenses are separate tabs — one shown at a time. -->
+                  <div class="acct-ledger-subnav" id="acct-ledger-side-nav">
+                    <button type="button" class="acct-ledger-subtab active" data-lside="revenue">Income</button>
+                    <button type="button" class="acct-ledger-subtab" data-lside="expenses">Expenses</button>
+                  </div>
 
-                    <div class="acct-side">
-                      <div class="acct-side-head">
-                        <h3>Expenses</h3>
-                        <span class="acct-side-total" id="acct-exp-total">$0.00</span>
-                      </div>
-                      <div style="overflow-x:auto;">
-                        <table class="acct-table acct-readonly" id="acct-exp-table">
-                          <thead><tr>
-                            <th>Expense</th><th>Date</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
-                          </tr></thead>
-                          <tbody></tbody>
-                        </table>
-                      </div>
-                      <button class="adm-btn small" id="acct-add-expense" style="background:#666;margin-top:8px;">+ Add expense</button>
-                      <p class="acct-exp-hint">Click any line to edit it, attach a receipt, or delete it.</p>
+                  <div class="acct-side acct-ledger-side" data-lside="revenue">
+                    <div class="acct-side-head">
+                      <h3>Income</h3>
+                      <span class="acct-side-total" id="acct-rev-total">$0.00</span>
                     </div>
+                    <input type="text" class="acct-search" id="acct-rev-search" placeholder="Search by amount… e.g. 1200 finds $1,200.00" inputmode="decimal" autocomplete="off">
+                    <div style="overflow-x:auto;">
+                      <table class="acct-table acct-readonly" id="acct-rev-table">
+                        <thead><tr>
+                          <th>Source</th><th>Date</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
+                        </tr></thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                    <button class="adm-btn small" id="acct-add-revenue" style="background:#666;margin-top:8px;">+ Add revenue line</button>
+                    <p class="acct-exp-hint">Click any line to edit it, attach a receipt, or delete it.</p>
+                  </div>
+
+                  <div class="acct-side acct-ledger-side" data-lside="expenses" hidden>
+                    <div class="acct-side-head">
+                      <h3>Expenses</h3>
+                      <span class="acct-side-total" id="acct-exp-total">$0.00</span>
+                    </div>
+                    <input type="text" class="acct-search" id="acct-exp-search" placeholder="Search by amount… e.g. 1200 finds $1,200.00" inputmode="decimal" autocomplete="off">
+                    <div style="overflow-x:auto;">
+                      <table class="acct-table acct-readonly" id="acct-exp-table">
+                        <thead><tr>
+                          <th>Expense</th><th>Date</th><th>Category</th><th class="ctr">Check&nbsp;#</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
+                        </tr></thead>
+                        <tbody></tbody>
+                      </table>
+                    </div>
+                    <button class="adm-btn small" id="acct-add-expense" style="background:#666;margin-top:8px;">+ Add expense</button>
+                    <p class="acct-exp-hint">Click any line to edit it, attach a receipt, or delete it. New expenses need a category, name, date, and amount before they can be saved.</p>
                   </div>
 
                   <p class="sub" id="acct-opening-note" style="margin-top:16px;"></p>
@@ -6133,6 +6158,16 @@
           if (name === 'sponsorships') acctRenderSponsorships();
         });
       });
+      // Ledger's own Income / Expenses tabs — one side shown at a time, per year.
+      document.querySelectorAll('.acct-ledger-subtab').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var lside = b.getAttribute('data-lside');
+          document.querySelectorAll('.acct-ledger-subtab').forEach(function (x) { x.classList.toggle('active', x === b); });
+          document.querySelectorAll('.acct-ledger-side').forEach(function (p) { p.hidden = (p.getAttribute('data-lside') !== lside); });
+        });
+      });
+      $('acct-rev-search').addEventListener('input', function () { acctRenderLines('revenue'); });
+      $('acct-exp-search').addEventListener('input', function () { acctRenderLines('expenses'); });
       // Buttons
       $('acct-seed-btn').addEventListener('click', acctSeed);
       $('acct-add-year').addEventListener('click', acctAddYear);
@@ -6437,17 +6472,37 @@
       return (Array.isArray(d[side]) ? d[side] : []).slice();
     }
 
-    // Read-only table for a side, rendered straight from the saved snapshot.
+    // Amount search: strip commas/$ from both the query and the formatted amount so
+    // typing "1200" (no thousands comma) still finds "$1,200.00" in the table.
+    function acctSearchMatches(line, rawQuery) {
+      var q = String(rawQuery == null ? '' : rawQuery).replace(/[^0-9.]/g, '');
+      if (!q) return true;
+      var amtDigits = acctFmtAmount(+line.amount || 0).replace(/,/g, '');
+      return amtDigits.indexOf(q) !== -1;
+    }
+
+    // Read-only table for a side, rendered straight from the saved snapshot,
+    // filtered by the side's amount-search box (original indices kept intact so
+    // a filtered row still opens the right line in the edit modal).
     function acctRenderLines(side) {
       var tid = side === 'revenue' ? 'acct-rev-table' : 'acct-exp-table';
+      var colspan = side === 'revenue' ? 7 : 8;
       var tb = $(tid).querySelector('tbody');
-      var lines = acctWorkingLines(side);
-      if (!lines.length) {
+      var all = acctWorkingLines(side);
+      if (!all.length) {
         var label = side === 'revenue' ? '+ Add revenue line' : '+ Add expense';
-        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="7">Nothing yet — click “' + label + '”.</td></tr>';
+        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="' + colspan + '">Nothing yet — click “' + label + '”.</td></tr>';
         return;
       }
-      tb.innerHTML = lines.map(function (l, i) { return acctLineRowHtml(l, i); }).join('');
+      var searchEl = $(side === 'revenue' ? 'acct-rev-search' : 'acct-exp-search');
+      var q = searchEl ? searchEl.value : '';
+      var rows = [];
+      all.forEach(function (l, i) { if (acctSearchMatches(l, q)) rows.push(acctLineRowHtml(l, i, side)); });
+      if (!rows.length) {
+        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="' + colspan + '">No lines match that amount.</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.join('');
     }
 
     // 'YYYY-MM-DD' -> "Jun 12, 2027" (parsed by parts to dodge UTC off-by-one).
@@ -6458,17 +6513,21 @@
       return ACCT_MON[(+m[2]) - 1] + ' ' + (+m[3]) + ', ' + m[1];
     }
 
-    function acctLineRowHtml(line, idx) {
+    function acctLineRowHtml(line, idx, side) {
       var count = (line.count != null && line.count !== '') ? line.count : '';
       var unit = (line.unit != null && line.unit !== '') ? line.unit : '';
       var dateCell = line.date ? esc(acctFmtDate(line.date)) : '<span class="none">—</span>';
       var rcpt = (line.receipt && line.receipt.id)
         ? '<span class="has" title="Receipt attached">📎</span>'
         : '<span class="none" title="No receipt">—</span>';
+      var checkCell = side === 'expenses'
+        ? '<td class="ctr acct-chk">' + (line.checkNumber ? esc(String(line.checkNumber)) : '') + '</td>'
+        : '';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
         '<td class="acct-name">' + esc(line.name || '—') + '</td>' +
         '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
+        checkCell +
         '<td class="ctr">' + (unit === '' ? '' : esc(String(unit))) + '</td>' +
         '<td class="ctr">' + (count === '' ? '' : esc(String(count))) + '</td>' +
         '<td class="amt">' + acctMoney(+line.amount || 0) + '</td>' +
@@ -6609,18 +6668,30 @@
           vUnit = (line.unit != null ? esc(String(line.unit)) : ''),
           vAmt = (line.amount != null && line.amount !== '' ? acctFmtAmount(line.amount) : ''),
           vNote = esc(line.note || ''),
-          vDate = (typeof line.date === 'string' ? line.date : '');
+          vDate = (typeof line.date === 'string' ? line.date : ''),
+          vCheck = esc(line.checkNumber || '');
+      // New expenses (not historical ones already on the books) require a
+      // category, name, date, and amount before they can be saved.
+      var reqExpAdd = (side === 'expenses' && mode === 'add');
+      var nameLbl = nameLabel + (reqExpAdd ? ' *' : '');
+      var dateLbl = 'Date' + (reqExpAdd ? ' *' : ' (optional)');
+      var catLbl = 'Category' + (reqExpAdd ? ' *' : '');
+      var amtLbl = 'Amount ($)' + (reqExpAdd ? ' *' : '');
+      var checkField = !isRev
+        ? '<div class="em-field"><label>Check #</label><input type="text" id="em-check" placeholder="If paid by check" value="' + vCheck + '"></div>'
+        : '';
 
       $('acct-exp-modal-body').innerHTML =
         '<h3>' + title + '</h3>' +
-        '<p class="em-sub">' + acctCurYear + ' books.</p>' +
-        '<div class="em-field"><label>' + nameLabel + '</label><input type="text" id="em-name" placeholder="' + namePh + '" value="' + vName + '"></div>' +
-        '<div class="em-field"><label>Date (optional)</label><input type="date" id="em-date" value="' + vDate + '"></div>' +
-        '<div class="em-field"><label>Category</label><select id="em-cat">' + acctCatOptions(cats, line.category || '') + '</select></div>' +
+        '<p class="em-sub">' + acctCurYear + ' books.' + (reqExpAdd ? ' Fields marked * are required.' : '') + '</p>' +
+        '<div class="em-field"><label>' + nameLbl + '</label><input type="text" id="em-name" placeholder="' + namePh + '" value="' + vName + '"></div>' +
+        '<div class="em-field"><label>' + dateLbl + '</label><input type="date" id="em-date" value="' + vDate + '"></div>' +
+        '<div class="em-field"><label>' + catLbl + '</label><select id="em-cat">' + acctCatOptions(cats, line.category || '') + '</select></div>' +
+        checkField +
         '<div class="em-row2">' +
           '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count" value="' + vCount + '"></div>' +
           '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit" value="' + vUnit + '"></div>' +
-          '<div class="em-field em-amt"><label>Amount ($)</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
+          '<div class="em-field em-amt"><label>' + amtLbl + '</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
         '</div>' +
         '<div class="em-field"><label>Note (optional)</label><textarea id="em-note" placeholder="Anything worth remembering">' + vNote + '</textarea></div>' +
         '<div class="em-field"><label>Receipt / attachment (optional)</label>' +
@@ -6745,8 +6816,19 @@
       var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
       // The effective amount is what's typed, or count×unit when the total is blank.
       var effAmt = (a != null) ? a : ((c != null && u != null) ? acctR2(c * u) : null);
-      if (!name && (effAmt == null || effAmt === 0)) {
-        var m0 = $('em-msg'); m0.style.color = '#cc0000'; m0.textContent = 'Give the line a name or an amount.'; return;
+      var date = ($('em-date') && $('em-date').value || '').trim();
+      var validDate = /^\d{4}-\d{2}-\d{2}$/.test(date);
+      var m0 = $('em-msg');
+      // New expenses (not historical lines already on the books) must have a
+      // category, name, date, and amount before they can be saved — accounting
+      // for every expense depends on all four being set from the start.
+      if (side === 'expenses' && mode === 'add') {
+        if (!cat) { m0.style.color = '#cc0000'; m0.textContent = 'Choose a category before saving — every expense needs one.'; return; }
+        if (!name) { m0.style.color = '#cc0000'; m0.textContent = 'Give the expense a name.'; return; }
+        if (!validDate) { m0.style.color = '#cc0000'; m0.textContent = 'Pick a date for this expense.'; return; }
+        if (effAmt == null) { m0.style.color = '#cc0000'; m0.textContent = 'Enter an amount for this expense.'; return; }
+      } else if (!name && (effAmt == null || effAmt === 0)) {
+        m0.style.color = '#cc0000'; m0.textContent = 'Give the line a name or an amount.'; return;
       }
       // Send whatever the admin actually entered; the server derives the blank one
       // (unit from total÷count, or total from count×unit) and stores all present.
@@ -6755,8 +6837,11 @@
       if (c != null) line.count = c;
       if (u != null) line.unit = u;
       var note = $('em-note').value.trim(); if (note) line.note = note;
-      var date = ($('em-date') && $('em-date').value || '').trim();
-      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) line.date = date;
+      if (validDate) line.date = date;
+      if (side === 'expenses') {
+        var chk = ($('em-check') && $('em-check').value || '').trim();
+        if (chk) line.checkNumber = chk;
+      }
 
       var body = { year: acctCurYear, side: side, line: line };
       if (acctExpReceiptDataUrl) body.receiptDataUrl = acctExpReceiptDataUrl;

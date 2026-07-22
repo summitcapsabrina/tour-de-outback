@@ -5028,6 +5028,15 @@ function acctNum(v) {
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
 }
 
+/** The amount a raw line implies: what was typed, or count×unit — null if neither was given. */
+function acctEffAmt(raw) {
+  const r = raw || {};
+  const a = acctNum(r.amount);
+  if (a !== null) return a;
+  const c = acctNum(r.count), u = acctNum(r.unit);
+  return (c !== null && u !== null) ? Math.round(c * u * 100) / 100 : null;
+}
+
 /** Sanitize one ledger line coming from the client into a clean stored shape. */
 function acctCleanLine(raw) {
   const r = raw || {};
@@ -5058,6 +5067,9 @@ function acctCleanLine(raw) {
   if (typeof r.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date)) {
     line.date = r.date;
   }
+  // Optional check number (expenses only) — lets the books be tracked by check.
+  const checkNumber = String(r.checkNumber == null ? '' : r.checkNumber).trim().slice(0, 30);
+  if (checkNumber) line.checkNumber = checkNumber;
   // Preserve an attached receipt (an image stored in Storage under a receipt id).
   // Carried through untouched so a whole-year Save never drops it.
   if (r.receipt && typeof r.receipt === 'object' &&
@@ -5279,6 +5291,15 @@ exports.adminAccountingAddLine = onRequest(
       const line = acctCleanLine(body.line || {});
       if (!line.name && !line.amount) {
         return res.status(400).json({ error: 'Give the line a name or an amount.' });
+      }
+      // New expenses (not historical lines already on the books) must have a
+      // category, name, date, and amount — enforced here too, since this is a
+      // public endpoint and the client-side check alone isn't a guarantee.
+      if (field === 'expenses') {
+        if (!line.category) return res.status(400).json({ error: 'Choose a category before saving — every expense needs one.' });
+        if (!line.name) return res.status(400).json({ error: 'Give the expense a name.' });
+        if (!line.date) return res.status(400).json({ error: 'Pick a date for this expense.' });
+        if (acctEffAmt(body.line) === null) return res.status(400).json({ error: 'Enter an amount for this expense.' });
       }
       delete line.receipt; // ignore any client-sent receipt; only receiptDataUrl attaches one
       if (body.receiptDataUrl) {
