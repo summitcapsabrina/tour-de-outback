@@ -499,23 +499,21 @@
     table.acct-table td.num input { text-align: right; font-variant-numeric: tabular-nums; }
     table.acct-table td.amt input { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
     /* Fixed layout so the Amount column keeps its width — long names never squeeze it.
-       Revenue columns: Name(flex) · Date · Category · Unit · Count · Amount · Rcpt.
+       Revenue columns: Date · Name(flex) · Category · Unit · Count · Amount · Rcpt.
        Expenses adds Description + Check # columns, so it gets its own
-       (higher-specificity, ID-scoped) widths below — every column past Name
-       shifts, so expenses is fully re-specified rather than patched. */
+       (higher-specificity, ID-scoped) widths below for columns past Description —
+       Date/Name/Description are shared flex-vs-fixed logic, so kept generic. */
     table.acct-table { table-layout: fixed; width: 100%; min-width: 470px; }
     .acct-side { min-width: 0; }
     table.acct-table th, table.acct-table td { padding: 4px 4px; }
-    table.acct-table th:nth-child(2), table.acct-table td:nth-child(2) { width: 90px; }
+    table.acct-table th:nth-child(1), table.acct-table td:nth-child(1) { width: 90px; }
     table.acct-table th:nth-child(3), table.acct-table td:nth-child(3) { width: 92px; }
     table.acct-table th:nth-child(4), table.acct-table td:nth-child(4) { width: 54px; }
     table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 44px; }
     table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 96px; }
     table.acct-table th:nth-child(7), table.acct-table td:nth-child(7) { width: 34px; }
-    /* Expenses: Expense(flex) · Description · Date · Category · Check# · Unit · Count · Amount · Rcpt */
-    #acct-exp-table { min-width: 760px; }
-    #acct-exp-table th:nth-child(2), #acct-exp-table td:nth-child(2) { width: 150px; }
-    #acct-exp-table th:nth-child(3), #acct-exp-table td:nth-child(3) { width: 90px; }
+    /* Expenses: Date · Expense(flex) · Description(flex, equal to Expense) · Category · Check# · Unit · Count · Amount · Rcpt */
+    #acct-exp-table { min-width: 820px; }
     #acct-exp-table th:nth-child(4), #acct-exp-table td:nth-child(4) { width: 92px; }
     #acct-exp-table th:nth-child(5), #acct-exp-table td:nth-child(5) { width: 64px; }
     #acct-exp-table th:nth-child(6), #acct-exp-table td:nth-child(6) { width: 54px; }
@@ -884,7 +882,7 @@
                     <div style="overflow-x:auto;">
                       <table class="acct-table acct-readonly" id="acct-rev-table">
                         <thead><tr>
-                          <th>Source</th><th>Date</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
+                          <th>Date</th><th>Source</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
                         </tr></thead>
                         <tbody></tbody>
                       </table>
@@ -902,7 +900,7 @@
                     <div style="overflow-x:auto;">
                       <table class="acct-table acct-readonly" id="acct-exp-table">
                         <thead><tr>
-                          <th>Expense</th><th>Description</th><th>Date</th><th>Category</th><th class="ctr">Check&nbsp;#</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
+                          <th>Date</th><th>Expense</th><th>Description</th><th>Category</th><th class="ctr">Check&nbsp;#</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
                         </tr></thead>
                         <tbody></tbody>
                       </table>
@@ -6528,12 +6526,11 @@
       tb.innerHTML = rows.join('');
     }
 
-    // 'YYYY-MM-DD' -> "Jun 12, 2027" (parsed by parts to dodge UTC off-by-one).
-    var ACCT_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // 'YYYY-MM-DD' -> 'MM/DD/YYYY' (parsed by parts to dodge UTC off-by-one).
     function acctFmtDate(iso) {
       var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
       if (!m) return '';
-      return ACCT_MON[(+m[2]) - 1] + ' ' + (+m[3]) + ', ' + m[1];
+      return m[2] + '/' + m[3] + '/' + m[1];
     }
 
     function acctLineRowHtml(line, idx, side) {
@@ -6553,12 +6550,12 @@
         : '';
       var recurTag = line.recurringId ? ' <span title="Posted automatically from a recurring expense">🔁</span>' : '';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
+        '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-name">' + esc(line.name || '—') + recurTag + '</td>' +
         descCell +
-        '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
         checkCell +
-        '<td class="ctr">' + (unit === '' ? '' : esc(String(unit))) + '</td>' +
+        '<td class="ctr">' + (unit === '' ? '' : acctMoney(+unit)) + '</td>' +
         '<td class="ctr">' + (count === '' ? '' : esc(String(count))) + '</td>' +
         '<td class="amt">' + acctMoney(+line.amount || 0) + '</td>' +
         '<td class="acct-rcpt">' + rcpt + '</td></tr>';
@@ -6722,12 +6719,12 @@
       // shows as its own column in the Expenses table. Revenue keeps "Note".
       var noteLbl = isRev ? 'Note (optional)' : 'Description (optional)';
       var notePh = isRev ? 'Anything worth remembering' : 'Vendor — what it was for (e.g. Amazon — Banners)';
-      // Recurring toggle: two checkboxes, both only on a brand-new expense.
-      // (1) turns this add into a recurring template instead of a one-off line
-      //     — reuses the Date field above as its Start date.
-      // (2) only matters for a Yearly cadence: pin every occurrence to this
-      //     ledger year (default), or let each year's charge post to its own
-      //     fiscal year as the years roll forward.
+      // Recurring toggle: turns this add into a recurring template instead of
+      // a one-off line, reusing the Date field above as its Start date. Every
+      // occurrence always pins to THIS ledger year (acctCurYear) — no
+      // per-occurrence-by-date option here, since that's exactly what
+      // misfiled a plain-looking entry into the wrong year once already; that
+      // choice only lives in the deliberate Recurring expenses → Edit screen.
       var recurBlock = canRecur ?
         '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:-4px 0 13px;">' +
           '<input type="checkbox" id="em-recurring"> Make this a recurring expense' +
@@ -6742,7 +6739,7 @@
             '<input type="checkbox" id="em-noend" checked> No end date — keep this running' +
           '</label>' +
           '<div class="em-field" id="em-end-wrap" hidden><label>End date</label><input type="date" id="em-end"></div>' +
-          '<div id="em-yearmode-area"></div>' +
+          '<p class="acct-exp-hint" style="margin:2px 0 13px;">Every charge posts to the <strong>' + acctCurYear + '</strong> ledger, regardless of its own date.</p>' +
         '</div>'
         : '';
 
@@ -6777,31 +6774,17 @@
 
       if (canRecur) {
         var recurCb = $('em-recurring'), recurFields = $('em-recur-fields'), dateLabelEl = $('em-date-label');
-        var freqSel = $('em-freq'), noEndCb = $('em-noend'), endWrap = $('em-end-wrap');
-        var yearModeArea = $('em-yearmode-area'), receiptWrap = $('em-receipt-wrap');
-        var updateYearModeArea = function () {
-          if (freqSel.value === 'yearly') {
-            yearModeArea.innerHTML =
-              '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:2px 0 4px;">' +
-                '<input type="checkbox" id="em-yearmode"> File each year’s charge under its own fiscal year' +
-              '</label>' +
-              '<p class="acct-exp-hint" style="margin:0 0 13px;">Unchecked, every charge posts to the <strong>' + acctCurYear + '</strong> ledger regardless of its own date — checked, each year’s charge posts to that year instead.</p>';
-          } else {
-            yearModeArea.innerHTML = '<p class="acct-exp-hint" style="margin:2px 0 13px;">Every charge posts to the <strong>' + acctCurYear + '</strong> ledger, regardless of its own date.</p>';
-          }
-        };
+        var noEndCb = $('em-noend'), endWrap = $('em-end-wrap'), receiptWrap = $('em-receipt-wrap');
         recurCb.addEventListener('change', function () {
           recurFields.hidden = !this.checked;
           receiptWrap.hidden = this.checked;
           dateLabelEl.textContent = this.checked ? 'Start date *' : dateLblText;
           $('em-save').textContent = this.checked ? 'Add recurring expense' : (mode === 'add' ? 'Add' : 'Save changes');
         });
-        freqSel.addEventListener('change', updateYearModeArea);
         noEndCb.addEventListener('change', function () {
           endWrap.hidden = this.checked;
           if (this.checked) $('em-end').value = '';
         });
-        updateYearModeArea();
       }
 
       $('em-cat').addEventListener('change', function () {
@@ -6985,8 +6968,6 @@
       var noEnd = $('em-noend').checked;
       var end = noEnd ? '' : ($('em-end').value || '').trim();
       var note = $('em-note').value.trim();
-      var yearModeCb = $('em-yearmode');
-      var yearMode = (freq === 'yearly' && yearModeCb && yearModeCb.checked) ? 'per-occurrence' : 'pinned';
       var msg = $('em-msg');
 
       if (!cat) { msg.style.color = '#cc0000'; msg.textContent = 'Choose a category before saving — every expense needs one.'; return; }
@@ -6995,9 +6976,11 @@
       if (effAmt == null) { msg.style.color = '#cc0000'; msg.textContent = 'Enter an amount for this expense.'; return; }
       if (end && end < start) { msg.style.color = '#cc0000'; msg.textContent = 'The end date can’t be before the start date.'; return; }
 
+      // Always pinned to this ledger year — no per-occurrence-by-date option
+      // here (that only lives in Recurring expenses → Edit, deliberately).
       var body = {
         name: name, category: cat, year: acctCurYear, frequency: freq,
-        startDate: start, endDate: end || null, yearMode: yearMode, note: note,
+        startDate: start, endDate: end || null, yearMode: 'pinned', note: note,
         amount: (a != null ? acctR2(a) : effAmt)
       };
       if (c != null) body.count = c;
@@ -7180,7 +7163,7 @@
               '<input type="checkbox" id="em-yearmode"' + (vPerOcc ? ' checked' : '') + '> File each year’s charge under its own fiscal year' +
             '</label>' +
             '<div class="em-field" id="em-ryear-wrap"' + (vPerOcc ? ' hidden' : '') + '><label>Post to ledger year *</label><select id="em-ryear">' + yearOptions + '</select></div>' +
-            '<p class="acct-exp-hint" style="margin:0 0 13px;" id="em-ryear-hint"' + (vPerOcc ? '' : ' hidden') + '>Each year’s charge posts to that year automatically.</p>';
+            '<p class="acct-exp-hint" style="margin:0 0 13px;" id="em-ryear-hint"' + (vPerOcc ? '' : ' hidden') + '>For a genuinely annual charge only — each year’s occurrence posts to that year automatically, by its own date, not the ledger you’re viewing. Don’t use this for a single dated entry.</p>';
           $('em-yearmode').addEventListener('change', function () {
             $('em-ryear-wrap').hidden = this.checked;
             $('em-ryear-hint').hidden = !this.checked;
