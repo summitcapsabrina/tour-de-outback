@@ -6707,8 +6707,11 @@
       // New expenses (not historical ones already on the books) require a
       // category, name, date, and amount before they can be saved.
       var reqExpAdd = (side === 'expenses' && mode === 'add');
+      // Only a brand-new expense can become recurring — editing an existing
+      // one-off line into a template retroactively isn't offered.
+      var canRecur = reqExpAdd;
       var nameLbl = nameLabel + (reqExpAdd ? ' *' : '');
-      var dateLbl = 'Date' + (reqExpAdd ? ' *' : ' (optional)');
+      var dateLblText = 'Date' + (reqExpAdd ? ' *' : ' (optional)');
       var catLbl = 'Category' + (reqExpAdd ? ' *' : '');
       var amtLbl = 'Amount ($)' + (reqExpAdd ? ' *' : '');
       var checkField = !isRev
@@ -6719,21 +6722,45 @@
       // shows as its own column in the Expenses table. Revenue keeps "Note".
       var noteLbl = isRev ? 'Note (optional)' : 'Description (optional)';
       var notePh = isRev ? 'Anything worth remembering' : 'Vendor — what it was for (e.g. Amazon — Banners)';
+      // Recurring toggle: two checkboxes, both only on a brand-new expense.
+      // (1) turns this add into a recurring template instead of a one-off line
+      //     — reuses the Date field above as its Start date.
+      // (2) only matters for a Yearly cadence: pin every occurrence to this
+      //     ledger year (default), or let each year's charge post to its own
+      //     fiscal year as the years roll forward.
+      var recurBlock = canRecur ?
+        '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:-4px 0 13px;">' +
+          '<input type="checkbox" id="em-recurring"> Make this a recurring expense' +
+        '</label>' +
+        '<div id="em-recur-fields" hidden>' +
+          '<div class="em-field"><label>Frequency *</label><select id="em-freq">' +
+            ['weekly', 'monthly', 'quarterly', 'yearly'].map(function (f) {
+              return '<option value="' + f + '"' + (f === 'monthly' ? ' selected' : '') + '>' + ACCT_RECUR_FREQ_LABELS[f] + '</option>';
+            }).join('') +
+          '</select></div>' +
+          '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:2px 0 13px;">' +
+            '<input type="checkbox" id="em-noend" checked> No end date — keep this running' +
+          '</label>' +
+          '<div class="em-field" id="em-end-wrap" hidden><label>End date</label><input type="date" id="em-end"></div>' +
+          '<div id="em-yearmode-area"></div>' +
+        '</div>'
+        : '';
 
       $('acct-exp-modal-body').innerHTML =
         '<h3>' + title + '</h3>' +
         '<p class="em-sub">' + acctCurYear + ' books.' + (reqExpAdd ? ' Fields marked * are required.' : '') + '</p>' +
         '<div class="em-field"><label>' + nameLbl + '</label><input type="text" id="em-name" placeholder="' + namePh + '" value="' + vName + '"></div>' +
-        '<div class="em-field"><label>' + dateLbl + '</label><input type="date" id="em-date" value="' + vDate + '"></div>' +
+        '<div class="em-field"><label id="em-date-label">' + dateLblText + '</label><input type="date" id="em-date" value="' + vDate + '"></div>' +
         '<div class="em-field"><label>' + catLbl + '</label><select id="em-cat">' + acctCatOptions(cats, line.category || '') + '</select></div>' +
         checkField +
+        recurBlock +
         '<div class="em-row2">' +
           '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count" value="' + vCount + '"></div>' +
           '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit" value="' + vUnit + '"></div>' +
           '<div class="em-field em-amt"><label>' + amtLbl + '</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
         '</div>' +
         '<div class="em-field"><label>' + noteLbl + '</label><textarea id="em-note" placeholder="' + notePh + '">' + vNote + '</textarea></div>' +
-        '<div class="em-field"><label>Receipt / attachment (optional)</label>' +
+        '<div class="em-field" id="em-receipt-wrap"><label>Receipt / attachment (optional)</label>' +
           '<div id="em-drop" class="em-drop"><strong>Choose an image</strong>, drag one here, or paste from the clipboard (⌘/Ctrl+V).</div>' +
           '<input type="file" id="em-file" accept="image/*" hidden>' +
           '<div id="em-preview" class="em-preview"></div>' +
@@ -6747,6 +6774,35 @@
         '<div class="em-msg" id="em-msg"></div>';
       $('acct-exp-modal').hidden = false;
       $('em-name').focus();
+
+      if (canRecur) {
+        var recurCb = $('em-recurring'), recurFields = $('em-recur-fields'), dateLabelEl = $('em-date-label');
+        var freqSel = $('em-freq'), noEndCb = $('em-noend'), endWrap = $('em-end-wrap');
+        var yearModeArea = $('em-yearmode-area'), receiptWrap = $('em-receipt-wrap');
+        var updateYearModeArea = function () {
+          if (freqSel.value === 'yearly') {
+            yearModeArea.innerHTML =
+              '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:2px 0 4px;">' +
+                '<input type="checkbox" id="em-yearmode"> File each year’s charge under its own fiscal year' +
+              '</label>' +
+              '<p class="acct-exp-hint" style="margin:0 0 13px;">Unchecked, every charge posts to the <strong>' + acctCurYear + '</strong> ledger regardless of its own date — checked, each year’s charge posts to that year instead.</p>';
+          } else {
+            yearModeArea.innerHTML = '<p class="acct-exp-hint" style="margin:2px 0 13px;">Every charge posts to the <strong>' + acctCurYear + '</strong> ledger, regardless of its own date.</p>';
+          }
+        };
+        recurCb.addEventListener('change', function () {
+          recurFields.hidden = !this.checked;
+          receiptWrap.hidden = this.checked;
+          dateLabelEl.textContent = this.checked ? 'Start date *' : dateLblText;
+          $('em-save').textContent = this.checked ? 'Add recurring expense' : (mode === 'add' ? 'Add' : 'Save changes');
+        });
+        freqSel.addEventListener('change', updateYearModeArea);
+        noEndCb.addEventListener('change', function () {
+          endWrap.hidden = this.checked;
+          if (this.checked) $('em-end').value = '';
+        });
+        updateYearModeArea();
+      }
 
       $('em-cat').addEventListener('change', function () {
         if (this.value !== '__new__') return;
@@ -6849,6 +6905,8 @@
 
     // Save the modal (add or edit) through the matching endpoint.
     function acctSubmitLine() {
+      var recurCb = $('em-recurring');
+      if (recurCb && recurCb.checked) { acctSubmitNewRecurring(); return; }
       var side = acctModalSide, mode = acctModalMode;
       var name = $('em-name').value.trim();
       var cat = $('em-cat').value; if (cat === '__new__') cat = '';
@@ -6907,6 +6965,56 @@
       }).catch(function (e) {
         btn.disabled = false; $('em-cancel').disabled = false; if ($('em-del')) $('em-del').disabled = false;
         msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not save the line.';
+      });
+    }
+
+    // Submit path for the "Make this a recurring expense" checkbox in the
+    // + Add Expense modal — creates a new recurring-expense template instead
+    // of a one-off line, reusing that same modal's fields (em-date doubles as
+    // Start date). Pinned to the current ledger year by default; "File each
+    // year's charge under its own fiscal year" (Yearly only) opts into
+    // per-occurrence filing instead. See acctSyncRecurringTemplate.
+    function acctSubmitNewRecurring() {
+      var name = $('em-name').value.trim();
+      var cat = $('em-cat').value; if (cat === '__new__') cat = '';
+      var chk = ($('em-check').value || '').trim();
+      var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
+      var effAmt = (a != null) ? a : ((c != null && u != null) ? acctR2(c * u) : null);
+      var freq = $('em-freq').value;
+      var start = ($('em-date').value || '').trim();
+      var noEnd = $('em-noend').checked;
+      var end = noEnd ? '' : ($('em-end').value || '').trim();
+      var note = $('em-note').value.trim();
+      var yearModeCb = $('em-yearmode');
+      var yearMode = (freq === 'yearly' && yearModeCb && yearModeCb.checked) ? 'per-occurrence' : 'pinned';
+      var msg = $('em-msg');
+
+      if (!cat) { msg.style.color = '#cc0000'; msg.textContent = 'Choose a category before saving — every expense needs one.'; return; }
+      if (!name) { msg.style.color = '#cc0000'; msg.textContent = 'Give the expense a name.'; return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) { msg.style.color = '#cc0000'; msg.textContent = 'Pick a start date.'; return; }
+      if (effAmt == null) { msg.style.color = '#cc0000'; msg.textContent = 'Enter an amount for this expense.'; return; }
+      if (end && end < start) { msg.style.color = '#cc0000'; msg.textContent = 'The end date can’t be before the start date.'; return; }
+
+      var body = {
+        name: name, category: cat, year: acctCurYear, frequency: freq,
+        startDate: start, endDate: end || null, yearMode: yearMode, note: note,
+        amount: (a != null ? acctR2(a) : effAmt)
+      };
+      if (c != null) body.count = c;
+      if (u != null) body.unit = u;
+      if (chk) body.checkNumber = chk;
+
+      var btn = $('em-save'); btn.disabled = true; $('em-cancel').disabled = true;
+      msg.style.color = ''; msg.textContent = 'Saving…';
+      apiPost(API.adminAccountingRecurringSave, body).then(function (r) {
+        if (r.ok) { acctCloseLineModal(); }
+        else {
+          btn.disabled = false; $('em-cancel').disabled = false;
+          msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not save the recurring expense.';
+        }
+      }).catch(function (e) {
+        btn.disabled = false; $('em-cancel').disabled = false;
+        msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not save the recurring expense.';
       });
     }
 
@@ -6971,7 +7079,8 @@
         var t = acctRecurringTemplates[id];
         var range = (t.startDate ? acctFmtDate(t.startDate) : '?') + ' – ' + (t.endDate ? acctFmtDate(t.endDate) : 'ongoing');
         var freqLbl = ACCT_RECUR_FREQ_LABELS[t.frequency] || t.frequency || '—';
-        var yearLbl = Number.isInteger(t.year) ? ('Ledger year ' + t.year) : 'Ledger year not set';
+        var yearLbl = (t.yearMode === 'per-occurrence') ? 'Files to each year’s own ledger'
+          : (Number.isInteger(t.year) ? ('Ledger year ' + t.year) : 'Ledger year not set');
         return '<tr data-rid="' + id + '">' +
           '<td>' + esc(t.name || '—') + '<div style="font-size:.78rem;color:#888;">' + esc(t.category || '—') + ' · ' + esc(freqLbl) + ' · ' + esc(range) + ' · ' + esc(yearLbl) + '</div></td>' +
           '<td class="num" style="white-space:nowrap;vertical-align:top;">' + acctMoney(+t.amount || 0) + '</td>' +
@@ -6983,18 +7092,16 @@
       }).join('');
       $('acct-exp-modal-body').innerHTML =
         '<h3>Recurring expenses</h3>' +
-        '<p class="em-sub">Occurrences post automatically as normal expense lines, up through today, each time the admin panel loads.</p>' +
+        '<p class="em-sub">Occurrences post automatically as normal expense lines, up through today, each time the admin panel loads. To add a new one, use “+ Add expense” and check “Make this a recurring expense.”</p>' +
         (ids.length
           ? '<div style="overflow-x:auto;"><table class="acct-table" style="table-layout:auto;min-width:0;"><tbody>' + rows + '</tbody></table></div>'
           : '<p class="sub">No recurring expenses yet.</p>') +
         '<div class="em-actions">' +
-          '<button type="button" class="adm-btn" id="em-recurring-add">+ Add recurring expense</button>' +
           '<button type="button" class="adm-btn em-ghost" id="em-cancel">Close</button>' +
         '</div>' +
         '<div class="em-msg" id="em-msg"></div>';
       $('acct-exp-modal').hidden = false;
       $('em-cancel').addEventListener('click', acctCloseLineModal);
-      $('em-recurring-add').addEventListener('click', function () { acctOpenRecurringForm('add', null); });
       $('acct-exp-modal-body').querySelectorAll('[data-raction]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var id = btn.closest('tr').getAttribute('data-rid');
@@ -7006,38 +7113,38 @@
       });
     }
 
-    // Add ('add') or edit ('edit', with the template's id) a recurring expense.
-    // Start date is locked once created, since changing it after occurrences
-    // have already posted would create gaps or duplicates.
+    // Edit an existing recurring expense (creation now happens from "+ Add
+    // expense" instead — see acctSubmitNewRecurring). Start date is locked
+    // since changing it after occurrences have already posted would create
+    // gaps or duplicates.
     function acctOpenRecurringForm(mode, id) {
       acctModalKind = 'recurring-form';
-      acctRecurringFormId = (mode === 'edit') ? id : null;
-      var t = (mode === 'edit') ? (acctRecurringTemplates[id] || {}) : {};
+      acctRecurringFormId = id;
+      var t = acctRecurringTemplates[id] || {};
       var vName = esc(t.name || ''), vCat = t.category || '',
           vAmt = (t.amount != null ? acctFmtAmount(t.amount) : ''),
           vCount = (t.count != null ? esc(String(t.count)) : ''),
           vUnit = (t.unit != null ? esc(String(t.unit)) : ''),
           vCheck = esc(t.checkNumber || ''), vNote = esc(t.note || ''),
           vStart = t.startDate || '', vEnd = t.endDate || '',
-          noEnd = !t.endDate, vFreq = t.frequency || 'monthly';
-      var startLocked = (mode === 'edit');
+          noEnd = !t.endDate, vFreq = t.frequency || 'monthly',
+          vPerOcc = (t.yearMode === 'per-occurrence');
       // Which ledger year every occurrence posts into, independent of each
       // occurrence's own date — the fiscal year doesn't follow the calendar
       // year and checks land erratically, so this stays whatever you pick,
-      // even for a template spanning two calendar years.
+      // even for a template spanning two calendar years. Only shown when NOT
+      // filing per-occurrence (Yearly-only alternative — see em-yearmode below).
       var years = acctSortedYears();
-      var vYear = (mode === 'edit' && Number.isInteger(t.year)) ? t.year : acctCurYear;
+      var vYear = Number.isInteger(t.year) ? t.year : acctCurYear;
       var yearOptions = years.map(function (y) {
         return '<option value="' + y + '"' + (y === vYear ? ' selected' : '') + '>' + y + '</option>';
       }).join('');
 
       $('acct-exp-modal-body').innerHTML =
-        '<h3>' + (mode === 'add' ? 'Add ' : 'Edit ') + 'recurring expense</h3>' +
+        '<h3>Edit recurring expense</h3>' +
         '<p class="em-sub">Fields marked * are required.</p>' +
         '<div class="em-field"><label>Expense *</label><input type="text" id="em-name" placeholder="What it’s for" value="' + vName + '"></div>' +
         '<div class="em-field"><label>Category *</label><select id="em-cat">' + acctCatOptions(ACCT_EXPENSE_CATS, vCat) + '</select></div>' +
-        '<div class="em-field"><label>Post to ledger year *</label><select id="em-ryear">' + yearOptions + '</select>' +
-          '<p class="acct-exp-hint" style="margin:4px 0 0;">Every occurrence goes here regardless of its own date — handy since checks can land in a different calendar year than your books.</p></div>' +
         '<div class="em-field"><label>Check #</label><input type="text" id="em-check" placeholder="If paid by check" value="' + vCheck + '"></div>' +
         '<div class="em-row2">' +
           '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count" value="' + vCount + '"></div>' +
@@ -7050,19 +7157,42 @@
           }).join('') +
         '</select></div>' +
         '<div class="em-row2" style="grid-template-columns:1fr 1fr;">' +
-          '<div class="em-field"><label>Start date *</label><input type="date" id="em-start" value="' + vStart + '"' + (startLocked ? ' disabled' : '') + '></div>' +
+          '<div class="em-field"><label>Start date *</label><input type="date" id="em-start" value="' + vStart + '" disabled></div>' +
           '<div class="em-field"><label>End date</label><input type="date" id="em-end" value="' + vEnd + '"' + (noEnd ? ' disabled' : '') + '></div>' +
         '</div>' +
         '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:-6px 0 13px;">' +
           '<input type="checkbox" id="em-noend"' + (noEnd ? ' checked' : '') + '> No end date — keep this running' +
         '</label>' +
-        (startLocked ? '<p class="acct-exp-hint" style="margin:-8px 0 13px;">The start date can’t be changed once a recurring expense has begun posting — delete and re-add it if you need a different start.</p>' : '') +
+        '<p class="acct-exp-hint" style="margin:-8px 0 13px;">The start date can’t be changed once a recurring expense has begun posting — delete and re-add it if you need a different start.</p>' +
+        '<div id="em-yearmode-area"></div>' +
         '<div class="em-field"><label>Description (optional)</label><textarea id="em-note" placeholder="Vendor — what it was for (e.g. Amazon — Banners)">' + vNote + '</textarea></div>' +
         '<div class="em-actions">' +
-          '<button type="button" class="adm-btn" id="em-save">' + (mode === 'add' ? 'Add' : 'Save changes') + '</button>' +
+          '<button type="button" class="adm-btn" id="em-save">Save changes</button>' +
           '<button type="button" class="adm-btn em-ghost" id="em-back">Back to list</button>' +
         '</div>' +
         '<div class="em-msg" id="em-msg"></div>';
+
+      var freqSel = $('em-freq'), yearModeArea = $('em-yearmode-area');
+      var updateYearModeArea = function () {
+        if (freqSel.value === 'yearly') {
+          yearModeArea.innerHTML =
+            '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:2px 0 4px;">' +
+              '<input type="checkbox" id="em-yearmode"' + (vPerOcc ? ' checked' : '') + '> File each year’s charge under its own fiscal year' +
+            '</label>' +
+            '<div class="em-field" id="em-ryear-wrap"' + (vPerOcc ? ' hidden' : '') + '><label>Post to ledger year *</label><select id="em-ryear">' + yearOptions + '</select></div>' +
+            '<p class="acct-exp-hint" style="margin:0 0 13px;" id="em-ryear-hint"' + (vPerOcc ? '' : ' hidden') + '>Each year’s charge posts to that year automatically.</p>';
+          $('em-yearmode').addEventListener('change', function () {
+            $('em-ryear-wrap').hidden = this.checked;
+            $('em-ryear-hint').hidden = !this.checked;
+          });
+        } else {
+          yearModeArea.innerHTML =
+            '<div class="em-field" id="em-ryear-wrap"><label>Post to ledger year *</label><select id="em-ryear">' + yearOptions + '</select>' +
+              '<p class="acct-exp-hint" style="margin:4px 0 0;">Every occurrence goes here regardless of its own date — handy since checks can land in a different calendar year than your books.</p></div>';
+        }
+      };
+      updateYearModeArea();
+      freqSel.addEventListener('change', updateYearModeArea);
 
       $('em-cat').addEventListener('change', function () {
         if (this.value !== '__new__') return;
@@ -7075,17 +7205,19 @@
         if (this.checked) $('em-end').value = '';
       });
       $('em-back').addEventListener('click', acctOpenRecurringList);
-      $('em-save').addEventListener('click', function () { acctSubmitRecurring(mode); });
+      $('em-save').addEventListener('click', acctSubmitRecurring);
     }
 
-    function acctSubmitRecurring(mode) {
+    function acctSubmitRecurring() {
       var name = $('em-name').value.trim();
       var cat = $('em-cat').value; if (cat === '__new__') cat = '';
-      var ryear = parseInt($('em-ryear').value, 10);
+      var freq = $('em-freq').value;
+      var yearModeCb = $('em-yearmode');
+      var perOcc = (freq === 'yearly' && yearModeCb && yearModeCb.checked);
+      var ryear = perOcc ? null : parseInt($('em-ryear').value, 10);
       var chk = ($('em-check').value || '').trim();
       var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
       var effAmt = (a != null) ? a : ((c != null && u != null) ? acctR2(c * u) : null);
-      var freq = $('em-freq').value;
       var start = ($('em-start').value || '').trim();
       var noEnd = $('em-noend').checked;
       var end = noEnd ? '' : ($('em-end').value || '').trim();
@@ -7094,16 +7226,19 @@
 
       if (!cat) { msg.style.color = '#cc0000'; msg.textContent = 'Choose a category before saving — every expense needs one.'; return; }
       if (!name) { msg.style.color = '#cc0000'; msg.textContent = 'Give the expense a name.'; return; }
-      if (isNaN(ryear)) { msg.style.color = '#cc0000'; msg.textContent = 'Choose which ledger year this should post to.'; return; }
+      if (!perOcc && isNaN(ryear)) { msg.style.color = '#cc0000'; msg.textContent = 'Choose which ledger year this should post to.'; return; }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) { msg.style.color = '#cc0000'; msg.textContent = 'Pick a start date.'; return; }
       if (effAmt == null) { msg.style.color = '#cc0000'; msg.textContent = 'Enter an amount for this expense.'; return; }
       if (end && end < start) { msg.style.color = '#cc0000'; msg.textContent = 'The end date can’t be before the start date.'; return; }
 
-      var body = { name: name, category: cat, year: ryear, frequency: freq, startDate: start, endDate: end || null, note: note, amount: (a != null ? acctR2(a) : effAmt) };
+      var body = {
+        id: acctRecurringFormId, name: name, category: cat, frequency: freq, startDate: start, endDate: end || null,
+        yearMode: perOcc ? 'per-occurrence' : 'pinned', note: note, amount: (a != null ? acctR2(a) : effAmt)
+      };
+      if (ryear != null) body.year = ryear;
       if (c != null) body.count = c;
       if (u != null) body.unit = u;
       if (chk) body.checkNumber = chk;
-      if (mode === 'edit' && acctRecurringFormId) body.id = acctRecurringFormId;
 
       var btn = $('em-save'); btn.disabled = true;
       msg.style.color = ''; msg.textContent = 'Saving…';
@@ -7111,7 +7246,7 @@
         if (r.ok) {
           acctCloseLineModal();
           var moved = r.d && r.d.moved;
-          if (moved) alert('Moved ' + moved + ' already-posted entr' + (moved === 1 ? 'y' : 'ies') + ' into ' + ryear + ' to match.');
+          if (moved) alert('Moved ' + moved + ' already-posted entr' + (moved === 1 ? 'y' : 'ies') + ' to match.');
         }
         else { btn.disabled = false; msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not save the recurring expense.'; }
       }).catch(function (e) { btn.disabled = false; msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not save the recurring expense.'; });
@@ -7123,7 +7258,8 @@
       var today = new Date().toISOString().slice(0, 10);
       apiPost(API.adminAccountingRecurringSave, {
         id: id, name: t.name, category: t.category, amount: t.amount, count: t.count, unit: t.unit,
-        checkNumber: t.checkNumber, note: t.note, frequency: t.frequency, endDate: today
+        checkNumber: t.checkNumber, note: t.note, frequency: t.frequency, endDate: today,
+        year: t.year, yearMode: t.yearMode
       }).then(function (r) { if (!r.ok) alert((r.d && r.d.error) || 'Could not stop the recurring expense.'); });
     }
 

@@ -5494,27 +5494,44 @@ async function acctSyncRecurringTemplate(tmplSnap) {
   const dueDates = acctDueDates(tmpl, through);
   if (!dueDates.length) return 0;
 
-  // Every occurrence posts into the ONE ledger year the template is filed
-  // under (Dave's fiscal year doesn't follow the calendar year, and checks
-  // land erratically) — never split by the calendar year of the occurrence's
-  // own date. That date still shows on the line itself, just not the bucket.
-  const yRef = db.collection('accounting_years').doc(String(tmpl.year));
-  const ySnap = await yRef.get();
-  const yData = ySnap.exists ? (ySnap.data() || {}) : {};
-  let lines = Array.isArray(yData.expenses) ? yData.expenses.slice() : [];
+  // Two ways an occurrence's ledger year gets picked:
+  //  - 'pinned' (default, and the only option below Yearly): every occurrence
+  //    posts into the ONE ledger year the template is filed under — Dave's
+  //    fiscal year doesn't follow the calendar year, and checks land
+  //    erratically, so a template spanning two calendar years still books as
+  //    one thing. The occurrence's own date still shows on the line, just
+  //    not the bucket.
+  //  - 'per-occurrence' (Yearly frequency only): each year's occurrence posts
+  //    into ITS OWN calendar year instead — right for a genuinely annual
+  //    expense meant to roll forward through each future year's books on its
+  //    own, rather than piling up under one fixed year forever.
+  const perOccurrence = tmpl.yearMode === 'per-occurrence' && tmpl.frequency === 'yearly';
+  const byYear = {};
   dueDates.forEach((iso) => {
-    const line = acctCleanLine({
-      name: tmpl.name, category: tmpl.category, amount: tmpl.amount,
-      count: tmpl.count, unit: tmpl.unit, checkNumber: tmpl.checkNumber,
-      note: tmpl.note, date: iso,
-    });
-    line.recurringId = tmplSnap.id;
-    lines.push(line);
+    const y = perOccurrence ? +iso.slice(0, 4) : tmpl.year;
+    (byYear[y] = byYear[y] || []).push(iso);
   });
-  lines = acctSortLines(lines);
-  const patch = { year: tmpl.year, expenses: lines, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
-  if (!ySnap.exists) { patch.status = 'in-progress'; patch.revenue = []; patch.openingBalance = null; }
-  await yRef.set(patch, { merge: true });
+
+  for (const yStr of Object.keys(byYear)) {
+    const y = Number(yStr);
+    const yRef = db.collection('accounting_years').doc(String(y));
+    const ySnap = await yRef.get();
+    const yData = ySnap.exists ? (ySnap.data() || {}) : {};
+    let lines = Array.isArray(yData.expenses) ? yData.expenses.slice() : [];
+    byYear[y].forEach((iso) => {
+      const line = acctCleanLine({
+        name: tmpl.name, category: tmpl.category, amount: tmpl.amount,
+        count: tmpl.count, unit: tmpl.unit, checkNumber: tmpl.checkNumber,
+        note: tmpl.note, date: iso,
+      });
+      line.recurringId = tmplSnap.id;
+      lines.push(line);
+    });
+    lines = acctSortLines(lines);
+    const patch = { year: y, expenses: lines, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+    if (!ySnap.exists) { patch.status = 'in-progress'; patch.revenue = []; patch.openingBalance = null; }
+    await yRef.set(patch, { merge: true });
+  }
 
   const lastGen = dueDates[dueDates.length - 1];
   await tmplSnap.ref.set({ lastGeneratedDate: lastGen, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
@@ -5592,6 +5609,9 @@ exports.adminAccountingRecurringSave = onRequest(
       // acctReconcileRecurringYear below moves its history to match).
       const yearRaw = parseInt(body.year, 10);
       const year = Number.isInteger(yearRaw) ? yearRaw : (existing ? existing.year : null);
+      // Per-occurrence filing only makes sense for a Yearly cadence (see
+      // acctSyncRecurringTemplate) — anything else always pins to `year`.
+      const yearMode = (frequency === 'yearly' && body.yearMode === 'per-occurrence') ? 'per-occurrence' : 'pinned';
       let endDate = null;
       if (body.endDate !== null && body.endDate !== undefined && body.endDate !== '') {
         if (typeof body.endDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.endDate)) {
@@ -5619,7 +5639,7 @@ exports.adminAccountingRecurringSave = onRequest(
 
       const data = {
         name: name, category: category, amount: Math.round(amount * 100) / 100,
-        frequency: frequency, startDate: startDate, endDate: endDate, year: year,
+        frequency: frequency, startDate: startDate, endDate: endDate, year: year, yearMode: yearMode,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedBy: adminUser.email || adminUser.uid || null,
       };
@@ -5631,7 +5651,9 @@ exports.adminAccountingRecurringSave = onRequest(
       await ref.set(data, { merge: true });
       const fresh = await ref.get();
       const generated = await acctSyncRecurringTemplate(fresh);
-      const moved = await acctReconcileRecurringYear(ref.id, year);
+      // Reconciling to a single target year only makes sense in 'pinned' mode —
+      // 'per-occurrence' has no one correct year to sweep everything into.
+      const moved = (yearMode === 'pinned') ? await acctReconcileRecurringYear(ref.id, year) : 0;
       return res.json({ ok: true, id: ref.id, generated: generated, moved: moved });
     } catch (err) {
       logger.error('adminAccountingRecurringSave failed', err);
