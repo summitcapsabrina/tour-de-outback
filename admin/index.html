@@ -500,8 +500,9 @@
     table.acct-table td.amt input { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
     /* Fixed layout so the Amount column keeps its width — long names never squeeze it.
        Revenue columns: Name(flex) · Date · Category · Unit · Count · Amount · Rcpt.
-       Expenses adds a Check # column, so it gets its own (higher-specificity,
-       ID-scoped) widths below — Rcpt shifts from col 7 to col 8 there. */
+       Expenses adds Description + Check # columns, so it gets its own
+       (higher-specificity, ID-scoped) widths below — every column past Name
+       shifts, so expenses is fully re-specified rather than patched. */
     table.acct-table { table-layout: fixed; width: 100%; min-width: 470px; }
     .acct-side { min-width: 0; }
     table.acct-table th, table.acct-table td { padding: 4px 4px; }
@@ -511,12 +512,16 @@
     table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 44px; }
     table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 96px; }
     table.acct-table th:nth-child(7), table.acct-table td:nth-child(7) { width: 34px; }
-    #acct-exp-table { min-width: 560px; }
-    #acct-exp-table th:nth-child(4), #acct-exp-table td:nth-child(4) { width: 64px; }
-    #acct-exp-table th:nth-child(5), #acct-exp-table td:nth-child(5) { width: 54px; }
-    #acct-exp-table th:nth-child(6), #acct-exp-table td:nth-child(6) { width: 44px; }
-    #acct-exp-table th:nth-child(7), #acct-exp-table td:nth-child(7) { width: 96px; }
-    #acct-exp-table th:nth-child(8), #acct-exp-table td:nth-child(8) { width: 34px; }
+    /* Expenses: Expense(flex) · Description · Date · Category · Check# · Unit · Count · Amount · Rcpt */
+    #acct-exp-table { min-width: 760px; }
+    #acct-exp-table th:nth-child(2), #acct-exp-table td:nth-child(2) { width: 150px; }
+    #acct-exp-table th:nth-child(3), #acct-exp-table td:nth-child(3) { width: 90px; }
+    #acct-exp-table th:nth-child(4), #acct-exp-table td:nth-child(4) { width: 92px; }
+    #acct-exp-table th:nth-child(5), #acct-exp-table td:nth-child(5) { width: 64px; }
+    #acct-exp-table th:nth-child(6), #acct-exp-table td:nth-child(6) { width: 54px; }
+    #acct-exp-table th:nth-child(7), #acct-exp-table td:nth-child(7) { width: 44px; }
+    #acct-exp-table th:nth-child(8), #acct-exp-table td:nth-child(8) { width: 96px; }
+    #acct-exp-table th:nth-child(9), #acct-exp-table td:nth-child(9) { width: 34px; }
     table.acct-table .acct-cat select { max-width: 100%; }
     .acct-del { border: none; background: none; color: #c9c9c9; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 2px 4px; }
     .acct-del:hover { color: #b71c1c; }
@@ -567,7 +572,8 @@
     .acct-table.acct-readonly tbody tr { cursor: pointer; }
     .acct-table.acct-readonly tbody tr:hover td { background: #faf6f6; }
     html.dark .acct-table.acct-readonly tbody tr:hover td { background: #262024; }
-    .acct-table.acct-readonly td.acct-name, .acct-table.acct-readonly td.acct-cat { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .acct-table.acct-readonly td.acct-name, .acct-table.acct-readonly td.acct-cat, .acct-table.acct-readonly td.acct-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .acct-table.acct-readonly td.acct-desc .none { color: #c9c9c9; }
     .acct-table.acct-readonly td.amt { font-weight: 700; font-size: 1rem; text-align: right; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.num { text-align: right; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.ctr { text-align: center; font-variant-numeric: tabular-nums; }
@@ -577,7 +583,7 @@
     .acct-table .acct-empty-row td { color: #999; font-style: italic; cursor: default; }
     html.dark .acct-table .acct-empty-row td { color: #8a8f96; }
     #acct-rev-table.acct-readonly th:nth-child(7) { text-align: center; }
-    #acct-exp-table.acct-readonly th:nth-child(8) { text-align: center; }
+    #acct-exp-table.acct-readonly th:nth-child(9) { text-align: center; }
     #acct-exp-table.acct-readonly td.acct-chk { text-align: center; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.acct-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.acct-date .none { color: #c9c9c9; }
@@ -896,7 +902,7 @@
                     <div style="overflow-x:auto;">
                       <table class="acct-table acct-readonly" id="acct-exp-table">
                         <thead><tr>
-                          <th>Expense</th><th>Date</th><th>Category</th><th class="ctr">Check&nbsp;#</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
+                          <th>Expense</th><th>Description</th><th>Date</th><th>Category</th><th class="ctr">Check&nbsp;#</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
                         </tr></thead>
                         <tbody></tbody>
                       </table>
@@ -6503,7 +6509,7 @@
     // a filtered row still opens the right line in the edit modal).
     function acctRenderLines(side) {
       var tid = side === 'revenue' ? 'acct-rev-table' : 'acct-exp-table';
-      var colspan = side === 'revenue' ? 7 : 8;
+      var colspan = side === 'revenue' ? 7 : 9;
       var tb = $(tid).querySelector('tbody');
       var all = acctWorkingLines(side);
       if (!all.length) {
@@ -6540,9 +6546,15 @@
       var checkCell = side === 'expenses'
         ? '<td class="ctr acct-chk">' + (line.checkNumber ? esc(String(line.checkNumber)) : '') + '</td>'
         : '';
+      // Expenses' "Description" is the same underlying note field (vendor + what
+      // it was for, e.g. "Amazon — Banners") surfaced as its own column.
+      var descCell = side === 'expenses'
+        ? '<td class="acct-desc">' + (line.note ? esc(line.note) : '<span class="none">—</span>') + '</td>'
+        : '';
       var recurTag = line.recurringId ? ' <span title="Posted automatically from a recurring expense">🔁</span>' : '';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
         '<td class="acct-name">' + esc(line.name || '—') + recurTag + '</td>' +
+        descCell +
         '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
         checkCell +
@@ -6702,6 +6714,11 @@
       var checkField = !isRev
         ? '<div class="em-field"><label>Check #</label><input type="text" id="em-check" placeholder="If paid by check" value="' + vCheck + '"></div>'
         : '';
+      // Expenses get "Description" (vendor + what it was, e.g. "Amazon — Banners") —
+      // it's the same underlying note field, just labeled for how expenses use it;
+      // shows as its own column in the Expenses table. Revenue keeps "Note".
+      var noteLbl = isRev ? 'Note (optional)' : 'Description (optional)';
+      var notePh = isRev ? 'Anything worth remembering' : 'Vendor — what it was for (e.g. Amazon — Banners)';
 
       $('acct-exp-modal-body').innerHTML =
         '<h3>' + title + '</h3>' +
@@ -6715,7 +6732,7 @@
           '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit" value="' + vUnit + '"></div>' +
           '<div class="em-field em-amt"><label>' + amtLbl + '</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
         '</div>' +
-        '<div class="em-field"><label>Note (optional)</label><textarea id="em-note" placeholder="Anything worth remembering">' + vNote + '</textarea></div>' +
+        '<div class="em-field"><label>' + noteLbl + '</label><textarea id="em-note" placeholder="' + notePh + '">' + vNote + '</textarea></div>' +
         '<div class="em-field"><label>Receipt / attachment (optional)</label>' +
           '<div id="em-drop" class="em-drop"><strong>Choose an image</strong>, drag one here, or paste from the clipboard (⌘/Ctrl+V).</div>' +
           '<input type="file" id="em-file" accept="image/*" hidden>' +
@@ -6954,8 +6971,9 @@
         var t = acctRecurringTemplates[id];
         var range = (t.startDate ? acctFmtDate(t.startDate) : '?') + ' – ' + (t.endDate ? acctFmtDate(t.endDate) : 'ongoing');
         var freqLbl = ACCT_RECUR_FREQ_LABELS[t.frequency] || t.frequency || '—';
+        var yearLbl = Number.isInteger(t.year) ? ('Ledger year ' + t.year) : 'Ledger year not set';
         return '<tr data-rid="' + id + '">' +
-          '<td>' + esc(t.name || '—') + '<div style="font-size:.78rem;color:#888;">' + esc(t.category || '—') + ' · ' + esc(freqLbl) + ' · ' + esc(range) + '</div></td>' +
+          '<td>' + esc(t.name || '—') + '<div style="font-size:.78rem;color:#888;">' + esc(t.category || '—') + ' · ' + esc(freqLbl) + ' · ' + esc(range) + ' · ' + esc(yearLbl) + '</div></td>' +
           '<td class="num" style="white-space:nowrap;vertical-align:top;">' + acctMoney(+t.amount || 0) + '</td>' +
           '<td style="white-space:nowrap;vertical-align:top;">' +
             '<button type="button" class="adm-btn small" data-raction="edit" style="background:#666;">Edit</button> ' +
@@ -7003,12 +7021,23 @@
           vStart = t.startDate || '', vEnd = t.endDate || '',
           noEnd = !t.endDate, vFreq = t.frequency || 'monthly';
       var startLocked = (mode === 'edit');
+      // Which ledger year every occurrence posts into, independent of each
+      // occurrence's own date — the fiscal year doesn't follow the calendar
+      // year and checks land erratically, so this stays whatever you pick,
+      // even for a template spanning two calendar years.
+      var years = acctSortedYears();
+      var vYear = (mode === 'edit' && Number.isInteger(t.year)) ? t.year : acctCurYear;
+      var yearOptions = years.map(function (y) {
+        return '<option value="' + y + '"' + (y === vYear ? ' selected' : '') + '>' + y + '</option>';
+      }).join('');
 
       $('acct-exp-modal-body').innerHTML =
         '<h3>' + (mode === 'add' ? 'Add ' : 'Edit ') + 'recurring expense</h3>' +
-        '<p class="em-sub">' + acctCurYear + ' books and beyond. Fields marked * are required.</p>' +
+        '<p class="em-sub">Fields marked * are required.</p>' +
         '<div class="em-field"><label>Expense *</label><input type="text" id="em-name" placeholder="What it’s for" value="' + vName + '"></div>' +
         '<div class="em-field"><label>Category *</label><select id="em-cat">' + acctCatOptions(ACCT_EXPENSE_CATS, vCat) + '</select></div>' +
+        '<div class="em-field"><label>Post to ledger year *</label><select id="em-ryear">' + yearOptions + '</select>' +
+          '<p class="acct-exp-hint" style="margin:4px 0 0;">Every occurrence goes here regardless of its own date — handy since checks can land in a different calendar year than your books.</p></div>' +
         '<div class="em-field"><label>Check #</label><input type="text" id="em-check" placeholder="If paid by check" value="' + vCheck + '"></div>' +
         '<div class="em-row2">' +
           '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count" value="' + vCount + '"></div>' +
@@ -7028,7 +7057,7 @@
           '<input type="checkbox" id="em-noend"' + (noEnd ? ' checked' : '') + '> No end date — keep this running' +
         '</label>' +
         (startLocked ? '<p class="acct-exp-hint" style="margin:-8px 0 13px;">The start date can’t be changed once a recurring expense has begun posting — delete and re-add it if you need a different start.</p>' : '') +
-        '<div class="em-field"><label>Note (optional)</label><textarea id="em-note" placeholder="Anything worth remembering">' + vNote + '</textarea></div>' +
+        '<div class="em-field"><label>Description (optional)</label><textarea id="em-note" placeholder="Vendor — what it was for (e.g. Amazon — Banners)">' + vNote + '</textarea></div>' +
         '<div class="em-actions">' +
           '<button type="button" class="adm-btn" id="em-save">' + (mode === 'add' ? 'Add' : 'Save changes') + '</button>' +
           '<button type="button" class="adm-btn em-ghost" id="em-back">Back to list</button>' +
@@ -7052,6 +7081,7 @@
     function acctSubmitRecurring(mode) {
       var name = $('em-name').value.trim();
       var cat = $('em-cat').value; if (cat === '__new__') cat = '';
+      var ryear = parseInt($('em-ryear').value, 10);
       var chk = ($('em-check').value || '').trim();
       var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
       var effAmt = (a != null) ? a : ((c != null && u != null) ? acctR2(c * u) : null);
@@ -7064,11 +7094,12 @@
 
       if (!cat) { msg.style.color = '#cc0000'; msg.textContent = 'Choose a category before saving — every expense needs one.'; return; }
       if (!name) { msg.style.color = '#cc0000'; msg.textContent = 'Give the expense a name.'; return; }
+      if (isNaN(ryear)) { msg.style.color = '#cc0000'; msg.textContent = 'Choose which ledger year this should post to.'; return; }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) { msg.style.color = '#cc0000'; msg.textContent = 'Pick a start date.'; return; }
       if (effAmt == null) { msg.style.color = '#cc0000'; msg.textContent = 'Enter an amount for this expense.'; return; }
       if (end && end < start) { msg.style.color = '#cc0000'; msg.textContent = 'The end date can’t be before the start date.'; return; }
 
-      var body = { name: name, category: cat, frequency: freq, startDate: start, endDate: end || null, note: note, amount: (a != null ? acctR2(a) : effAmt) };
+      var body = { name: name, category: cat, year: ryear, frequency: freq, startDate: start, endDate: end || null, note: note, amount: (a != null ? acctR2(a) : effAmt) };
       if (c != null) body.count = c;
       if (u != null) body.unit = u;
       if (chk) body.checkNumber = chk;
@@ -7077,7 +7108,11 @@
       var btn = $('em-save'); btn.disabled = true;
       msg.style.color = ''; msg.textContent = 'Saving…';
       apiPost(API.adminAccountingRecurringSave, body).then(function (r) {
-        if (r.ok) { acctCloseLineModal(); }
+        if (r.ok) {
+          acctCloseLineModal();
+          var moved = r.d && r.d.moved;
+          if (moved) alert('Moved ' + moved + ' already-posted entr' + (moved === 1 ? 'y' : 'ies') + ' into ' + ryear + ' to match.');
+        }
         else { btn.disabled = false; msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not save the recurring expense.'; }
       }).catch(function (e) { btn.disabled = false; msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not save the recurring expense.'; });
     }
