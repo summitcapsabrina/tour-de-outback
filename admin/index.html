@@ -501,8 +501,8 @@
     /* Fixed layout so the Amount column keeps its width — long names never squeeze it.
        Revenue columns: Date · Name(flex) · Category · Unit · Count · Amount · Rcpt.
        Expenses adds Description + Check # columns, so it gets its own
-       (higher-specificity, ID-scoped) widths below for columns past Description —
-       Date/Name/Description are shared flex-vs-fixed logic, so kept generic. */
+       (higher-specificity, ID-scoped) widths below, including Expense's own
+       column (no longer flex there — see the note further down). */
     table.acct-table { table-layout: fixed; width: 100%; min-width: 470px; }
     .acct-side { min-width: 0; }
     table.acct-table th, table.acct-table td { padding: 4px 4px; }
@@ -512,8 +512,16 @@
     table.acct-table th:nth-child(5), table.acct-table td:nth-child(5) { width: 44px; }
     table.acct-table th:nth-child(6), table.acct-table td:nth-child(6) { width: 96px; }
     table.acct-table th:nth-child(7), table.acct-table td:nth-child(7) { width: 34px; }
-    /* Expenses: Date · Expense(flex) · Description(flex, equal to Expense) · Category · Check# · Unit · Count · Amount · Rcpt */
+    /* Expenses: Date · Expense · Description · Category · Check# · Unit · Count · Amount · Rcpt.
+       Expense and Description both get an explicit, equal width — leaving both
+       unspecified in a fixed-layout table doesn't split the remainder evenly,
+       it leans on each column's actual content length (Expense names read
+       longer than the mostly-empty Description cells, so Expense won every
+       time). Explicit equal widths stay equal at any table width, since
+       table-layout:fixed scales all specified columns proportionally. */
     #acct-exp-table { min-width: 820px; }
+    #acct-exp-table th:nth-child(2), #acct-exp-table td:nth-child(2) { width: 173px; }
+    #acct-exp-table th:nth-child(3), #acct-exp-table td:nth-child(3) { width: 173px; }
     #acct-exp-table th:nth-child(4), #acct-exp-table td:nth-child(4) { width: 92px; }
     #acct-exp-table th:nth-child(5), #acct-exp-table td:nth-child(5) { width: 64px; }
     #acct-exp-table th:nth-child(6), #acct-exp-table td:nth-child(6) { width: 54px; }
@@ -896,7 +904,10 @@
                       <h3>Expenses</h3>
                       <span class="acct-side-total" id="acct-exp-total">$0.00</span>
                     </div>
-                    <input type="text" class="acct-search" id="acct-exp-search" placeholder="Search by amount… e.g. 1200 finds $1,200.00" inputmode="decimal" autocomplete="off">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+                      <input type="text" class="acct-search" id="acct-exp-search" placeholder="Search by amount… e.g. 1200 finds $1,200.00" inputmode="decimal" autocomplete="off" style="flex:1 1 220px;">
+                      <select id="acct-exp-cat-filter" style="flex:0 0 auto;padding:7px 10px;border-radius:6px;font-size:.88rem;border:1px solid #ddd;margin-bottom:10px;"></select>
+                    </div>
                     <div style="overflow-x:auto;">
                       <table class="acct-table acct-readonly" id="acct-exp-table">
                         <thead><tr>
@@ -6056,7 +6067,7 @@
     // ===================== Accounting: books ledger + year-over-year =========
     var ACCT_INCOME_CATS = ['Registration', 'Camping', 'Grants', 'Sponsorship', 'Sales'];
     var ACCT_EXPENSE_CATS = ['Administrative Expense', 'Aid Stations', 'After Party',
-      'Assets', 'Beneficiary', 'Marketing', 'Registration', 'SWAG', 'Pre Party'];
+      'Assets', 'Beneficiary', 'Marketing', 'Registration', 'SWAG', 'Pre Party', 'Unknown'];
     var ACCT_RECUR_FREQ_LABELS = { weekly: 'Weekly', monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' };
     var acctYears = {};        // year(number) -> saved doc data
     var acctCurYear = null;    // selected year (number)
@@ -6177,6 +6188,7 @@
       });
       $('acct-rev-search').addEventListener('input', function () { acctRenderLines('revenue'); });
       $('acct-exp-search').addEventListener('input', function () { acctRenderLines('expenses'); });
+      $('acct-exp-cat-filter').addEventListener('change', function () { acctRenderLines('expenses'); });
       // Buttons
       $('acct-seed-btn').addEventListener('click', acctSeed);
       $('acct-add-year').addEventListener('click', acctAddYear);
@@ -6453,6 +6465,7 @@
       var regC = acctRiderCounts[y];
       $('acct-riders-display').textContent = 'Riders: ' + (regC != null ? regC : '—');
       // Both sides are read-only rows; add/edit/delete all happen in the modal.
+      acctRenderExpCatFilterOptions();
       acctRenderLines('revenue');
       acctRenderLines('expenses');
       // stat grid (built once per year; recalc only updates the numbers)
@@ -6502,9 +6515,27 @@
       return amtDigits.indexOf(q) !== -1;
     }
 
+    // Rebuild the Expenses category-filter dropdown from ACCT_EXPENSE_CATS
+    // plus any category actually used in this year's data (so a one-off
+    // category typed via "+ Add category…" is still filterable, not just the
+    // official list). Preserves the current selection if it's still valid.
+    function acctRenderExpCatFilterOptions() {
+      var sel = $('acct-exp-cat-filter');
+      if (!sel) return;
+      var prev = sel.value;
+      var used = {};
+      acctWorkingLines('expenses').forEach(function (l) { if (l.category) used[l.category] = true; });
+      var cats = ACCT_EXPENSE_CATS.slice();
+      Object.keys(used).forEach(function (c) { if (cats.indexOf(c) === -1) cats.push(c); });
+      sel.innerHTML = '<option value="">All categories</option>' +
+        cats.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('');
+      sel.value = (cats.indexOf(prev) !== -1) ? prev : '';
+    }
+
     // Read-only table for a side, rendered straight from the saved snapshot,
-    // filtered by the side's amount-search box (original indices kept intact so
-    // a filtered row still opens the right line in the edit modal).
+    // filtered by the side's amount-search box and (expenses only) category
+    // dropdown — original indices kept intact so a filtered row still opens
+    // the right line in the edit modal.
     function acctRenderLines(side) {
       var tid = side === 'revenue' ? 'acct-rev-table' : 'acct-exp-table';
       var colspan = side === 'revenue' ? 7 : 9;
@@ -6517,10 +6548,16 @@
       }
       var searchEl = $(side === 'revenue' ? 'acct-rev-search' : 'acct-exp-search');
       var q = searchEl ? searchEl.value : '';
+      var catSel = (side === 'expenses') ? $('acct-exp-cat-filter') : null;
+      var catFilter = catSel ? catSel.value : '';
       var rows = [];
-      all.forEach(function (l, i) { if (acctSearchMatches(l, q)) rows.push(acctLineRowHtml(l, i, side)); });
+      all.forEach(function (l, i) {
+        if (!acctSearchMatches(l, q)) return;
+        if (catFilter && l.category !== catFilter) return;
+        rows.push(acctLineRowHtml(l, i, side));
+      });
       if (!rows.length) {
-        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="' + colspan + '">No lines match that amount.</td></tr>';
+        tb.innerHTML = '<tr class="acct-empty-row"><td colspan="' + colspan + '">No lines match' + (catFilter ? ' “' + esc(catFilter) + '”' : ' that amount') + '.</td></tr>';
         return;
       }
       tb.innerHTML = rows.join('');
