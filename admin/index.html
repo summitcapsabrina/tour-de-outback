@@ -593,6 +593,10 @@
     #acct-exp-table.acct-readonly td.acct-chk { text-align: center; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.acct-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
     .acct-table.acct-readonly td.acct-date .none { color: #c9c9c9; }
+    .acct-refund-tag { font-size: .72rem; font-weight: 600; color: #1b8a3a; background: #e7f6e9; border-radius: 8px; padding: 1px 7px; white-space: nowrap; }
+    html.dark .acct-refund-tag { color: #6fd88a; background: #17301f; }
+    td.acct-refund-amt { color: #1b8a3a; }
+    html.dark td.acct-refund-amt { color: #6fd88a; }
     .acct-exp-hint { font-size: .82rem; color: #888; margin: 6px 0 0; }
     html.dark .acct-exp-hint { color: #9aa0a6; }
     /* ---- Expense modal (add / view+delete) ---- */
@@ -6586,15 +6590,16 @@
         ? '<td class="acct-desc">' + (line.note ? esc(line.note) : '<span class="none">—</span>') + '</td>'
         : '';
       var recurTag = line.recurringId ? ' <span title="Posted automatically from a recurring expense">🔁</span>' : '';
+      var refundTag = line.refund ? ' <span class="acct-refund-tag" title="Refund — subtracted from total expenses">↩ Refund</span>' : '';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
         '<td class="acct-date">' + dateCell + '</td>' +
-        '<td class="acct-name">' + esc(line.name || '—') + recurTag + '</td>' +
+        '<td class="acct-name">' + esc(line.name || '—') + recurTag + refundTag + '</td>' +
         descCell +
         '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
         checkCell +
         '<td class="ctr">' + (unit === '' ? '' : acctMoney(+unit)) + '</td>' +
         '<td class="ctr">' + (count === '' ? '' : esc(String(count))) + '</td>' +
-        '<td class="amt">' + acctMoney(+line.amount || 0) + '</td>' +
+        '<td class="amt' + (line.refund ? ' acct-refund-amt' : '') + '">' + acctMoney(+line.amount || 0) + '</td>' +
         '<td class="acct-rcpt">' + rcpt + '</td></tr>';
     }
 
@@ -6732,9 +6737,13 @@
       var namePh = isRev ? 'Where the money came from' : 'What it was for';
       var title = (mode === 'add' ? 'Add ' : 'Edit ') + (isRev ? 'revenue line' : 'expense');
       var cats = acctSideCats(side);
+      // A refund is stored as a negative amount (so it subtracts from the
+      // Expenses total for free) but always shown/typed here as the positive
+      // amount that came back — Math.abs undoes the sign for editing.
+      var vAmtNum = (line.amount != null && line.amount !== '') ? (line.refund ? Math.abs(line.amount) : line.amount) : null;
       var vName = esc(line.name || ''), vCount = (line.count != null ? esc(String(line.count)) : ''),
           vUnit = (line.unit != null ? esc(String(line.unit)) : ''),
-          vAmt = (line.amount != null && line.amount !== '' ? acctFmtAmount(line.amount) : ''),
+          vAmt = (vAmtNum != null ? acctFmtAmount(vAmtNum) : ''),
           vNote = esc(line.note || ''),
           vDate = (typeof line.date === 'string' ? line.date : ''),
           vCheck = esc(line.checkNumber || '');
@@ -6793,6 +6802,12 @@
           '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit" value="' + vUnit + '"></div>' +
           '<div class="em-field em-amt"><label>' + amtLbl + '</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
         '</div>' +
+        (!isRev
+          ? '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:-6px 0 13px;">' +
+              '<input type="checkbox" id="em-refund"' + (line.refund ? ' checked' : '') + '> This is a refund — subtract it from total expenses' +
+            '</label>' +
+            '<p class="acct-exp-hint" style="margin:-8px 0 13px;">Enter the amount you got back as a positive number above — it’s subtracted automatically.</p>'
+          : '') +
         '<div class="em-field"><label>' + noteLbl + '</label><textarea id="em-note" placeholder="' + notePh + '">' + vNote + '</textarea></div>' +
         '<div class="em-field" id="em-receipt-wrap"><label>Receipt / attachment (optional)</label>' +
           '<div id="em-drop" class="em-drop"><strong>Choose an image</strong>, drag one here, or paste from the clipboard (⌘/Ctrl+V).</div>' +
@@ -6958,6 +6973,7 @@
       if (side === 'expenses') {
         var chk = ($('em-check') && $('em-check').value || '').trim();
         if (chk) line.checkNumber = chk;
+        if ($('em-refund') && $('em-refund').checked) line.refund = true;
       }
 
       var body = { year: acctCurYear, side: side, line: line };
@@ -7023,6 +7039,7 @@
       if (c != null) body.count = c;
       if (u != null) body.unit = u;
       if (chk) body.checkNumber = chk;
+      if ($('em-refund') && $('em-refund').checked) body.refund = true;
 
       var btn = $('em-save'); btn.disabled = true; $('em-cancel').disabled = true;
       msg.style.color = ''; msg.textContent = 'Saving…';
@@ -7101,9 +7118,10 @@
         var freqLbl = ACCT_RECUR_FREQ_LABELS[t.frequency] || t.frequency || '—';
         var yearLbl = (t.yearMode === 'per-occurrence') ? 'Files to each year’s own ledger'
           : (Number.isInteger(t.year) ? ('Ledger year ' + t.year) : 'Ledger year not set');
+        var refundLbl = t.refund ? ' · <span class="acct-refund-tag">↩ Refund</span>' : '';
         return '<tr data-rid="' + id + '">' +
-          '<td>' + esc(t.name || '—') + '<div style="font-size:.78rem;color:#888;">' + esc(t.category || '—') + ' · ' + esc(freqLbl) + ' · ' + esc(range) + ' · ' + esc(yearLbl) + '</div></td>' +
-          '<td class="num" style="white-space:nowrap;vertical-align:top;">' + acctMoney(+t.amount || 0) + '</td>' +
+          '<td>' + esc(t.name || '—') + '<div style="font-size:.78rem;color:#888;">' + esc(t.category || '—') + ' · ' + esc(freqLbl) + ' · ' + esc(range) + ' · ' + esc(yearLbl) + refundLbl + '</div></td>' +
+          '<td class="num' + (t.refund ? ' acct-refund-amt' : '') + '" style="white-space:nowrap;vertical-align:top;">' + acctMoney(+t.amount || 0) + '</td>' +
           '<td style="white-space:nowrap;vertical-align:top;">' +
             '<button type="button" class="adm-btn small" data-raction="edit" style="background:#666;">Edit</button> ' +
             (t.endDate ? '' : '<button type="button" class="adm-btn small" data-raction="end" style="background:#a35200;">End now</button> ') +
@@ -7171,6 +7189,10 @@
           '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit" value="' + vUnit + '"></div>' +
           '<div class="em-field em-amt"><label>Amount ($) *</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
         '</div>' +
+        '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:-6px 0 13px;">' +
+          '<input type="checkbox" id="em-refund"' + (t.refund ? ' checked' : '') + '> This is a refund — subtract it from total expenses' +
+        '</label>' +
+        '<p class="acct-exp-hint" style="margin:-8px 0 13px;">Enter the amount that comes back each occurrence as a positive number above — it’s subtracted automatically.</p>' +
         '<div class="em-field"><label>Frequency *</label><select id="em-freq">' +
           ['weekly', 'monthly', 'quarterly', 'yearly'].map(function (f) {
             return '<option value="' + f + '"' + (f === vFreq ? ' selected' : '') + '>' + ACCT_RECUR_FREQ_LABELS[f] + '</option>';
@@ -7253,7 +7275,8 @@
 
       var body = {
         id: acctRecurringFormId, name: name, category: cat, frequency: freq, startDate: start, endDate: end || null,
-        yearMode: perOcc ? 'per-occurrence' : 'pinned', note: note, amount: (a != null ? acctR2(a) : effAmt)
+        yearMode: perOcc ? 'per-occurrence' : 'pinned', note: note, amount: (a != null ? acctR2(a) : effAmt),
+        refund: $('em-refund').checked
       };
       if (ryear != null) body.year = ryear;
       if (c != null) body.count = c;

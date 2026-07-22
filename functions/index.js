@@ -5055,7 +5055,13 @@ function acctCleanLine(raw) {
     unit = Math.round((amount / count) * 100) / 100;
   }
   if (amount === null) amount = 0;
+  // A refund is entered as the positive amount that came back — stored as a
+  // negative amount so it subtracts from the Expenses total for free, through
+  // the same plain sum every total/chart already does over `amount`.
+  const isRefund = r.refund === true;
+  if (isRefund) amount = -Math.abs(amount);
   const line = { name: name, category: category, amount: amount, paid: r.paid !== false };
+  if (isRefund) line.refund = true;
   // Keep count/unit whenever present (given or derived) — no longer gated on an
   // exact count×unit===amount match, so a derived unit with rounding still sticks.
   if (count !== null) line.count = count;
@@ -5522,7 +5528,7 @@ async function acctSyncRecurringTemplate(tmplSnap) {
       const line = acctCleanLine({
         name: tmpl.name, category: tmpl.category, amount: tmpl.amount,
         count: tmpl.count, unit: tmpl.unit, checkNumber: tmpl.checkNumber,
-        note: tmpl.note, date: iso,
+        note: tmpl.note, date: iso, refund: tmpl.refund === true,
       });
       line.recurringId = tmplSnap.id;
       lines.push(line);
@@ -5626,6 +5632,11 @@ exports.adminAccountingRecurringSave = onRequest(
       else if (unit === null && count !== null && count !== 0 && amount !== null) unit = Math.round((amount / count) * 100) / 100;
       const checkNumber = String(body.checkNumber == null ? '' : body.checkNumber).trim().slice(0, 30);
       const note = String(body.note == null ? '' : body.note).trim().slice(0, 300);
+      // Refund: kept as the positive amount that comes back each occurrence
+      // (matches how it's typed) — acctSyncRecurringTemplate/acctCleanLine
+      // negate it per generated line. Falls back to the existing value on
+      // edit so a partial save (e.g. "End now") can't silently clear it.
+      const refund = (typeof body.refund === 'boolean') ? body.refund : !!(existing && existing.refund);
 
       if (!category) return res.status(400).json({ error: 'Choose a category before saving — every expense needs one.' });
       if (!name) return res.status(400).json({ error: 'Give the expense a name.' });
@@ -5640,6 +5651,7 @@ exports.adminAccountingRecurringSave = onRequest(
       const data = {
         name: name, category: category, amount: Math.round(amount * 100) / 100,
         frequency: frequency, startDate: startDate, endDate: endDate, year: year, yearMode: yearMode,
+        refund: refund,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedBy: adminUser.email || adminUser.uid || null,
       };
