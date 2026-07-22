@@ -179,8 +179,9 @@ import {
       window.gtag('event', 'conversion', { send_to: sendTo });
     }
   }
-  // Subscribe a consented email to EmailOctopus, then fire the Email sign-up
-  // conversion only if they were newly added (created:true) — not if already listed.
+  // Subscribe a consented email to EmailOctopus, then fire the GA4 sign_up event and
+  // the Email sign-up conversion only if they were newly added (created:true) — not
+  // if already listed.
   function subscribeAndTrack(email) {
     if (!email) return;
     fetch('/api/subscribe-newsletter', {
@@ -190,7 +191,10 @@ import {
     }).then(function (r) {
       return r.json().then(function (d) { return { ok: r.ok, d: d }; });
     }).then(function (res) {
-      if (res.ok && res.d && res.d.created) { fireConversion(CONV_EMAIL_SIGNUP); }
+      if (res.ok && res.d && res.d.created) {
+        if (typeof window.gtag === 'function') { window.gtag('event', 'sign_up', { method: 'email' }); }
+        fireConversion(CONV_EMAIL_SIGNUP);
+      }
     }).catch(function () {});
   }
 

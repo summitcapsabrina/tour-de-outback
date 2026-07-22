@@ -110,11 +110,14 @@ function setActiveNav() {
 // --- Newsletter Form (EmailOctopus Embedded) ---
 // EmailOctopus handles the form itself via its embedded script (submit, validation,
 // reCAPTCHA). On a successful signup EO redirects to ?eo_subscribed=1 (configured in
-// the EO form settings) — we fire the Google Ads "Email sign-up" conversion on return,
-// then strip the flag so a reload/bookmark can't re-fire it.
+// the EO form settings) — we fire the GA4 "sign_up" completion event and the Google
+// Ads "Email sign-up" conversion on return, then strip the flag so a reload/bookmark
+// can't re-fire them. GA4's automatic form_start (enhanced measurement) fires as soon
+// as someone starts typing in the embedded form — this is the actual completion event.
 function initNewsletter() {
   if (!/[?&]eo_subscribed=1/.test(location.search)) return;
   if (typeof gtag === 'function') {
+    gtag('event', 'sign_up', { method: 'email' });
     gtag('event', 'conversion', { 'send_to': 'AW-11006704390/-3_RCM7OgdAcEIb2s4Ap' });
   }
   try {
