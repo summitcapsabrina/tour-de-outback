@@ -5372,6 +5372,9 @@ exports.adminAccountingUpdateLine = onRequest(
       } else if (oldReceipt && oldReceipt.id) {
         line.receipt = { id: oldReceipt.id }; // untouched → keep the existing one
       }
+      // A line generated from a recurring expense keeps that tag through manual
+      // edits — it's an internal detail, never settable from the line form itself.
+      if (target.recurringId) line.recurringId = target.recurringId;
       lines[index] = line;
       lines = acctSortLines(lines);
       await ref.set({
@@ -5429,6 +5432,223 @@ exports.adminAccountingDeleteLine = onRequest(
     } catch (err) {
       logger.error('adminAccountingDeleteLine failed', err);
       return res.status(500).json({ error: 'Could not delete the line.' });
+    }
+  }
+);
+
+// ===========================================================================
+// Recurring expenses — a template (name/category/amount/frequency/date range)
+// stored in accounting_recurring_expenses; admin-accounting-recurring-sync
+// posts each occurrence as a normal expense line (tagged with recurringId)
+// into the matching year's books, up through today. initAccounting() on the
+// client calls the sync endpoint once per admin page load, so a recurring
+// expense keeps "running" with no further action — the admin just needs to
+// open the admin panel occasionally to catch it up.
+// ---------------------------------------------------------------------------
+const ACCT_RECUR_FREQS = ['weekly', 'monthly', 'quarterly', 'yearly'];
+
+function acctPad2(n) { return (n < 10 ? '0' : '') + n; }
+function acctDaysInMonth(y, m) { // m: 1-12
+  const leap = (y % 4 === 0 && y % 100 !== 0) || (y % 400 === 0);
+  return [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
+}
+// Advance an ISO date by one period of the given frequency, clamping the day
+// to the target month's length (e.g. Jan 31 monthly -> Feb 28/29).
+function acctAdvanceIso(iso, freq) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  const y = +m[1], mo = +m[2], d = +m[3];
+  if (freq === 'weekly') {
+    const dt = new Date(Date.UTC(y, mo - 1, d + 7));
+    return dt.getUTCFullYear() + '-' + acctPad2(dt.getUTCMonth() + 1) + '-' + acctPad2(dt.getUTCDate());
+  }
+  const step = freq === 'monthly' ? 1 : (freq === 'quarterly' ? 3 : 12);
+  const total = (y * 12 + (mo - 1)) + step;
+  const ny = Math.floor(total / 12), nm = (total % 12) + 1;
+  const nd = Math.min(d, acctDaysInMonth(ny, nm));
+  return ny + '-' + acctPad2(nm) + '-' + acctPad2(nd);
+}
+// Every occurrence date due for one template, from its last generated date
+// (exclusive) or start date (inclusive) through `through`. Capped so a bad or
+// very old start date can't blow up a single request.
+function acctDueDates(tmpl, through) {
+  const dates = [];
+  let next = tmpl.lastGeneratedDate ? acctAdvanceIso(tmpl.lastGeneratedDate, tmpl.frequency) : tmpl.startDate;
+  let guard = 0;
+  while (next <= through && guard < 1000) {
+    dates.push(next);
+    next = acctAdvanceIso(next, tmpl.frequency);
+    guard++;
+  }
+  return dates;
+}
+
+// Generate every occurrence due for one recurring-expense template snapshot,
+// posting each as a normal expense line into the matching year's books.
+// Returns the number of occurrences generated (0 if none were due).
+async function acctSyncRecurringTemplate(tmplSnap) {
+  const tmpl = tmplSnap.data() || {};
+  if (!tmpl.startDate || ACCT_RECUR_FREQS.indexOf(tmpl.frequency) === -1) return 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const through = tmpl.endDate ? (tmpl.endDate < today ? tmpl.endDate : today) : today;
+  if (tmpl.lastGeneratedDate && tmpl.lastGeneratedDate >= through) return 0;
+  const dueDates = acctDueDates(tmpl, through);
+  if (!dueDates.length) return 0;
+
+  // Group by year so each affected year's doc is only read/written once.
+  const byYear = {};
+  dueDates.forEach((iso) => { const y = +iso.slice(0, 4); (byYear[y] = byYear[y] || []).push(iso); });
+
+  for (const yStr of Object.keys(byYear)) {
+    const y = Number(yStr);
+    const yRef = db.collection('accounting_years').doc(String(y));
+    const ySnap = await yRef.get();
+    const yData = ySnap.exists ? (ySnap.data() || {}) : {};
+    let lines = Array.isArray(yData.expenses) ? yData.expenses.slice() : [];
+    byYear[y].forEach((iso) => {
+      const line = acctCleanLine({
+        name: tmpl.name, category: tmpl.category, amount: tmpl.amount,
+        count: tmpl.count, unit: tmpl.unit, checkNumber: tmpl.checkNumber,
+        note: tmpl.note, date: iso,
+      });
+      line.recurringId = tmplSnap.id;
+      lines.push(line);
+    });
+    lines = acctSortLines(lines);
+    const patch = { year: y, expenses: lines, updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+    if (!ySnap.exists) { patch.status = 'in-progress'; patch.revenue = []; patch.openingBalance = null; }
+    await yRef.set(patch, { merge: true });
+  }
+
+  const lastGen = dueDates[dueDates.length - 1];
+  await tmplSnap.ref.set({ lastGeneratedDate: lastGen, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  return dueDates.length;
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-accounting-recurring-save — create (no id) or update
+// (with id) a recurring-expense template, then immediately generate any
+// occurrences already due (e.g. backfilling history on a brand-new template).
+// The start date is fixed at creation; edits keep whatever it already is.
+// body: { id?, name, category, amount|count+unit, checkNumber?, note?,
+//         frequency, startDate, endDate|null }
+// returns: { ok, id, generated }
+// ---------------------------------------------------------------------------
+exports.adminAccountingRecurringSave = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    const body = req.body || {};
+    const id = (typeof body.id === 'string' && /^rec_[a-z0-9]+$/i.test(body.id)) ? body.id : null;
+    const col = db.collection('accounting_recurring_expenses');
+
+    try {
+      let ref, existing = null;
+      if (id) {
+        ref = col.doc(id);
+        const snap = await ref.get();
+        if (!snap.exists) return res.status(404).json({ error: 'That recurring expense no longer exists.' });
+        existing = snap.data();
+      } else {
+        ref = col.doc('rec_' + crypto.randomUUID().replace(/-/g, ''));
+      }
+
+      const name = String(body.name == null ? '' : body.name).trim().slice(0, 200);
+      const category = String(body.category == null ? '' : body.category).trim().slice(0, 60);
+      const frequency = ACCT_RECUR_FREQS.indexOf(body.frequency) !== -1 ? body.frequency : null;
+      const startDate = existing ? existing.startDate
+        : ((typeof body.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.startDate)) ? body.startDate : null);
+      let endDate = null;
+      if (body.endDate !== null && body.endDate !== undefined && body.endDate !== '') {
+        if (typeof body.endDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.endDate)) {
+          return res.status(400).json({ error: 'That end date isn’t valid.' });
+        }
+        endDate = body.endDate;
+      }
+      const count = acctNum(body.count);
+      let unit = acctNum(body.unit);
+      let amount = acctNum(body.amount);
+      if (amount === null && count !== null && unit !== null) amount = Math.round(count * unit * 100) / 100;
+      else if (unit === null && count !== null && count !== 0 && amount !== null) unit = Math.round((amount / count) * 100) / 100;
+      const checkNumber = String(body.checkNumber == null ? '' : body.checkNumber).trim().slice(0, 30);
+      const note = String(body.note == null ? '' : body.note).trim().slice(0, 300);
+
+      if (!category) return res.status(400).json({ error: 'Choose a category before saving — every expense needs one.' });
+      if (!name) return res.status(400).json({ error: 'Give the expense a name.' });
+      if (!startDate) return res.status(400).json({ error: 'Pick a start date for this recurring expense.' });
+      if (!frequency) return res.status(400).json({ error: 'Choose how often this expense repeats.' });
+      if (amount === null) return res.status(400).json({ error: 'Enter an amount for this expense.' });
+      if (endDate && endDate < startDate) return res.status(400).json({ error: 'The end date can’t be before the start date.' });
+
+      const data = {
+        name: name, category: category, amount: Math.round(amount * 100) / 100,
+        frequency: frequency, startDate: startDate, endDate: endDate,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedBy: adminUser.email || adminUser.uid || null,
+      };
+      data.count = count !== null ? count : admin.firestore.FieldValue.delete();
+      data.unit = unit !== null ? unit : admin.firestore.FieldValue.delete();
+      data.checkNumber = checkNumber ? checkNumber : admin.firestore.FieldValue.delete();
+      data.note = note ? note : admin.firestore.FieldValue.delete();
+      if (!existing) { data.createdAt = admin.firestore.FieldValue.serverTimestamp(); data.lastGeneratedDate = null; }
+      await ref.set(data, { merge: true });
+      const fresh = await ref.get();
+      const generated = await acctSyncRecurringTemplate(fresh);
+      return res.json({ ok: true, id: ref.id, generated: generated });
+    } catch (err) {
+      logger.error('adminAccountingRecurringSave failed', err);
+      return res.status(500).json({ error: 'Could not save the recurring expense.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-accounting-recurring-delete — remove a recurring-expense
+// template. Already-posted occurrences stay in the books; only future
+// occurrences stop.
+// body: { id }
+// ---------------------------------------------------------------------------
+exports.adminAccountingRecurringDelete = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    const body = req.body || {};
+    const id = (typeof body.id === 'string' && /^rec_[a-z0-9]+$/i.test(body.id)) ? body.id : null;
+    if (!id) return res.status(400).json({ error: 'Bad recurring expense id.' });
+    try {
+      await db.collection('accounting_recurring_expenses').doc(id).delete();
+      return res.json({ ok: true });
+    } catch (err) {
+      logger.error('adminAccountingRecurringDelete failed', err);
+      return res.status(500).json({ error: 'Could not delete the recurring expense.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-accounting-recurring-sync — catch up every recurring-expense
+// template on occurrences due up through today. Idempotent; safe to call on
+// every admin page load (which is exactly what the client does).
+// ---------------------------------------------------------------------------
+exports.adminAccountingRecurringSync = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    try {
+      const snap = await db.collection('accounting_recurring_expenses').get();
+      let total = 0;
+      for (const doc of snap.docs) {
+        total += await acctSyncRecurringTemplate(doc);
+      }
+      return res.json({ ok: true, generated: total });
+    } catch (err) {
+      logger.error('adminAccountingRecurringSync failed', err);
+      return res.status(500).json({ error: 'Could not sync recurring expenses.' });
     }
   }
 );

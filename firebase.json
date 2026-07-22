@@ -301,6 +301,18 @@
         "function": { "functionId": "adminAccountingDeleteLine", "region": "us-central1" }
       },
       {
+        "source": "/api/admin-accounting-recurring-save",
+        "function": { "functionId": "adminAccountingRecurringSave", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-recurring-delete",
+        "function": { "functionId": "adminAccountingRecurringDelete", "region": "us-central1" }
+      },
+      {
+        "source": "/api/admin-accounting-recurring-sync",
+        "function": { "functionId": "adminAccountingRecurringSync", "region": "us-central1" }
+      },
+      {
         "source": "/api/admin-receipt",
         "function": { "functionId": "adminReceipt", "region": "us-central1" }
       }

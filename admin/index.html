@@ -902,6 +902,7 @@
                       </table>
                     </div>
                     <button class="adm-btn small" id="acct-add-expense" style="background:#666;margin-top:8px;">+ Add expense</button>
+                    <button class="adm-btn small" id="acct-manage-recurring" style="background:#666;margin-top:8px;margin-left:8px;">Recurring expenses<span id="acct-recurring-badge"></span></button>
                     <p class="acct-exp-hint">Click any line to edit it, attach a receipt, or delete it. New expenses need a category, name, date, and amount before they can be saved.</p>
                   </div>
 
@@ -6052,11 +6053,15 @@
     var ACCT_INCOME_CATS = ['Registration', 'Camping', 'Grants', 'Sponsorship', 'Sales'];
     var ACCT_EXPENSE_CATS = ['Administrative Expense', 'Aid Stations', 'After Party',
       'Assets', 'Beneficiary', 'Marketing', 'Registration', 'SWAG', 'Pre Party'];
+    var ACCT_RECUR_FREQ_LABELS = { weekly: 'Weekly', monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' };
     var acctYears = {};        // year(number) -> saved doc data
     var acctCurYear = null;    // selected year (number)
     var acctDirty = false;
     var acctLoaded = false;
     var acctRiderCounts = {};  // year(number) -> registrants (from registration_history)
+    var acctRecurringTemplates = {}; // id -> recurring-expense template doc data
+    var acctModalKind = null;        // 'line' | 'recurring-list' | 'recurring-form' — what #acct-exp-modal is showing
+    var acctRecurringFormId = null;  // template id being edited in the recurring form, else null (add mode)
 
     function acctPnum(v) { if (v === '' || v == null) return null; var n = parseFloat(v); return isFinite(n) ? n : null; }
     function acctR2(n) { return Math.round(n * 100) / 100; }
@@ -6203,6 +6208,7 @@
       // opens it in Edit mode (edit fields, swap the receipt, or delete).
       $('acct-add-revenue').addEventListener('click', function () { acctOpenLineModal('revenue', 'add', null); });
       $('acct-add-expense').addEventListener('click', function () { acctOpenLineModal('expenses', 'add', null); });
+      $('acct-manage-recurring').addEventListener('click', acctOpenRecurringList);
       [['acct-rev-table', 'revenue'], ['acct-exp-table', 'expenses']].forEach(function (pair) {
         $(pair[0]).querySelector('tbody').addEventListener('click', function (e) {
           var tr = e.target.closest('tr'); if (!tr || tr.classList.contains('acct-empty-row')) return;
@@ -6229,6 +6235,17 @@
         $('acct-empty').hidden = false;
         $('acct-seed-result').textContent = 'Could not load books: ' + (err && err.message || err);
       });
+      // Recurring-expense templates — live list powering the manager modal + badge.
+      onSnapshot(collection(db, 'accounting_recurring_expenses'), function (snap) {
+        acctRecurringTemplates = {};
+        snap.forEach(function (docSnap) { acctRecurringTemplates[docSnap.id] = docSnap.data() || {}; });
+        acctRenderRecurringBadge();
+        if (acctModalKind === 'recurring-list') acctOpenRecurringList();
+      }, function () { /* badge just stays blank if this fails to load */ });
+      // Catch up any recurring expenses that have come due since the admin's
+      // last visit — this is what keeps a recurring expense "running" without
+      // Dave ever re-entering it; it's a no-op if nothing is due yet.
+      apiPost(API.adminAccountingRecurringSync, {}).catch(function () { /* best-effort */ });
       // Registrant counts per year (from registration history) — powers the default
       // rider count + the cost-per-rider chart, so Dave doesn't re-enter them.
       acctLoadRiderCounts();
@@ -6523,8 +6540,9 @@
       var checkCell = side === 'expenses'
         ? '<td class="ctr acct-chk">' + (line.checkNumber ? esc(String(line.checkNumber)) : '') + '</td>'
         : '';
+      var recurTag = line.recurringId ? ' <span title="Posted automatically from a recurring expense">🔁</span>' : '';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
-        '<td class="acct-name">' + esc(line.name || '—') + '</td>' +
+        '<td class="acct-name">' + esc(line.name || '—') + recurTag + '</td>' +
         '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-cat">' + esc(line.category || '—') + '</td>' +
         checkCell +
@@ -6638,11 +6656,14 @@
       });
     }
 
+    // Shared by the line modal and the recurring-expense modal (list + form) —
+    // all three reuse the same #acct-exp-modal container, one at a time.
     function acctCloseLineModal() {
       $('acct-exp-modal').hidden = true;
       $('acct-exp-modal-body').innerHTML = '';
       acctModalSide = acctModalMode = acctModalIdx = acctModalExpected = null;
       acctModalHadReceipt = false; acctModalRemoveReceipt = false; acctExpReceiptDataUrl = null;
+      acctModalKind = null; acctRecurringFormId = null;
       if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} acctExpBlobUrl = null; }
     }
 
@@ -6651,6 +6672,7 @@
     function acctOpenLineModal(side, mode, idx) {
       if (acctCurYear == null) return;
       if (acctExpBlobUrl) { try { URL.revokeObjectURL(acctExpBlobUrl); } catch (e) {} acctExpBlobUrl = null; }
+      acctModalKind = 'line';
       acctModalSide = side; acctModalMode = mode; acctModalIdx = (mode === 'edit' ? idx : null);
       acctExpReceiptDataUrl = null; acctModalRemoveReceipt = false;
 
@@ -6908,6 +6930,174 @@
       }).catch(function (e) {
         if (yes) yes.disabled = false; if (no) no.disabled = false;
         msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not delete the line.';
+      });
+    }
+
+    // ================= Recurring expenses (list, add/edit form) =================
+    // A recurring expense is a template — name/category/amount/frequency/date
+    // range — stored in accounting_recurring_expenses. The server posts each
+    // occurrence as a normal expense line (tagged with recurringId) up through
+    // today every time admin-accounting-recurring-sync runs, which initAccounting
+    // calls once per admin page load. So "keeping it running" needs no further
+    // action here beyond opening the admin panel occasionally.
+    function acctRenderRecurringBadge() {
+      var n = Object.keys(acctRecurringTemplates).length;
+      var b = $('acct-recurring-badge'); if (b) b.textContent = n ? ' (' + n + ')' : '';
+    }
+
+    function acctOpenRecurringList() {
+      acctModalKind = 'recurring-list';
+      var ids = Object.keys(acctRecurringTemplates).sort(function (a, b) {
+        return (acctRecurringTemplates[a].name || '').localeCompare(acctRecurringTemplates[b].name || '');
+      });
+      var rows = ids.map(function (id) {
+        var t = acctRecurringTemplates[id];
+        var range = (t.startDate ? acctFmtDate(t.startDate) : '?') + ' – ' + (t.endDate ? acctFmtDate(t.endDate) : 'ongoing');
+        var freqLbl = ACCT_RECUR_FREQ_LABELS[t.frequency] || t.frequency || '—';
+        return '<tr data-rid="' + id + '">' +
+          '<td>' + esc(t.name || '—') + '<div style="font-size:.78rem;color:#888;">' + esc(t.category || '—') + ' · ' + esc(freqLbl) + ' · ' + esc(range) + '</div></td>' +
+          '<td class="num" style="white-space:nowrap;vertical-align:top;">' + acctMoney(+t.amount || 0) + '</td>' +
+          '<td style="white-space:nowrap;vertical-align:top;">' +
+            '<button type="button" class="adm-btn small" data-raction="edit" style="background:#666;">Edit</button> ' +
+            (t.endDate ? '' : '<button type="button" class="adm-btn small" data-raction="end" style="background:#a35200;">End now</button> ') +
+            '<button type="button" class="adm-btn small em-danger" data-raction="delete">Delete</button>' +
+          '</td></tr>';
+      }).join('');
+      $('acct-exp-modal-body').innerHTML =
+        '<h3>Recurring expenses</h3>' +
+        '<p class="em-sub">Occurrences post automatically as normal expense lines, up through today, each time the admin panel loads.</p>' +
+        (ids.length
+          ? '<div style="overflow-x:auto;"><table class="acct-table" style="table-layout:auto;min-width:0;"><tbody>' + rows + '</tbody></table></div>'
+          : '<p class="sub">No recurring expenses yet.</p>') +
+        '<div class="em-actions">' +
+          '<button type="button" class="adm-btn" id="em-recurring-add">+ Add recurring expense</button>' +
+          '<button type="button" class="adm-btn em-ghost" id="em-cancel">Close</button>' +
+        '</div>' +
+        '<div class="em-msg" id="em-msg"></div>';
+      $('acct-exp-modal').hidden = false;
+      $('em-cancel').addEventListener('click', acctCloseLineModal);
+      $('em-recurring-add').addEventListener('click', function () { acctOpenRecurringForm('add', null); });
+      $('acct-exp-modal-body').querySelectorAll('[data-raction]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.closest('tr').getAttribute('data-rid');
+          var action = btn.getAttribute('data-raction');
+          if (action === 'edit') acctOpenRecurringForm('edit', id);
+          else if (action === 'end') acctEndRecurring(id);
+          else if (action === 'delete') acctDeleteRecurringConfirm(id);
+        });
+      });
+    }
+
+    // Add ('add') or edit ('edit', with the template's id) a recurring expense.
+    // Start date is locked once created, since changing it after occurrences
+    // have already posted would create gaps or duplicates.
+    function acctOpenRecurringForm(mode, id) {
+      acctModalKind = 'recurring-form';
+      acctRecurringFormId = (mode === 'edit') ? id : null;
+      var t = (mode === 'edit') ? (acctRecurringTemplates[id] || {}) : {};
+      var vName = esc(t.name || ''), vCat = t.category || '',
+          vAmt = (t.amount != null ? acctFmtAmount(t.amount) : ''),
+          vCount = (t.count != null ? esc(String(t.count)) : ''),
+          vUnit = (t.unit != null ? esc(String(t.unit)) : ''),
+          vCheck = esc(t.checkNumber || ''), vNote = esc(t.note || ''),
+          vStart = t.startDate || '', vEnd = t.endDate || '',
+          noEnd = !t.endDate, vFreq = t.frequency || 'monthly';
+      var startLocked = (mode === 'edit');
+
+      $('acct-exp-modal-body').innerHTML =
+        '<h3>' + (mode === 'add' ? 'Add ' : 'Edit ') + 'recurring expense</h3>' +
+        '<p class="em-sub">' + acctCurYear + ' books and beyond. Fields marked * are required.</p>' +
+        '<div class="em-field"><label>Expense *</label><input type="text" id="em-name" placeholder="What it’s for" value="' + vName + '"></div>' +
+        '<div class="em-field"><label>Category *</label><select id="em-cat">' + acctCatOptions(ACCT_EXPENSE_CATS, vCat) + '</select></div>' +
+        '<div class="em-field"><label>Check #</label><input type="text" id="em-check" placeholder="If paid by check" value="' + vCheck + '"></div>' +
+        '<div class="em-row2">' +
+          '<div class="em-field em-num"><label>Count</label><input type="text" inputmode="decimal" id="em-count" value="' + vCount + '"></div>' +
+          '<div class="em-field em-num"><label>Unit ($)</label><input type="text" inputmode="decimal" id="em-unit" value="' + vUnit + '"></div>' +
+          '<div class="em-field em-amt"><label>Amount ($) *</label><input type="text" inputmode="decimal" id="em-amt" value="' + vAmt + '"></div>' +
+        '</div>' +
+        '<div class="em-field"><label>Frequency *</label><select id="em-freq">' +
+          ['weekly', 'monthly', 'quarterly', 'yearly'].map(function (f) {
+            return '<option value="' + f + '"' + (f === vFreq ? ' selected' : '') + '>' + ACCT_RECUR_FREQ_LABELS[f] + '</option>';
+          }).join('') +
+        '</select></div>' +
+        '<div class="em-row2" style="grid-template-columns:1fr 1fr;">' +
+          '<div class="em-field"><label>Start date *</label><input type="date" id="em-start" value="' + vStart + '"' + (startLocked ? ' disabled' : '') + '></div>' +
+          '<div class="em-field"><label>End date</label><input type="date" id="em-end" value="' + vEnd + '"' + (noEnd ? ' disabled' : '') + '></div>' +
+        '</div>' +
+        '<label style="font-size:.85rem;display:flex;align-items:center;gap:6px;cursor:pointer;margin:-6px 0 13px;">' +
+          '<input type="checkbox" id="em-noend"' + (noEnd ? ' checked' : '') + '> No end date — keep this running' +
+        '</label>' +
+        (startLocked ? '<p class="acct-exp-hint" style="margin:-8px 0 13px;">The start date can’t be changed once a recurring expense has begun posting — delete and re-add it if you need a different start.</p>' : '') +
+        '<div class="em-field"><label>Note (optional)</label><textarea id="em-note" placeholder="Anything worth remembering">' + vNote + '</textarea></div>' +
+        '<div class="em-actions">' +
+          '<button type="button" class="adm-btn" id="em-save">' + (mode === 'add' ? 'Add' : 'Save changes') + '</button>' +
+          '<button type="button" class="adm-btn em-ghost" id="em-back">Back to list</button>' +
+        '</div>' +
+        '<div class="em-msg" id="em-msg"></div>';
+
+      $('em-cat').addEventListener('change', function () {
+        if (this.value !== '__new__') return;
+        var nm = (prompt('New category name:') || '').trim();
+        this.innerHTML = acctCatOptions(ACCT_EXPENSE_CATS, nm || '');
+      });
+      $('em-amt').addEventListener('blur', function () { var n = acctParse(this.value); this.value = (n == null ? '' : acctFmtAmount(n)); });
+      $('em-noend').addEventListener('change', function () {
+        $('em-end').disabled = this.checked;
+        if (this.checked) $('em-end').value = '';
+      });
+      $('em-back').addEventListener('click', acctOpenRecurringList);
+      $('em-save').addEventListener('click', function () { acctSubmitRecurring(mode); });
+    }
+
+    function acctSubmitRecurring(mode) {
+      var name = $('em-name').value.trim();
+      var cat = $('em-cat').value; if (cat === '__new__') cat = '';
+      var chk = ($('em-check').value || '').trim();
+      var c = acctParse($('em-count').value), u = acctParse($('em-unit').value), a = acctParse($('em-amt').value);
+      var effAmt = (a != null) ? a : ((c != null && u != null) ? acctR2(c * u) : null);
+      var freq = $('em-freq').value;
+      var start = ($('em-start').value || '').trim();
+      var noEnd = $('em-noend').checked;
+      var end = noEnd ? '' : ($('em-end').value || '').trim();
+      var note = $('em-note').value.trim();
+      var msg = $('em-msg');
+
+      if (!cat) { msg.style.color = '#cc0000'; msg.textContent = 'Choose a category before saving — every expense needs one.'; return; }
+      if (!name) { msg.style.color = '#cc0000'; msg.textContent = 'Give the expense a name.'; return; }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(start)) { msg.style.color = '#cc0000'; msg.textContent = 'Pick a start date.'; return; }
+      if (effAmt == null) { msg.style.color = '#cc0000'; msg.textContent = 'Enter an amount for this expense.'; return; }
+      if (end && end < start) { msg.style.color = '#cc0000'; msg.textContent = 'The end date can’t be before the start date.'; return; }
+
+      var body = { name: name, category: cat, frequency: freq, startDate: start, endDate: end || null, note: note, amount: (a != null ? acctR2(a) : effAmt) };
+      if (c != null) body.count = c;
+      if (u != null) body.unit = u;
+      if (chk) body.checkNumber = chk;
+      if (mode === 'edit' && acctRecurringFormId) body.id = acctRecurringFormId;
+
+      var btn = $('em-save'); btn.disabled = true;
+      msg.style.color = ''; msg.textContent = 'Saving…';
+      apiPost(API.adminAccountingRecurringSave, body).then(function (r) {
+        if (r.ok) { acctCloseLineModal(); }
+        else { btn.disabled = false; msg.style.color = '#cc0000'; msg.textContent = (r.d && r.d.error) || 'Could not save the recurring expense.'; }
+      }).catch(function (e) { btn.disabled = false; msg.style.color = '#cc0000'; msg.textContent = e.message || 'Could not save the recurring expense.'; });
+    }
+
+    function acctEndRecurring(id) {
+      var t = acctRecurringTemplates[id]; if (!t) return;
+      if (!confirm('Stop “' + (t.name || 'this recurring expense') + '” going forward? Entries already posted stay in the books.')) return;
+      var today = new Date().toISOString().slice(0, 10);
+      apiPost(API.adminAccountingRecurringSave, {
+        id: id, name: t.name, category: t.category, amount: t.amount, count: t.count, unit: t.unit,
+        checkNumber: t.checkNumber, note: t.note, frequency: t.frequency, endDate: today
+      }).then(function (r) { if (!r.ok) alert((r.d && r.d.error) || 'Could not stop the recurring expense.'); });
+    }
+
+    function acctDeleteRecurringConfirm(id) {
+      var t = acctRecurringTemplates[id]; if (!t) return;
+      if (!confirm('Delete the recurring expense “' + (t.name || '') + '”? Entries already posted stay in the books — only future occurrences stop.')) return;
+      apiPost(API.adminAccountingRecurringDelete, { id: id }).then(function (r) {
+        if (r.ok) acctCloseLineModal();
+        else alert((r.d && r.d.error) || 'Could not delete the recurring expense.');
       });
     }
 

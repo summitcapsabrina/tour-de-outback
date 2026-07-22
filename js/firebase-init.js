@@ -117,6 +117,9 @@ export const API = {
   adminAccountingAddLine: "/api/admin-accounting-add-line",
   adminAccountingUpdateLine: "/api/admin-accounting-update-line",
   adminAccountingDeleteLine: "/api/admin-accounting-delete-line",
+  adminAccountingRecurringSave: "/api/admin-accounting-recurring-save",
+  adminAccountingRecurringDelete: "/api/admin-accounting-recurring-delete",
+  adminAccountingRecurringSync: "/api/admin-accounting-recurring-sync",
   adminReceipt: "/api/admin-receipt",
   adminRiderCounts: "/api/admin-rider-counts"
 };

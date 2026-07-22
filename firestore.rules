@@ -64,6 +64,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Recurring-expense templates: admins read the live list in the Ledger's
+    // "Recurring expenses" manager; all writes go through the
+    // /api/admin-accounting-recurring-* Cloud Functions (Admin SDK).
+    match /accounting_recurring_expenses/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Everything else is closed to clients (donation/price/config/mail docs, etc.).
     match /{document=**} {
       allow read, write: if false;
