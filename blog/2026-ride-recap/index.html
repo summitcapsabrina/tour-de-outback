@@ -35,11 +35,11 @@
   <meta property="og:url" content="https://www.tourdeoregon.com/blog/2026-ride-recap/">
   <meta property="og:title" content="Missed the 2026 Ride? Here's What Happened">
   <meta property="og:description" content="A storm rolling over the sagebrush, campfire pizza, a live band under the tent, and five routes through Oregon's high desert. Here's the full story of the 2026 Oregon Tour de Outback.">
-  <meta property="og:image" content="https://www.tourdeoregon.com/blog/2026-ride-recap/fomo-07-morning-start.jpg">
+  <meta property="og:image" content="https://www.tourdeoregon.com/blog/2026-ride-recap/fomo-hero.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Missed the 2026 Ride? Here's What Happened">
   <meta name="twitter:description" content="The full story of the 2026 Oregon Tour de Outback, plus this year's Photo Contest winners.">
-  <meta name="twitter:image" content="https://www.tourdeoregon.com/blog/2026-ride-recap/fomo-07-morning-start.jpg">
+  <meta name="twitter:image" content="https://www.tourdeoregon.com/blog/2026-ride-recap/fomo-hero.jpg">
 
   <script type="application/ld+json">
   {
@@ -47,7 +47,7 @@
     "@type": "BlogPosting",
     "headline": "Missed the 2026 Ride? Here's What Happened",
     "description": "A storm rolling over the sagebrush, campfire pizza, a live band under the tent, and five routes through Oregon's high desert. Here's the full story of the 2026 Oregon Tour de Outback, plus this year's Photo Contest winners.",
-    "image": "https://www.tourdeoregon.com/blog/2026-ride-recap/fomo-07-morning-start.jpg",
+    "image": "https://www.tourdeoregon.com/blog/2026-ride-recap/fomo-hero.jpg",
     "datePublished": "2026-07-25",
     "author": { "@type": "Person", "name": "Dave Tucker" },
     "publisher": { "@type": "Organization", "name": "Oregon Tour de Outback" }
@@ -68,7 +68,7 @@
         <a href="/shop/">Shop</a>
         <a href="/blog/" class="active">Blog</a>
         <a href="/donate/">Donate</a>
-        <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Register</a>
+        <a href="/register/" data-reg-gate class="btn btn-primary" target="_blank">Register</a>
       </div>
       <div class="weather-widget" id="weather-widget"></div>
       <script>!function(){var c=sessionStorage.getItem('weatherData');if(c){var d=JSON.parse(c);var w=document.getElementById('weather-widget');if(w){var h='<span class="weather-current" role="button" tabindex="0"><span class="weather-main"><span class="weather-icon">'+d.icon+'</span> <span class="weather-temp">'+d.temp+'°F</span></span>';h+='<span class="weather-arrow">▾</span></span><div class="forecast-dropdown"></div>';w.innerHTML=h}}}()</script>
@@ -78,13 +78,17 @@
   </nav>
 
   <section class="hero hero-page">
-    <div class="hero-bg" style="background-image: url('fomo-07-morning-start.jpg'); background-color: #4a6741;"></div>
+    <div class="hero-bg" style="background-image: url('../../images/hero-road.jpg'); background-color: #4a6741;"></div>
     <div class="hero-content">
       <h1>The Outback Journal</h1>
     </div>
   </section>
 
   <style>
+    .blog-featured-image {
+      max-width: 50%;
+      margin-bottom: 40px;
+    }
     .blog-float-right, .blog-float-left {
       width: 42%;
       border-radius: 8px;
@@ -176,7 +180,7 @@
           <a href="/blog/">&larr; All Posts</a>
         </div>
         <div class="blog-featured-image">
-          <img src="fomo-07-morning-start.jpg" alt="A big group of riders gathered at the Lake County Fairgrounds before the 2026 Oregon Tour de Outback rollout">
+          <img src="fomo-hero.jpg" alt="A big group of riders gathered at the Lake County Fairgrounds before the 2026 Oregon Tour de Outback rollout">
         </div>
       </div>
       <div class="container blog-article">
@@ -309,7 +313,7 @@
         <div class="blog-cta">
           <h3>Don't Just Read About Next Year</h3>
           <p>The Oregon Tour de Outback returns June 26, 2027, but registration isn't open yet. Join the email list and we'll let you know the moment it launches.</p>
-          <a href="https://www.bikereg.com/tour-de-outback" class="btn btn-primary" target="_blank">Get Notified</a>
+          <a href="/register/" data-reg-gate class="btn btn-primary" target="_blank">Get Notified</a>
         </div>
       </div>
     </article>
@@ -343,7 +347,7 @@
               <!-- <li><a href="/shop/">Shop</a></li> -->
               <li><a href="/volunteer/">Volunteer</a></li>
               <li><a href="/blog/">Blog</a></li>
-              <li><a href="https://www.bikereg.com/tour-de-outback" target="_blank">Register</a></li>
+              <li><a href="/register/" data-reg-gate target="_blank">Register</a></li>
             </ul>
           </div>
           <div class="footer-social">

@@ -129,7 +129,7 @@ function initNewsletter() {
 
 // --- Register Button Click Tracking (GA4 + Google Ads + Meta Pixel) ---
 function initRegisterTracking() {
-  document.querySelectorAll('a[href*="bikereg.com"]').forEach(link => {
+  document.querySelectorAll('a[data-reg-gate]').forEach(link => {
     link.addEventListener('click', function(e) {
       if (typeof gtag === 'function') {
         // GA4 event
@@ -856,7 +856,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fa.textContent = 'Donate';
     li.appendChild(fa);
     var regLi = Array.prototype.slice.call(footUl.querySelectorAll('li')).filter(function (l) {
-      var x = l.querySelector('a'); return x && /bikereg/.test(x.href);
+      var x = l.querySelector('a'); return x && x.hasAttribute('data-reg-gate');
     })[0];
     if (regLi) { footUl.insertBefore(li, regLi); } else { footUl.appendChild(li); }
   }
@@ -899,10 +899,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.head.appendChild(s);
 })();
 
-// --- Register gate: BikeReg is disabled. Any "Register" link (which points to
-//     bikereg.com) instead opens a popup: registration opens January 1st, with an
-//     email-capture form for launch updates. Works site-wide (nav, footer, hero,
-//     register page). ---
+// --- Register gate: online registration isn't open yet. Any link marked
+//     data-reg-gate opens a popup instead of navigating: registration opens
+//     January 1st, with an email-capture form for launch updates. Works
+//     site-wide (nav, footer, hero, register page). ---
 (function registerGate() {
   var injected = false, overlay = null;
   function inject() {
@@ -965,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function close() { if (overlay) overlay.classList.remove('open'); }
   // Capture-phase so we run before the link's own handlers and block navigation.
   document.addEventListener('click', function (e) {
-    var a = e.target.closest ? e.target.closest('a[href*="bikereg"]') : null;
+    var a = e.target.closest ? e.target.closest('a[data-reg-gate]') : null;
     if (a) { e.preventDefault(); e.stopPropagation(); open(); }
   }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
