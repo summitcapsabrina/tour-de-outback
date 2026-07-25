@@ -128,6 +128,33 @@
       font-weight: 600;
       color: #cc0000;
     }
+    .fomo-winners-row {
+      display: flex;
+      gap: 28px;
+      margin: 24px 0;
+    }
+    .fomo-winners-row .winner-col {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .fomo-winners-row .winner-photo {
+      width: 100%;
+      display: block;
+      border-radius: 8px;
+      object-fit: cover;
+      aspect-ratio: 1 / 1;
+    }
+    .fomo-winners-row .float-caption {
+      margin-top: 10px;
+      margin-bottom: 4px;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .fomo-winners-row p:last-child {
+      font-size: 0.92rem;
+      color: #555;
+      line-height: 1.6;
+    }
     @media (max-width: 768px) {
       .blog-float-right, .blog-float-left,
       .blog-float-right.size-sm, .blog-float-left.size-sm,
@@ -135,6 +162,9 @@
         float: none;
         width: 100%;
         margin: 20px 0;
+      }
+      .fomo-winners-row {
+        flex-direction: column;
       }
     }
   </style>
@@ -257,19 +287,22 @@
 
         <h3>Photo Contest Winners</h3>
 
-        <div class="blog-float-left">
-          <img src="winner-jill-mulder.jpg" class="ar-portrait" alt="Three gravel riders kicking up dust on a forest trail, photo by Jill Mulder">
-          <p class="float-caption"><span class="fomo-winner-name">Jill Mulder</span> &mdash; dust, pines, and pace line</p>
+        <p>Every year riders submit their best shots from the road, and every year it gets harder to pick winners. This year the field came down to two photos, and both earned the win outright.</p>
+
+        <div class="fomo-winners-row">
+          <div class="winner-col">
+            <img src="winner-jill-mulder.jpg" class="winner-photo" alt="Three gravel riders kicking up dust on a forest trail, photo by Jill Mulder">
+            <p class="float-caption"><span class="fomo-winner-name">Jill Mulder</span></p>
+            <p>Dust, shadow, and a pace line that keeps rolling through a stand of ponderosa pine &mdash; this shot captures exactly what the gravel routes feel like from inside the pack.</p>
+          </div>
+          <div class="winner-col">
+            <img src="winner-michael-fitzsimmons.jpg" class="winner-photo" alt="A storm front rolling over a high desert road, photo by Michael Fitzsimmons">
+            <p class="float-caption"><span class="fomo-winner-name">Michael Fitzsimmons</span></p>
+            <p>Caught at the exact moment the storm mentioned above swallowed the road ahead, a shot that says more about riding in the Oregon outback than a paragraph ever could.</p>
+          </div>
         </div>
 
-        <p>Every year riders submit their best shots from the road, and every year it gets harder to pick winners. <strong>Jill Mulder's</strong> photo of three riders kicking up dust through a stand of ponderosa pine captures exactly what the gravel routes feel like from inside the pack: dust, shadow, and a pace line that just keeps rolling.</p>
-
-        <div class="blog-float-right">
-          <img src="winner-michael-fitzsimmons.jpg" alt="A storm front rolling over a high desert road, photo by Michael Fitzsimmons">
-          <p class="float-caption"><span class="fomo-winner-name">Michael Fitzsimmons</span> &mdash; the storm, up close</p>
-        </div>
-
-        <p><strong>Michael Fitzsimmons</strong> caught the storm mentioned above at the exact moment it swallowed the road ahead, a shot that says more about riding in the Oregon outback than a paragraph of description ever could. Congratulations to both of this year's winners, and to everyone who submitted a photo &mdash; picking just two never gets easier.</p>
+        <p>Congratulations to both of this year's winners, and to everyone who submitted a photo. Picking just two never gets easier.</p>
 
         <div class="clearfix"></div>
 
