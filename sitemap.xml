@@ -72,6 +72,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.tourdeoregon.com/blog/2026-ride-recap/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.tourdeoregon.com/privacy/</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
