@@ -198,6 +198,7 @@
     table.reg-table th { font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; color: #888; position: sticky; top: 0; background: #fff; }
     /* ---------- Dark mode ---------- */
     html.dark { background: #15171a; }
+    html.dark body { background: #15171a; }
     /* Keep the hero veil the SAME 0.50 see-through as light mode, just dark instead of white. */
     html.dark .page-content { background-color: rgba(21, 23, 26, 0.50); }
     html.dark .admin-card { background: #1e2126; box-shadow: 0 6px 28px rgba(0,0,0,0.55); }
@@ -749,9 +750,9 @@
         </div>
 
         <div id="view-admin" hidden>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-            <p class="admin-lead" id="admin-welcome" style="margin:0;">Site administration</p>
+          <div style="display:flex;justify-content:flex-start;align-items:center;gap:12px;flex-wrap:wrap;">
             <button class="adm-btn small" id="theme-toggle" style="background:#333;">🌙 Dark</button>
+            <p class="admin-lead" id="admin-welcome" style="margin:0;">Site administration</p>
           </div>
           <div class="admin-card">
             <div class="admin-tabs" id="admin-tabs">
@@ -925,7 +926,7 @@
                     <div style="overflow-x:auto;">
                       <table class="acct-table acct-readonly" id="acct-rev-table">
                         <thead><tr>
-                          <th>Date</th><th>Source</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th>
+                          <th>Date</th><th>Source</th><th>Category</th><th class="ctr">Unit</th><th class="ctr">Count</th><th class="num">Amount</th><th class="num">Rcpt</th><th class="ctr">Copy</th>
                         </tr></thead>
                         <tbody></tbody>
                       </table>
@@ -6599,7 +6600,7 @@
     // the right line in the edit modal.
     function acctRenderLines(side) {
       var tid = side === 'revenue' ? 'acct-rev-table' : 'acct-exp-table';
-      var colspan = side === 'revenue' ? 7 : 10;
+      var colspan = side === 'revenue' ? 8 : 10;
       var tb = $(tid).querySelector('tbody');
       var all = acctWorkingLines(side);
       if (!all.length) {
@@ -6648,9 +6649,7 @@
         : '';
       var recurTag = line.recurringId ? ' <span title="Posted automatically from a recurring expense">🔁</span>' : '';
       var refundTag = line.refund ? ' <span class="acct-refund-tag" title="Refund — subtracted from total expenses">↩ Refund</span>' : '';
-      var dupCell = side === 'expenses'
-        ? '<td class="ctr"><button type="button" class="acct-dup-btn" title="Duplicate this expense">⧉</button></td>'
-        : '';
+      var dupCell = '<td class="ctr"><button type="button" class="acct-dup-btn" title="Duplicate this ' + (side === 'expenses' ? 'expense' : 'revenue line') + '">⧉</button></td>';
       return '<tr data-idx="' + idx + '" title="Click to edit or delete">' +
         '<td class="acct-date">' + dateCell + '</td>' +
         '<td class="acct-name">' + esc(line.name || '—') + recurTag + refundTag + '</td>' +
@@ -7174,7 +7173,8 @@
       if (src.checkNumber) line.checkNumber = src.checkNumber;
       if (src.note) line.note = src.note;
       if (src.refund) line.refund = true;
-      var btn = document.querySelector('#acct-exp-table tr[data-idx="' + idx + '"] .acct-dup-btn');
+      var tid = side === 'revenue' ? 'acct-rev-table' : 'acct-exp-table';
+      var btn = document.querySelector('#' + tid + ' tr[data-idx="' + idx + '"] .acct-dup-btn');
       if (btn) btn.disabled = true;
       apiPost(API.adminAccountingAddLine, { year: acctCurYear, side: side, line: line }).then(function (r) {
         if (r.ok && r.d && r.d.lines) { acctApplyLines(side, r.d.lines); }
