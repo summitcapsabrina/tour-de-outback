@@ -260,7 +260,12 @@ import {
   }
 
   // ---- Signed-in account dropdown ----
-  function renderSignedIn(user) {
+  // isAdmin reflects the FULL admin check (super-admin email OR the admin:true
+  // custom claim) — same source of truth the chat widget's admin gate uses — so
+  // a claim-granted admin (not just the hardcoded super-admin email) sees the
+  // Admin button too, instead of silently losing the chat widget with no
+  // indication of why.
+  function renderSignedIn(user, isAdmin) {
     var photo = photoOf(user);
     var pic = photo ? avatarImg(photo) : HEAD_SVG;
     menu.innerHTML =
@@ -268,7 +273,7 @@ import {
       '<div class="nm">' + esc(user.displayName || 'Your account') + '</div>' +
       '<div class="em">' + esc(user.email || '') + '</div></div></div>' +
       '<a class="tdo-btn tdo-btn-primary" href="/account/">My Account</a>' +
-      (isAdminUser(user) ? '<a class="tdo-btn" style="background:#222;color:#fff" href="/admin/">Admin</a>' : '') +
+      (isAdmin ? '<a class="tdo-btn" style="background:#222;color:#fff" href="/admin/">Admin</a>' : '') +
       '<button class="tdo-btn" style="background:#f0f0f0;color:#333" id="tdo-signout">Sign out</button>';
     wirePhotoFallback(menu);
     menu.querySelector('#tdo-signout').addEventListener('click', function () {
@@ -307,12 +312,13 @@ import {
       if (cachePhoto) localStorage.setItem('tdoAvatarPhoto', cachePhoto);
       else localStorage.removeItem('tdoAvatarPhoto');
     } catch (e) { /* storage disabled */ }
-    if (user) { renderSignedIn(user); closeModal(); }
-    else { menu.innerHTML = ''; closeMenu(); }
-    // Resolve the admin flag before publishing state, so listeners (the chat
-    // widget) see a consistent view. The cached-claim read resolves in a
-    // microtask for non-admins, so gate dismissal isn't meaningfully delayed.
+    if (!user) { menu.innerHTML = ''; closeMenu(); }
+    // Resolve the admin flag before rendering the dropdown / publishing state,
+    // so the Admin button and the chat widget's admin gate agree. The
+    // cached-claim read resolves in a microtask for non-admins, so this isn't
+    // meaningfully delayed.
     cachedIsAdmin(user).then(function (isAdmin) {
+      if (user) { renderSignedIn(user, isAdmin); closeModal(); }
       window.tdoAuth.currentUser = user
         ? { uid: user.uid, displayName: user.displayName || '', email: user.email || '' }
         : null;
