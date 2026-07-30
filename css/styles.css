@@ -2300,6 +2300,13 @@ h1, h2, h3, h4, h5, h6 {
   .blog-article h3 { font-size: 1.3rem; }
   .blog-article p { font-size: 1rem; }
   .blog-cta { padding: 24px; }
+  .blog-featured-image {
+    max-width: none;
+    margin-left: -24px;
+    margin-right: -24px;
+    border-radius: 0;
+    box-shadow: none;
+  }
 }
 
 @media (max-width: 480px) {
