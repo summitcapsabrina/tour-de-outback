@@ -2219,7 +2219,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .blog-featured-image {
-  max-width: 380px;
+  max-width: 600px;
   margin: 0 auto 36px;
   border-radius: 8px;
   overflow: hidden;
@@ -2302,10 +2302,8 @@ h1, h2, h3, h4, h5, h6 {
   .blog-cta { padding: 24px; }
   .blog-featured-image {
     max-width: none;
-    margin-left: -24px;
-    margin-right: -24px;
-    border-radius: 0;
-    box-shadow: none;
+    margin-left: -14px;
+    margin-right: -14px;
   }
 }
 
