@@ -921,7 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
 (function loadShopCart() {
   if (window.TDOShop) return;
   var s = document.createElement('script');
-  s.src = '/js/shop.js?v=8';
+  s.src = '/js/shop.js?v=10';
   document.head.appendChild(s);
 })();
 

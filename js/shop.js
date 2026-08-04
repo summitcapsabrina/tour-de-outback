@@ -101,10 +101,11 @@
   function injectStyles() {
     if (document.getElementById('tdo-shop-styles')) return;
     var css =
-      // Cart button lives in the navbar, far right (after the profile avatar).
-      '.tdo-cart-nav{position:relative;background:none;border:none;cursor:pointer;padding:6px;margin-left:10px;' +
+      // Cart button lives in the navbar's .nav-controls cluster (toggle, cart,
+      // profile avatar), which handles spacing via a flex gap — no margin here.
+      '.tdo-cart-nav{position:relative;background:none;border:none;cursor:pointer;padding:6px;' +
       'display:flex;align-items:center;flex:0 0 auto}' +
-      '.tdo-cart-nav svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}' +
+      '.tdo-cart-nav svg{width:26px;height:26px;stroke:var(--nav-icon-stroke);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}' +
       '.tdo-cart-nav:hover svg{stroke:#cc0000}' +
       '.tdo-cart-nav .tdo-cart-badge{position:absolute;top:-3px;right:-7px;min-width:18px;height:18px;padding:0 4px;' +
       'background:#cc0000;color:#fff;border-radius:9px;font-family:Oswald,sans-serif;font-size:.72rem;font-weight:600;' +

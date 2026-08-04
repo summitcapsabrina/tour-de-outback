@@ -46,7 +46,8 @@
     nudgeTimer: null,
     nudged: false,
     unread: 0,
-    booted: false
+    booted: false,
+    scrollLocked: false  // whether lockBodyScroll(true) actually applied the lock
   };
 
   function esc(s) {
@@ -84,6 +85,16 @@
   }
 
   // ---------------------------------------------------------------- styles
+  // Theme: reuses the site's own --surface/--surface-alt/--text-primary/
+  // --text-muted/--border-subtle custom properties (set on <html> under
+  // [data-theme="dark"] in css/styles.css) so the widget follows the site's
+  // light/dark toggle automatically — no JS-side theme branching needed,
+  // since these are DOM-inherited CSS variables and #tdo-chat is appended to
+  // <body>, a descendant of <html>. Fallback values keep it usable if ever
+  // reused on a site without those tokens. Brand chrome (red header, launch/
+  // send buttons, the visitor's own red message bubbles) intentionally stays
+  // fixed in both themes, matching how the site's own navbar/footer do.
+  var MOBILE_KEYBOARD_BUFFER_PX = 500; // arbitrary safety margin, not measured — see syncMobileViewport()
   var css = document.createElement('style');
   css.textContent = [
     '#tdo-chat *{box-sizing:border-box}',
@@ -98,7 +109,7 @@
     '#tdo-chat-launch.open .tdo-ic-chat{opacity:0}',
     '#tdo-chat-launch.open .tdo-ic-x{opacity:1}',
     '#tdo-chat-badge{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;border-radius:10px;background:#fff;color:' + RED + ';font:700 12px/20px Arial,sans-serif;text-align:center;padding:0 5px;border:2px solid ' + RED + ';display:none}',
-    '#tdo-chat-panel{position:fixed;right:20px;bottom:92px;z-index:2147483000;width:380px;max-width:calc(100vw - 32px);height:560px;max-height:calc(100vh - 120px);background:#fff;border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,0.32);display:none;flex-direction:column;overflow:hidden;font-family:"Open Sans",Arial,sans-serif}',
+    '#tdo-chat-panel{position:fixed;right:20px;bottom:92px;z-index:2147483000;width:380px;max-width:calc(100vw - 32px);height:560px;max-height:calc(100vh - 120px);background:var(--surface,#fff);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,0.32);display:none;flex-direction:column;overflow:hidden;font-family:"Open Sans",Arial,sans-serif;overscroll-behavior:none}',
     '#tdo-chat-panel.open{display:flex}',
     '.tdo-c-head{background:' + RED + ';color:#fff;padding:14px 16px;display:flex;align-items:center;gap:11px;flex:none;position:relative}',
     '.tdo-c-ava{width:40px;height:40px;border-radius:50%;background:#fff;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden}',
@@ -109,62 +120,72 @@
     '.tdo-c-dot{width:8px;height:8px;border-radius:50%;background:#4caf50;display:inline-block}',
     '.tdo-c-x{margin-left:auto;background:none;border:none;color:#fff;font-size:1.5rem;line-height:1;cursor:pointer;padding:4px 6px;opacity:.9}',
     '.tdo-c-x:hover{opacity:1}',
-    '.tdo-c-body{flex:1;overflow-y:auto;padding:16px;background:#f5f5f5;display:flex;flex-direction:column;gap:10px}',
+    '.tdo-c-body{flex:1;overflow-y:auto;padding:16px;background:var(--surface-alt,#f5f5f5);display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;touch-action:pan-y}',
     '.tdo-c-row{display:flex;flex-direction:column;max-width:82%}',
     '.tdo-c-row.me{align-self:flex-end;align-items:flex-end}',
     '.tdo-c-row.them{align-self:flex-start;align-items:flex-start}',
-    '.tdo-c-who{font-size:0.68rem;color:#888;margin:0 4px 2px}',
+    '.tdo-c-who{font-size:0.68rem;color:var(--text-muted,#888);margin:0 4px 2px}',
     '.tdo-c-bub{padding:9px 13px;border-radius:14px;font-size:0.92rem;line-height:1.4;word-wrap:break-word;white-space:normal}',
-    '.tdo-c-row.them .tdo-c-bub{background:#fff;color:#222;border:1px solid #e6e6e6;border-bottom-left-radius:4px}',
+    '.tdo-c-row.them .tdo-c-bub{background:var(--surface,#fff);color:var(--text-primary,#222);border:1px solid var(--border-subtle,#e6e6e6);border-bottom-left-radius:4px}',
     '.tdo-c-row.me .tdo-c-bub{background:' + RED + ';color:#fff;border-bottom-right-radius:4px}',
     '.tdo-c-row.pending .tdo-c-bub{opacity:.6}',
     '.tdo-c-bub a{color:inherit;text-decoration:underline}',
     '.tdo-c-row.them .tdo-c-bub a{color:' + RED + '}',
-    '.tdo-c-time{font-size:0.64rem;color:#aaa;margin:2px 4px 0}',
-    '.tdo-c-sys{align-self:center;text-align:center;max-width:90%;font-size:0.76rem;color:#777;background:#eaeaea;border-radius:10px;padding:5px 12px}',
-    '.tdo-c-typing{align-self:flex-start;align-items:center;background:#fff;border:1px solid #e6e6e6;border-radius:14px;border-bottom-left-radius:4px;padding:9px 13px;display:none}',
+    '.tdo-c-time{font-size:0.64rem;color:var(--text-muted,#aaa);margin:2px 4px 0}',
+    '.tdo-c-sys{align-self:center;text-align:center;max-width:90%;font-size:0.76rem;color:var(--text-muted,#777);background:var(--surface-alt,#eaeaea);border-radius:10px;padding:5px 12px}',
+    '.tdo-c-typing{align-self:flex-start;align-items:center;background:var(--surface,#fff);border:1px solid var(--border-subtle,#e6e6e6);border-radius:14px;border-bottom-left-radius:4px;padding:9px 13px;display:none}',
     '.tdo-c-typing.show{display:flex}',
-    '.tdo-c-typing-label{font-size:0.8rem;color:#888;margin-right:7px;font-style:italic}',
-    '.tdo-c-typing i{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:#999;animation:tdoblink 1.2s infinite both}',
+    '.tdo-c-typing-label{font-size:0.8rem;color:var(--text-muted,#888);margin-right:7px;font-style:italic}',
+    '.tdo-c-typing i{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:var(--text-muted,#999);animation:tdoblink 1.2s infinite both}',
     '.tdo-c-typing i:nth-child(2){animation-delay:.2s}.tdo-c-typing i:nth-child(3){animation-delay:.4s}',
     '@keyframes tdoblink{0%,80%,100%{opacity:.3}40%{opacity:1}}',
-    '.tdo-c-foot{flex:none;border-top:1px solid #eee;background:#fff;padding:10px 12px}',
+    '.tdo-c-foot{flex:none;border-top:1px solid var(--border-subtle,#eee);background:var(--surface,#fff);padding:10px 12px}',
     '.tdo-c-inrow{display:flex;align-items:flex-end;gap:8px}',
-    '.tdo-c-in{flex:1;border:1px solid #ccc;border-radius:20px;padding:10px 14px;font-size:0.92rem;font-family:inherit;resize:none;max-height:96px;line-height:1.35;outline:none}',
+    '.tdo-c-in{flex:1;border:1px solid var(--border-subtle,#ccc);border-radius:20px;padding:10px 14px;font-size:0.92rem;font-family:inherit;resize:none;max-height:96px;line-height:1.35;outline:none;background:var(--surface,#fff);color:var(--text-primary,#222)}',
     '.tdo-c-in:focus{border-color:' + RED + ';box-shadow:0 0 0 2px rgba(204,0,0,0.14)}',
     '.tdo-c-send{flex:none;width:40px;height:40px;border-radius:50%;background:' + RED + ';border:none;cursor:pointer;display:flex;align-items:center;justify-content:center}',
-    '.tdo-c-send:hover{background:#a80000}.tdo-c-send:disabled{background:#ccc;cursor:default}',
+    '.tdo-c-send:hover{background:#a80000}.tdo-c-send:disabled{background:var(--border-subtle,#ccc);cursor:default}',
     '.tdo-c-send svg{width:19px;height:19px;fill:#fff}',
     '.tdo-c-actions{display:flex;justify-content:space-between;align-items:center;margin-top:7px}',
     '.tdo-c-human{background:none;border:none;color:' + RED + ';font-size:0.78rem;font-weight:600;cursor:pointer;padding:0;text-decoration:underline;font-family:inherit}',
-    '.tdo-c-human:disabled{color:#aaa;cursor:default;text-decoration:none}',
-    '.tdo-c-note{font-size:0.68rem;color:#aaa}',
-    '.tdo-c-intro{align-self:stretch;text-align:center;color:#666;font-size:0.82rem;padding:6px 8px}',
+    '.tdo-c-human:disabled{color:var(--text-muted,#aaa);cursor:default;text-decoration:none}',
+    '.tdo-c-note{font-size:0.68rem;color:var(--text-muted,#aaa)}',
+    '.tdo-c-intro{align-self:stretch;text-align:center;color:var(--text-muted,#666);font-size:0.82rem;padding:6px 8px}',
     // Gate (require sign-in or guest name+email before chatting)
-    '.tdo-c-gate{position:absolute;left:0;right:0;bottom:0;top:69px;background:#fff;z-index:5;overflow-y:auto;padding:22px 20px;display:none}',
+    '.tdo-c-gate{position:absolute;left:0;right:0;bottom:0;top:69px;background:var(--surface,#fff);z-index:5;overflow-y:auto;padding:22px 20px;display:none}',
     '.tdo-c-gate.show{display:block}',
-    '.tdo-c-gate h4{font-family:"Oswald",Arial,sans-serif;font-size:1.15rem;margin:0 0 6px;color:#222}',
-    '.tdo-c-gate .g-sub{font-size:0.86rem;color:#666;margin:0 0 16px}',
+    '.tdo-c-gate h4{font-family:"Oswald",Arial,sans-serif;font-size:1.15rem;margin:0 0 6px;color:var(--text-primary,#222)}',
+    '.tdo-c-gate .g-sub{font-size:0.86rem;color:var(--text-muted,#666);margin:0 0 16px}',
     '.tdo-c-gate .g-primary{display:block;width:100%;background:' + RED + ';color:#fff;border:none;border-radius:10px;padding:12px;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:inherit}',
     '.tdo-c-gate .g-primary:hover{background:#a80000}',
-    '.tdo-c-gate .g-or{display:flex;align-items:center;gap:10px;color:#999;font-size:0.78rem;margin:16px 0 12px}',
-    '.tdo-c-gate .g-or::before,.tdo-c-gate .g-or::after{content:"";flex:1;height:1px;background:#e6e6e6}',
-    '.tdo-c-gate label{display:block;font-size:0.8rem;font-weight:600;color:#444;margin:0 0 4px}',
-    '.tdo-c-gate input{width:100%;padding:10px 12px;border:1px solid #ccc;border-radius:8px;font-size:0.92rem;font-family:inherit;margin-bottom:11px;box-sizing:border-box}',
+    '.tdo-c-gate .g-or{display:flex;align-items:center;gap:10px;color:var(--text-muted,#999);font-size:0.78rem;margin:16px 0 12px}',
+    '.tdo-c-gate .g-or::before,.tdo-c-gate .g-or::after{content:"";flex:1;height:1px;background:var(--border-subtle,#e6e6e6)}',
+    '.tdo-c-gate label{display:block;font-size:0.8rem;font-weight:600;color:var(--text-primary,#444);margin:0 0 4px}',
+    '.tdo-c-gate input{width:100%;padding:10px 12px;border:1px solid var(--border-subtle,#ccc);border-radius:8px;font-size:0.92rem;font-family:inherit;margin-bottom:11px;box-sizing:border-box;background:var(--surface,#fff);color:var(--text-primary,#222)}',
     '.tdo-c-gate input:focus{outline:none;border-color:' + RED + ';box-shadow:0 0 0 2px rgba(204,0,0,0.14)}',
-    '.tdo-c-gate .g-note{font-size:0.76rem;color:#888;background:#f6f6f6;border-radius:8px;padding:9px 11px;margin:0 0 12px;line-height:1.4}',
+    '.tdo-c-gate .g-note{font-size:0.76rem;color:var(--text-muted,#888);background:var(--surface-alt,#f6f6f6);border-radius:8px;padding:9px 11px;margin:0 0 12px;line-height:1.4}',
     '.tdo-c-gate .g-err{color:#b71c1c;font-size:0.8rem;margin:0 0 10px;display:none}',
     '.tdo-c-gate .g-err.show{display:block}',
-    '.tdo-c-gate .g-guest{display:block;width:100%;background:#222;color:#fff;border:none;border-radius:10px;padding:12px;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:inherit}',
-    '.tdo-c-gate .g-guest:hover{background:#000}',
+    '.tdo-c-gate .g-guest{display:block;width:100%;background:#4a4a4a;color:#fff;border:none;border-radius:10px;padding:12px;font-size:0.95rem;font-weight:600;cursor:pointer;font-family:inherit}',
+    '.tdo-c-gate .g-guest:hover{background:#333}',
     // "Talk to a person" options card (Chat vs Email)
-    '.tdo-c-opts{align-self:stretch;background:#fff;border:1px solid #e6e6e6;border-radius:12px;padding:12px;margin:2px 0}',
-    '.tdo-c-opts .o-q{font-size:0.86rem;color:#333;font-weight:600;margin-bottom:9px}',
-    '.tdo-c-opt{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;box-sizing:border-box;border:1px solid #ddd;background:#fafafa;color:#222;border-radius:9px;padding:10px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;margin-bottom:8px}',
+    '.tdo-c-opts{align-self:stretch;background:var(--surface,#fff);border:1px solid var(--border-subtle,#e6e6e6);border-radius:12px;padding:12px;margin:2px 0}',
+    '.tdo-c-opts .o-q{font-size:0.86rem;color:var(--text-primary,#333);font-weight:600;margin-bottom:9px}',
+    '.tdo-c-opt{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;box-sizing:border-box;border:1px solid var(--border-subtle,#ddd);background:var(--surface-alt,#fafafa);color:var(--text-primary,#222);border-radius:9px;padding:10px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;margin-bottom:8px}',
     '.tdo-c-opt:last-child{margin-bottom:0}',
     '.tdo-c-opt[data-opt="chat"]{border-color:' + RED + ';color:' + RED + '}',
-    '.tdo-c-opt:hover{background:#f0f0f0}',
-    '@media (max-width:480px){#tdo-chat-panel{right:8px;left:8px;bottom:84px;width:auto;height:calc(100vh - 100px)}#tdo-chat-launch{right:16px;bottom:16px}}'
+    '.tdo-c-opt:hover{filter:brightness(0.96)}',
+    // Non-interactive spacer that absorbs the mobile keyboard-overshoot buffer
+    // (see syncMobileViewport()) — hidden by unconditional default, shown only
+    // inside the mobile-fullscreen media query below.
+    '#tdo-c-kbbuf{display:none;flex:none;height:0;background:var(--surface,#fff);overscroll-behavior:none;touch-action:none;pointer-events:none}',
+    // Mobile: full-screen takeover instead of a floating panel. Matches the
+    // site's own primary layout breakpoint (768px, same as the nav collapse).
+    '@media (max-width:768px){' +
+      '#tdo-chat-panel{left:0;right:0;top:0;bottom:0;width:100%;max-width:100%;height:100dvh;max-height:none;border-radius:0}' +
+      '#tdo-c-kbbuf{display:block;height:' + MOBILE_KEYBOARD_BUFFER_PX + 'px}' +
+      '#tdo-chat-launch{right:16px;bottom:16px}' +
+    '}'
   ].join('');
   document.head.appendChild(css);
 
@@ -216,6 +237,7 @@
           '<span class="tdo-c-note">Powered by Claude Haiku 4.5</span>' +
         '</div>' +
       '</div>' +
+      '<div id="tdo-c-kbbuf" aria-hidden="true"></div>' +
     '</div>';
   (document.body || document.documentElement).appendChild(root);
 
@@ -609,6 +631,63 @@
   }
   function clearBadge() { state.unread = 0; elBadge.style.display = 'none'; }
 
+  // ------------------------------------------------ mobile fullscreen panel
+  // Below 768px (matches the site's own nav-collapse breakpoint) the panel is
+  // a fullscreen takeover, not a floating box — needs its own viewport/scroll
+  // handling a floating panel never had to worry about.
+  function isMobileFullscreen() { return window.matchMedia('(max-width:768px)').matches; }
+  // Pin the panel to window.visualViewport so it resizes correctly when the
+  // on-screen keyboard opens — a plain position:fixed panel stays sized to
+  // the layout viewport on iOS, pushing it up off-screen behind the keyboard.
+  // Mobile keyboards don't reliably report their FULL height through
+  // visualViewport (iOS QuickType, Android Gboard's toolbar), so instead of
+  // measuring the exact gap, the panel is deliberately taller than what
+  // visualViewport reports by a fixed buffer, and the excess (plus the
+  // non-interactive #tdo-c-kbbuf spacer right after the input bar) simply
+  // hangs off past the real bottom of the screen, clipped and invisible.
+  function syncMobileViewport() {
+    if (!state.open || !isMobileFullscreen()) return;
+    var vv = window.visualViewport;
+    if (!vv) return;
+    elPanel.style.height = (vv.height + MOBILE_KEYBOARD_BUFFER_PX) + 'px';
+    elPanel.style.top = vv.offsetTop + 'px';
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncMobileViewport);
+    window.visualViewport.addEventListener('scroll', syncMobileViewport);
+  }
+  // Lock <html> AND <body> (locking body alone lets iOS still rubber-band the
+  // page underneath) while the fullscreen panel is open, so the page behind
+  // it can't be scrolled/bounced. Desktop's floating panel never locks the
+  // page at all. Unlock is gated on state.scrollLocked (whether a lock was
+  // actually applied), NOT on re-checking the breakpoint — if the viewport
+  // crosses 768px while the panel is open (e.g. rotating a tablet), closing
+  // it must still unlock even though isMobileFullscreen() now says "desktop,"
+  // or the whole page is left permanently frozen (overflow:hidden) until reload.
+  function lockBodyScroll(lock) {
+    if (lock) {
+      if (!isMobileFullscreen()) return;
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      state.scrollLocked = true;
+    } else {
+      if (!state.scrollLocked) return;
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      state.scrollLocked = false;
+    }
+  }
+  // Block every drag on the mobile panel except one starting inside the
+  // message list or the input textarea — the two areas actually meant to
+  // scroll. Registered once, globally; it's a no-op unless the mobile
+  // fullscreen panel is actually open.
+  function handleMobilePanelTouchMove(e) {
+    if (!state.open || !isMobileFullscreen()) return;
+    if (e.target.closest('.tdo-c-body, .tdo-c-in')) return;
+    e.preventDefault();
+  }
+  document.addEventListener('touchmove', handleMobilePanelTouchMove, { passive: false });
+
   function openPanel() {
     state.open = true;
     unlockAudio();
@@ -621,6 +700,7 @@
     if (!state.booted) { state.booted = true; if (state.cid) fetchNew(); }
     ensurePolling();
     reportPanel(true);
+    if (isMobileFullscreen()) { elLaunch.style.display = 'none'; lockBodyScroll(true); syncMobileViewport(); }
     setTimeout(function () { if (!elGate.classList.contains('show')) elIn.focus(); scrollDown(); }, 60);
   }
   function closePanel() {
@@ -629,6 +709,9 @@
     elLaunch.classList.remove('open');
     elLaunch.setAttribute('aria-label', 'Chat with Sabrina');
     reportPanel(false);
+    elLaunch.style.display = '';
+    lockBodyScroll(false);
+    elPanel.style.height = ''; elPanel.style.top = '';
   }
   function toggle() { state.open ? closePanel() : openPanel(); }
 

@@ -14,8 +14,8 @@ import {
   // ---- Styles ----
   var css = document.createElement('style');
   css.textContent = [
-    '.tdo-auth{position:relative;display:flex;align-items:center;margin-left:24px;font-family:inherit}',
-    '.tdo-avatar{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,0.35);background:#3a3a3a;cursor:pointer;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center}',
+    '.tdo-auth{position:relative;display:flex;align-items:center;font-family:inherit}',
+    '.tdo-avatar{width:36px;height:36px;border-radius:50%;border:2px solid var(--nav-avatar-border);background:#3a3a3a;cursor:pointer;padding:0;overflow:hidden;display:flex;align-items:center;justify-content:center}',
     '.tdo-avatar:hover{border-color:#cc0000}',
     '.tdo-avatar img{width:100%;height:100%;object-fit:cover;display:block}',
     '.tdo-avatar svg{width:22px;height:22px;fill:rgba(255,255,255,0.75)}',

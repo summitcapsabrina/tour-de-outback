@@ -99,6 +99,13 @@ const EMAILOCTOPUS_LIST_ID = '35e53e2a-1812-11f1-bdf7-2131ac6e0118';
 //   firebase functions:secrets:set TELEGRAM_CHAT_ID
 const TELEGRAM_BOT_TOKEN = defineSecret('TELEGRAM_BOT_TOKEN');
 const TELEGRAM_CHAT_ID = defineSecret('TELEGRAM_CHAT_ID');
+// SummitCapSabrina is a shared, multi-purpose bot/group used by other projects
+// too — without a topic id, Telegram silently posts to the group's "General"
+// topic instead of erroring, so this MUST be set for messages to land in Tour
+// de Outback's own dedicated topic. Not a secret (just a numeric topic id,
+// not sensitive) — a plain constant, so fixing a wrong/moved topic later is a
+// one-line code change, not another round of `secrets:set` + redeploy.
+const TELEGRAM_THREAD_ID = '305';
 
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 
@@ -1214,10 +1221,13 @@ async function sendAdminPush(title, body, cid) {
   }
 }
 
-/** Build a "Sender: text" transcript of a conversation's last ~60 minutes, so
- *  a Telegram escalation alert carries actual context instead of a bare
+/** Build a "**Sender:** text" transcript of a conversation's last ~60 minutes,
+ *  so a Telegram escalation alert carries actual context instead of a bare
  *  one-line preview — an operator shouldn't have to open the inbox just to
- *  read what's already been said before replying. */
+ *  read what's already been said before replying. The sender label is bold
+ *  (Telegram HTML `<b>`) so a busy transcript is easy to scan; the label
+ *  itself and the message text are both HTML-escaped since a visitor's own
+ *  name/message is untrusted and must never be interpreted as markup. */
 async function buildTelegramTranscript(cid) {
   const since = new Date(Date.now() - 60 * 60 * 1000);
   const snap = await db.collection('conversations').doc(cid).collection('messages')
@@ -1230,7 +1240,7 @@ async function buildTelegramTranscript(cid) {
       : m.role === 'assistant' ? 'Sabrina'
       : m.role === 'agent' ? (m.senderName || 'Admin')
       : 'System';
-    lines.push(label + ': ' + String(m.text || '').replace(/\n/g, ' '));
+    lines.push('<b>' + escapeHtml(label) + ':</b> ' + escapeHtml(String(m.text || '').replace(/\n/g, ' ')));
   });
   return lines.join('\n');
 }
@@ -1238,8 +1248,15 @@ async function buildTelegramTranscript(cid) {
 /** Send one Telegram message, or several in order if the text exceeds the
  *  4096-char hard limit — the API rejects the whole send rather than
  *  truncating, so a busy hour of chat has to be split, not cut off. Splits on
- *  line boundaries and numbers chunks "(i/n)" so they read in order. */
-async function sendTelegramMessage(token, chatId, text) {
+ *  line boundaries and numbers chunks "(i/n)" so they read in order — always
+ *  at a `\n`, never mid-line, so a `<b>...</b>` pair (always confined to a
+ *  single line) can never be split across chunks.
+ *  Sent as Telegram HTML (`parse_mode: "HTML"`) so sender labels can be bold;
+ *  the caller is responsible for HTML-escaping any untrusted text it embeds.
+ *  `threadId` (a forum-topic id) is optional — omit it entirely for a normal
+ *  chat/DM; passing it for a non-forum chat would make Telegram reject the
+ *  send outright. */
+async function sendTelegramMessage(token, chatId, text, threadId) {
   const LIMIT = 4096 - 20; // headroom for the "(i/n) " prefix added per chunk
   const chunks = [];
   let rest = text;
@@ -1252,10 +1269,12 @@ async function sendTelegramMessage(token, chatId, text) {
   chunks.push(rest);
   for (let i = 0; i < chunks.length; i++) {
     const body = chunks.length > 1 ? '(' + (i + 1) + '/' + chunks.length + ') ' + chunks[i] : chunks[i];
+    const payload = { chat_id: chatId, text: body, parse_mode: 'HTML', disable_web_page_preview: true };
+    if (threadId) payload.message_thread_id = Number(threadId);
     const r = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: body, disable_web_page_preview: true }),
+      body: JSON.stringify(payload),
     });
     const d = await r.json().catch(function () { return {}; });
     if (!d.ok) logger.warn('sendTelegramMessage: Telegram API rejected a chunk', d.description || '');
@@ -1266,24 +1285,26 @@ async function sendTelegramMessage(token, chatId, text) {
  * Notify Telegram when a visitor asks for a human. Independent of the
  * email/push channels above — its own no-op guard and its own try/catch, so
  * a failure or missing config here never blocks either of the others.
- * Best-effort — never throws. Plain text (no Markdown parse mode), since the
- * visitor's own name/message text is untrusted and would otherwise need
- * careful escaping to avoid breaking Telegram's formatting.
+ * Best-effort — never throws. Sent as Telegram HTML so the transcript's
+ * sender labels can be bold; every interpolated field (visitor name/email,
+ * reason, message text) is HTML-escaped since all of it is untrusted and
+ * would otherwise risk breaking the markup or failing the send outright.
  */
 async function notifyEscalationTelegram(cid, conv, reason) {
   try {
     const token = (TELEGRAM_BOT_TOKEN.value() || '').trim();
     const chatId = (TELEGRAM_CHAT_ID.value() || '').trim();
     if (!token || !chatId) { logger.info('notifyEscalationTelegram: not configured — skipped'); return; }
-    const name = (conv && conv.visitorName) || 'A visitor';
-    const email = (conv && conv.visitorEmail) || '(not provided)';
-    const link = CHAT_APP_URL + '?c=' + encodeURIComponent(cid || '');
+    const name = escapeHtml((conv && conv.visitorName) || 'A visitor');
+    const email = escapeHtml((conv && conv.visitorEmail) || '(not provided)');
+    const link = escapeHtml(CHAT_APP_URL + '?c=' + encodeURIComponent(cid || ''));
+    reason = reason ? escapeHtml(reason) : reason;
     const header =
       'Chat Escalation: ' + name + ' (' + email + ')' +
       (reason ? '\nReason: ' + reason : '') +
       '\nOpen the inbox: ' + link + '\n\n';
     const transcript = await buildTelegramTranscript(cid);
-    await sendTelegramMessage(token, chatId, header + transcript);
+    await sendTelegramMessage(token, chatId, header + transcript, TELEGRAM_THREAD_ID);
     logger.info('notifyEscalationTelegram: sent for conversation ' + cid);
   } catch (e) {
     logger.error('notifyEscalationTelegram failed (non-fatal)', e.message);
