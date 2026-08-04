@@ -175,6 +175,9 @@
     '.tdo-c-opt:last-child{margin-bottom:0}',
     '.tdo-c-opt[data-opt="chat"]{border-color:' + RED + ';color:' + RED + '}',
     '.tdo-c-opt:hover{filter:brightness(0.96)}',
+    '.tdo-c-opt.tdo-c-phone{display:flex;gap:8px;padding:0;background:transparent;border:none;margin-bottom:0}',
+    '.tdo-c-phone-action{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--border-subtle,#ddd);background:var(--surface-alt,#fafafa);color:var(--text-primary,#222);border-radius:9px;padding:10px;font-size:0.9rem;font-weight:600;text-decoration:none;font-family:inherit}',
+    '.tdo-c-phone-action:hover{filter:brightness(0.96)}',
     // Non-interactive spacer that absorbs the mobile keyboard-overshoot buffer
     // (see syncMobileViewport()) — hidden by unconditional default, shown only
     // inside the mobile-fullscreen media query below.
@@ -314,7 +317,6 @@
     if (m.id) state.renderedIds[m.id] = true;
     var ts = m.createdAt ? new Date(m.createdAt).getTime() : Date.now();
     if (ts > state.lastTs) state.lastTs = ts;
-    if (elIntro) { elIntro.style.display = 'none'; }
 
     if (m.role === 'system') {
       var s = document.createElement('div');
@@ -346,7 +348,6 @@
   // Optimistic bubble for the visitor's own message (reconciled on next poll).
   var pendingEl = null;
   function showPending(text) {
-    if (elIntro) elIntro.style.display = 'none';
     var row = document.createElement('div');
     row.className = 'tdo-c-row me pending';
     row.innerHTML = '<div class="tdo-c-bub">' + renderText(text) + '</div>' +
@@ -562,7 +563,7 @@
           lsSet(LS.cid, state.cid);
         }
         if (!res.ok) {
-          appendServerMessage({ role: 'assistant', text: "Sorry, I couldn't connect you with our team just now. Please try again, or email us directly at info@tourdeoutback.org." });
+          appendServerMessage({ role: 'assistant', text: "Sorry, I couldn't connect you with our team just now. Please try again, or email us directly at info@tourdeoutback.org, or call/text (541) 238-2066." });
           setStatusLabel();
           return;
         }
@@ -576,18 +577,21 @@
       });
   }
 
-  // "Talk to a person" → let the visitor choose Chat (escalate to a human) or Email.
+  // "Talk to a person" → let the visitor choose Chat, Email, or Call/Text.
   function showHumanOptions() {
     if (state.status === 'human' || state.status === 'escalated') return;
     if (document.getElementById('tdo-c-human-opts')) { scrollDown(); return; }
-    if (elIntro) elIntro.style.display = 'none';
     var card = document.createElement('div');
     card.className = 'tdo-c-opts';
     card.id = 'tdo-c-human-opts';
     card.innerHTML =
       '<div class="o-q">How would you like to reach our team?</div>' +
       '<button class="tdo-c-opt" data-opt="chat">💬 Chat with a person</button>' +
-      '<a class="tdo-c-opt" data-opt="email" href="mailto:info@tourdeoutback.org?subject=Tour%20de%20Outback%20question">✉️ Email us (info@tourdeoutback.org)</a>';
+      '<a class="tdo-c-opt" data-opt="email" href="mailto:info@tourdeoutback.org?subject=Tour%20de%20Outback%20question">✉️ Email us (info@tourdeoutback.org)</a>' +
+      '<div class="tdo-c-opt tdo-c-phone">' +
+        '<a class="tdo-c-phone-action" data-opt="call" href="tel:+15412382066">📞 Call</a>' +
+        '<a class="tdo-c-phone-action" data-opt="text" href="sms:+15412382066">💬 Text</a>' +
+      '</div>';
     elBody.insertBefore(card, elTyping);
     scrollDown();
     card.querySelector('[data-opt="chat"]').addEventListener('click', function () {
@@ -596,6 +600,12 @@
     });
     card.querySelector('[data-opt="email"]').addEventListener('click', function () {
       appendServerMessage({ role: 'assistant', text: "Opening your email app to reach info@tourdeoutback.org. If it doesn't open, just email us there directly." });
+    });
+    card.querySelector('[data-opt="call"]').addEventListener('click', function () {
+      appendServerMessage({ role: 'assistant', text: "Opening your phone app to call (541) 238-2066." });
+    });
+    card.querySelector('[data-opt="text"]').addEventListener('click', function () {
+      appendServerMessage({ role: 'assistant', text: "Opening your messages app to text (541) 238-2066." });
     });
   }
 
@@ -646,16 +656,28 @@
   // non-interactive #tdo-c-kbbuf spacer right after the input bar) simply
   // hangs off past the real bottom of the screen, clipped and invisible.
   function syncMobileViewport() {
-    if (!state.open || !isMobileFullscreen()) return;
+    if (!isMobileFullscreen()) { elLaunch.style.bottom = ''; return; }
     var vv = window.visualViewport;
     if (!vv) return;
-    elPanel.style.height = (vv.height + MOBILE_KEYBOARD_BUFFER_PX) + 'px';
-    elPanel.style.top = vv.offsetTop + 'px';
+    if (state.open) {
+      elPanel.style.height = (vv.height + MOBILE_KEYBOARD_BUFFER_PX) + 'px';
+      elPanel.style.top = vv.offsetTop + 'px';
+      return;
+    }
+    // Safari's bottom toolbar overlays the layout viewport instead of shrinking
+    // it, so a plain `bottom:16px` fixed button can end up hidden behind the
+    // toolbar once it reappears (e.g. scrolling back up the page). Track the
+    // gap between the layout viewport and the (possibly toolbar-shrunk) visual
+    // viewport and pad the button up by that amount so it always clears it.
+    var gap = document.documentElement.clientHeight - (vv.height + vv.offsetTop);
+    elLaunch.style.bottom = (16 + Math.max(0, gap)) + 'px';
   }
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', syncMobileViewport);
     window.visualViewport.addEventListener('scroll', syncMobileViewport);
   }
+  window.addEventListener('resize', syncMobileViewport);
+  syncMobileViewport();
   // Lock <html> AND <body> (locking body alone lets iOS still rubber-band the
   // page underneath) while the fullscreen panel is open, so the page behind
   // it can't be scrolled/bounced. Desktop's floating panel never locks the
@@ -712,6 +734,7 @@
     elLaunch.style.display = '';
     lockBodyScroll(false);
     elPanel.style.height = ''; elPanel.style.top = '';
+    syncMobileViewport();
   }
   function toggle() { state.open ? closePanel() : openPanel(); }
 

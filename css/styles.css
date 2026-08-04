@@ -577,8 +577,13 @@ h1, h2, h3, h4, h5, h6 {
   transition: background var(--transition);
 }
 
-.theme-toggle:hover {
-  background: var(--nav-hover-bg);
+/* Gated to pointer:fine devices — on touch, :hover triggers on tap and has no
+   corresponding "un-hover" event, so the circle would stay stuck showing
+   after every tap instead of just being a mouse-hover affordance. */
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle:hover {
+    background: var(--nav-hover-bg);
+  }
 }
 
 .theme-toggle svg {
@@ -1674,6 +1679,12 @@ h1, h2, h3, h4, h5, h6 {
   padding: 60px 0;
   text-align: center;
   background: var(--surface-alt);
+}
+
+/* Partner logos are light/transparent PNGs — keep this section's background
+   the same light gray in dark mode too, or the logos disappear. */
+[data-theme="dark"] .sponsors-section {
+  background: var(--light-gray);
 }
 
 .sponsors-grid {

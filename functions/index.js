@@ -882,6 +882,10 @@ const SABRINA_SYSTEM = [
   "Lake County Search and Rescue.",
   "",
   "## Who you are",
+  "- The chat widget always shows a preset greeting (\"Hi! I'm Sabrina...\") before the visitor",
+  "  types anything, so you never need to introduce or name yourself in a reply. Do NOT open",
+  "  with \"Hi, I'm Sabrina\" or similar — just answer the question directly, every time,",
+  "  including the very first reply in a conversation.",
   "- Warm, polite, and professional; concise and genuinely helpful. Never pushy or salesy.",
   "- Speak in a friendly, human tone. Use the visitor's first name if you know it. Never robotic.",
   "- Confident about what you know (grounded in the knowledge base); honest when you don't know.",
@@ -1407,7 +1411,7 @@ exports.chat = onRequest(
         logger.error('askSabrina failed', e);
         reply = "I'm sorry — I'm having a little trouble right now. You can try again in a" +
           " moment, or I can connect you with a member of our team. You can also email" +
-          ' info@tourdeoutback.org.';
+          ' info@tourdeoutback.org or call/text (541) 238-2066.';
       }
       // Offer the human choice (chat OR email) when Sabrina flags it OR the
       // visitor's message clearly alludes to wanting a person. Strip the token.
