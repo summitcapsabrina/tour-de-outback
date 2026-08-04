@@ -518,14 +518,40 @@
   // ---------------------------------------------------------- escalation
   function escalate() {
     if (state.status === 'human' || state.status === 'escalated') return;
+    // Same identity requirement as sending a message — the team needs a name
+    // and email to reach the visitor back if the connection drops. Gate here
+    // (not just in send()) since a visitor can ask for a person before ever
+    // typing anything.
+    if (!isIdentified()) { maybeGate(); return; }
     elHuman.disabled = true;
-    postJSON(API.escalate, { conversationId: state.cid, reason: 'Visitor clicked "Talk to a person"' })
+    postJSON(API.escalate, {
+      conversationId: state.cid,
+      reason: 'Visitor clicked "Talk to a person"',
+      visitorId: visitorId,
+      visitorName: state.name || undefined,
+      visitorEmail: state.email || undefined,
+      pageUrl: location.href
+    })
       .then(function (res) {
+        // A brand-new visitor (no conversation yet) gets one created server-side —
+        // adopt its id so replies/polling attach to the right thread.
+        if (res.d && res.d.conversationId && res.d.conversationId !== state.cid) {
+          state.cid = res.d.conversationId;
+          lsSet(LS.cid, state.cid);
+        }
+        if (!res.ok) {
+          appendServerMessage({ role: 'assistant', text: "Sorry, I couldn't connect you with our team just now. Please try again, or email us directly at info@tourdeoutback.org." });
+          setStatusLabel();
+          return;
+        }
         if (res.d && res.d.status) state.status = res.d.status;
         setStatusLabel();
         ensurePolling();
         return fetchNew();
-      }).catch(function () { setStatusLabel(); });
+      }).catch(function () {
+        appendServerMessage({ role: 'assistant', text: "I couldn't reach the server. Please check your connection and try again." });
+        setStatusLabel();
+      });
   }
 
   // "Talk to a person" → let the visitor choose Chat (escalate to a human) or Email.

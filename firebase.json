@@ -62,6 +62,10 @@
         "function": { "functionId": "adminChatAction", "region": "us-central1" }
       },
       {
+        "source": "/api/admin-chat-config",
+        "function": { "functionId": "adminChatConfig", "region": "us-central1" }
+      },
+      {
         "source": "/api/admin-kb-seed",
         "function": { "functionId": "adminKbSeed", "region": "us-central1" }
       },

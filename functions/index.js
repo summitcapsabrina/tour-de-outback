@@ -92,6 +92,14 @@ const EMAILOCTOPUS_API_KEY = defineSecret('EMAILOCTOPUS_API_KEY');
 // The EmailOctopus list new contacts are added to (same list the newsletter form feeds).
 const EMAILOCTOPUS_LIST_ID = '35e53e2a-1812-11f1-bdf7-2131ac6e0118';
 
+// Telegram bot alert for chat escalations — a second, independent notification
+// channel alongside the email (notifyEscalation) and Web Push (sendAdminPush)
+// channels above. Best-effort: no-ops cleanly if either secret is unset. Set:
+//   firebase functions:secrets:set TELEGRAM_BOT_TOKEN
+//   firebase functions:secrets:set TELEGRAM_CHAT_ID
+const TELEGRAM_BOT_TOKEN = defineSecret('TELEGRAM_BOT_TOKEN');
+const TELEGRAM_CHAT_ID = defineSecret('TELEGRAM_CHAT_ID');
+
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 
 // Origins allowed to call create-donation from the browser. Same-origin calls
@@ -1206,6 +1214,92 @@ async function sendAdminPush(title, body, cid) {
   }
 }
 
+/** Build a "Sender: text" transcript of a conversation's last ~60 minutes, so
+ *  a Telegram escalation alert carries actual context instead of a bare
+ *  one-line preview — an operator shouldn't have to open the inbox just to
+ *  read what's already been said before replying. */
+async function buildTelegramTranscript(cid) {
+  const since = new Date(Date.now() - 60 * 60 * 1000);
+  const snap = await db.collection('conversations').doc(cid).collection('messages')
+    .where('createdAt', '>=', since).orderBy('createdAt', 'asc').get();
+  if (snap.empty) return '(no recent messages)';
+  const lines = [];
+  snap.forEach(function (doc) {
+    const m = doc.data();
+    const label = m.role === 'user' ? (m.senderName || 'Visitor')
+      : m.role === 'assistant' ? 'Sabrina'
+      : m.role === 'agent' ? (m.senderName || 'Admin')
+      : 'System';
+    lines.push(label + ': ' + String(m.text || '').replace(/\n/g, ' '));
+  });
+  return lines.join('\n');
+}
+
+/** Send one Telegram message, or several in order if the text exceeds the
+ *  4096-char hard limit — the API rejects the whole send rather than
+ *  truncating, so a busy hour of chat has to be split, not cut off. Splits on
+ *  line boundaries and numbers chunks "(i/n)" so they read in order. */
+async function sendTelegramMessage(token, chatId, text) {
+  const LIMIT = 4096 - 20; // headroom for the "(i/n) " prefix added per chunk
+  const chunks = [];
+  let rest = text;
+  while (rest.length > LIMIT) {
+    let cut = rest.lastIndexOf('\n', LIMIT);
+    if (cut <= 0) cut = LIMIT;
+    chunks.push(rest.slice(0, cut));
+    rest = rest.slice(cut).replace(/^\n/, '');
+  }
+  chunks.push(rest);
+  for (let i = 0; i < chunks.length; i++) {
+    const body = chunks.length > 1 ? '(' + (i + 1) + '/' + chunks.length + ') ' + chunks[i] : chunks[i];
+    const r = await fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: body, disable_web_page_preview: true }),
+    });
+    const d = await r.json().catch(function () { return {}; });
+    if (!d.ok) logger.warn('sendTelegramMessage: Telegram API rejected a chunk', d.description || '');
+  }
+}
+
+/**
+ * Notify Telegram when a visitor asks for a human. Independent of the
+ * email/push channels above — its own no-op guard and its own try/catch, so
+ * a failure or missing config here never blocks either of the others.
+ * Best-effort — never throws. Plain text (no Markdown parse mode), since the
+ * visitor's own name/message text is untrusted and would otherwise need
+ * careful escaping to avoid breaking Telegram's formatting.
+ */
+async function notifyEscalationTelegram(cid, conv, reason) {
+  try {
+    const token = (TELEGRAM_BOT_TOKEN.value() || '').trim();
+    const chatId = (TELEGRAM_CHAT_ID.value() || '').trim();
+    if (!token || !chatId) { logger.info('notifyEscalationTelegram: not configured — skipped'); return; }
+    const name = (conv && conv.visitorName) || 'A visitor';
+    const email = (conv && conv.visitorEmail) || '(not provided)';
+    const link = CHAT_APP_URL + '?c=' + encodeURIComponent(cid || '');
+    const header =
+      'Chat Escalation: ' + name + ' (' + email + ')' +
+      (reason ? '\nReason: ' + reason : '') +
+      '\nOpen the inbox: ' + link + '\n\n';
+    const transcript = await buildTelegramTranscript(cid);
+    await sendTelegramMessage(token, chatId, header + transcript);
+    logger.info('notifyEscalationTelegram: sent for conversation ' + cid);
+  } catch (e) {
+    logger.error('notifyEscalationTelegram failed (non-fatal)', e.message);
+  }
+}
+
+/** The admin-configured estimated wait time (minutes), or null if unset/off.
+ *  Backed by chatConfig/settings.waitMinutes — see /api/admin-chat-config. */
+async function getWaitMinutes() {
+  try {
+    const snap = await db.doc('chatConfig/settings').get();
+    const m = snap.exists ? snap.data().waitMinutes : null;
+    return (typeof m === 'number' && m > 0) ? m : null;
+  } catch (e) { return null; }
+}
+
 /** The operator's editable first name (from admin_profiles/{uid}), defaulting to
  *  the first word of their account display name, then 'Team'. Shown to visitors. */
 async function adminFirstName(user) {
@@ -1370,22 +1464,48 @@ exports.chatPoll = onRequest(
 
 // ---------------------------------------------------------------------------
 // POST /api/chat-escalate  — visitor asks for a human (or the widget escalates).
-// body: { conversationId, reason? }
+// body: { conversationId?, reason?, visitorId?, visitorName?, visitorEmail?, pageUrl? }
+// conversationId may be omitted/blank — a visitor who clicks "Talk to a person"
+// before ever sending a message has no conversation yet, so one is created here.
+// returns: { conversationId, status, waitMinutes }
 // ---------------------------------------------------------------------------
 exports.chatEscalate = onRequest(
-  { secrets: [RESEND_API_KEY, WEBPUSH_PRIVATE_KEY], cors: ALLOWED_ORIGINS, invoker: 'public' },
+  { secrets: [RESEND_API_KEY, WEBPUSH_PRIVATE_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID], cors: ALLOWED_ORIGINS, invoker: 'public' },
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     const body = req.body || {};
-    const cid = String(body.conversationId || '').trim();
-    if (!cid) return res.status(400).json({ error: 'No conversation.' });
     try {
-      const convRef = db.collection('conversations').doc(cid);
-      const convSnap = await convRef.get();
-      if (!convSnap.exists) return res.status(404).json({ error: 'No conversation.' });
+      let cid = String(body.conversationId || '').trim();
+      let convRef, convSnap;
+      if (cid) {
+        convRef = db.collection('conversations').doc(cid);
+        convSnap = await convRef.get();
+        if (!convSnap.exists) cid = '';
+      }
+      if (!cid) {
+        const now = admin.firestore.FieldValue.serverTimestamp();
+        convRef = db.collection('conversations').doc();
+        cid = convRef.id;
+        await convRef.set({
+          status: 'bot',
+          createdAt: now,
+          updatedAt: now,
+          lastMessageAt: now,
+          visitorId: String(body.visitorId || '').slice(0, 80) || null,
+          visitorName: String(body.visitorName || '').slice(0, 120) || null,
+          visitorEmail: String(body.visitorEmail || '').slice(0, 160) || null,
+          userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
+          pageUrl: String(body.pageUrl || '').slice(0, 300) || null,
+          firstMessage: '',
+          messageCount: 0,
+          unread: true,
+          adminName: null,
+        });
+        convSnap = await convRef.get();
+      }
       const conv = convSnap.data();
       if (conv.status === 'escalated' || conv.status === 'human') {
-        return res.json({ status: conv.status });
+        return res.json({ conversationId: cid, status: conv.status });
       }
       await convRef.set({
         status: 'escalated',
@@ -1393,10 +1513,17 @@ exports.chatEscalate = onRequest(
         unread: true,
       }, { merge: true });
       await appendMessage(cid, 'system', CONNECTING_MSG, { senderName: 'System' });
+      const waitMinutes = await getWaitMinutes();
+      if (waitMinutes) {
+        await appendMessage(cid, 'system',
+          'Estimated wait: about ' + waitMinutes + ' minute' + (waitMinutes === 1 ? '' : 's') + '.',
+          { senderName: 'System' });
+      }
       var who = conv.visitorName || 'A visitor';
       await notifyEscalation(cid, conv, body.reason);
       await sendAdminPush(who + ' needs a human', conv.lastMessagePreview || 'Tap to join the chat.', cid);
-      return res.json({ status: 'escalated' });
+      await notifyEscalationTelegram(cid, conv, body.reason);
+      return res.json({ conversationId: cid, status: 'escalated', waitMinutes: waitMinutes || null });
     } catch (err) {
       logger.error('chatEscalate failed', err);
       return res.status(500).json({ error: 'Could not escalate.' });
@@ -1528,6 +1655,35 @@ exports.adminChatAction = onRequest(
     } catch (err) {
       logger.error('adminChatAction failed', err);
       return res.status(500).json({ error: 'Action failed.' });
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/admin-chat-config  — get/set the estimated wait time shown to a
+// visitor right after Sabrina connects them with the team (admins only).
+// body: { waitMinutes? } — a positive number sets it; 0, null, or "" clears it
+// (no wait line shown); omit the field to just read the current value.
+// ---------------------------------------------------------------------------
+exports.adminChatConfig = onRequest(
+  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  async (req, res) => {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    const adminUser = await verifyAdmin(req);
+    if (!adminUser) return res.status(403).json({ error: 'Admins only.' });
+    const body = req.body || {};
+    try {
+      const ref = db.doc('chatConfig/settings');
+      if (typeof body.waitMinutes !== 'undefined') {
+        const n = Number(body.waitMinutes);
+        const waitMinutes = (Number.isFinite(n) && n > 0) ? Math.round(n) : null;
+        await ref.set({ waitMinutes: waitMinutes, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      }
+      const snap = await ref.get();
+      return res.json({ waitMinutes: (snap.exists && snap.data().waitMinutes) || null });
+    } catch (err) {
+      logger.error('adminChatConfig failed', err);
+      return res.status(500).json({ error: 'Could not save.' });
     }
   }
 );
@@ -2261,7 +2417,7 @@ exports.adminProfile = onRequest(
 // operator has joined, email ALL admin recipients. Runs every minute.
 // ---------------------------------------------------------------------------
 exports.escalationBackup = onSchedule(
-  { schedule: 'every 1 minutes', secrets: [RESEND_API_KEY, WEBPUSH_PRIVATE_KEY] },
+  { schedule: 'every 1 minutes', secrets: [RESEND_API_KEY, WEBPUSH_PRIVATE_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID] },
   async () => {
     const cutoff = new Date(Date.now() - 3 * 60 * 1000);
     const snap = await db.collection('conversations').where('status', '==', 'escalated').get();
@@ -2284,9 +2440,10 @@ exports.escalationBackup = onSchedule(
             'Last message: ' + preview + '\n\n' +
             'Join now: ' + CHAT_APP_URL + '?c=' + doc.id + '\nConversation id: ' + doc.id,
         });
-        // Also re-push in case the first notification was missed.
+        // Also re-push/re-alert in case the first notification was missed.
         await sendAdminPush('Still waiting — ' + (c.visitorName || 'a visitor') + ' needs a human',
           (c.lastMessagePreview || 'Please join the chat.'), doc.id);
+        await notifyEscalationTelegram(doc.id, c, 'Still waiting 3+ minutes (reminder)');
         await doc.ref.set({ backupEmailSent: true }, { merge: true });
       } catch (e) {
         logger.error('escalationBackup: send failed for ' + doc.id, e.message);

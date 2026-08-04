@@ -161,11 +161,12 @@ h1, h2, h3, h4, h5, h6 {
 /* ============================================
    Weather Widget (inside navbar)
    ============================================ */
-/* Weather widget: floats at the top-right, overlaying the hero banner (an
-   extension of the top bar) rather than sitting inside the navbar. position:fixed
-   drops it out of the navbar flow, so the navbar keeps just the nav links + avatar. */
+/* Weather widget: sits at the top-right of the page, overlaying the hero banner.
+   It now lives in the DOM as a sibling right after </nav> (not inside the fixed
+   navbar), and uses position:absolute rather than fixed — so it scrolls away
+   with the page instead of staying pinned to the header. */
 .weather-widget {
-  position: fixed;
+  position: absolute;
   top: calc(var(--nav-height) + 12px);
   right: 24px;
   z-index: 999;

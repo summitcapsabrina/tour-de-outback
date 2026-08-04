@@ -729,11 +729,12 @@
         <a href="/donate/">Donate</a>
         <a href="/register/" data-reg-gate class="btn btn-primary" target="_blank">Register</a>
       </div>
-      <div class="weather-widget" id="weather-widget"></div>
         <div class="tdo-auth"><button class="tdo-avatar" id="tdo-avatar" aria-label="Account" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"/></svg></button><div class="tdo-menu" id="tdo-menu" role="menu"></div></div>
         <div class="tdo-cart-slot"><button class="tdo-cart-nav" type="button" aria-label="Open cart"><svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg><span class="tdo-cart-badge" hidden>0</span></button></div>
     </div>
   </nav>
+
+  <div class="weather-widget" id="weather-widget"></div>
 
   <div class="page-content">
     <section class="admin-section">
@@ -1348,6 +1349,13 @@
                   <label class="cn-toggle"><input type="checkbox" id="notif-toggle"> Desktop notifications when a visitor asks for a human</label>
                   <span class="ci-status" id="notif-status"></span>
                 </div>
+                <div class="ci-row cn-row">
+                  <label for="wait-minutes" style="margin:0;">Estimated wait time for visitors (minutes)</label>
+                  <input type="number" id="wait-minutes" min="0" max="240" step="1" style="width:80px;" placeholder="off">
+                  <button class="adm-btn dark" id="wait-save">Save</button>
+                  <span class="ci-status" id="wait-status"></span>
+                </div>
+                <p class="sub ci-help">Shown to the visitor right after Sabrina connects them with the team, e.g. “Estimated wait: about 10 minutes.” Leave blank to skip showing a wait time.</p>
               </div>
 
               <div class="chat-subtabs">
@@ -2444,6 +2452,7 @@
 
       initOperatorName();
       initChatNotifs();
+      initWaitTime();
       initKb();
     }
 
@@ -2509,6 +2518,30 @@
         });
         n.onclick = function () { window.focus(); n.close(); };
       } catch (e) {}
+    }
+
+    // Estimated wait time shown to a visitor right after Sabrina connects them
+    // with the team (chatConfig/settings.waitMinutes via /api/admin-chat-config).
+    // Manual admin field, not auto-computed from recent conversations — a
+    // deliberate v1 scope cut.
+    function initWaitTime() {
+      var input = $('wait-minutes'), btn = $('wait-save'), status = $('wait-status');
+      if (!input || !btn) return;
+      function setStatus(msg, cls) { status.textContent = msg || ''; status.className = 'ci-status' + (cls ? ' ' + cls : ''); }
+      apiPost(API.adminChatConfig, {}).then(function (res) {
+        if (res.ok && res.d) input.value = res.d.waitMinutes || '';
+      });
+      btn.addEventListener('click', function () {
+        btn.disabled = true; setStatus('Saving…');
+        apiPost(API.adminChatConfig, { waitMinutes: input.value === '' ? 0 : Number(input.value) }).then(function (res) {
+          btn.disabled = false;
+          if (res.ok) {
+            input.value = (res.d && res.d.waitMinutes) || '';
+            setStatus('Saved', 'ok'); setTimeout(function () { setStatus(''); }, 1500);
+          } else setStatus((res.d && res.d.error) || 'Could not save.', 'err');
+        }).catch(function () { btn.disabled = false; setStatus('Could not save.', 'err'); });
+      });
+      input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); btn.click(); } });
     }
 
     // Operator display name — the name visitors see when a human takes over.

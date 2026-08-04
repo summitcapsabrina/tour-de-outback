@@ -54,6 +54,7 @@ export const API = {
   chatTyping: "/api/chat-typing",
   adminChatReply: "/api/admin-chat-reply",
   adminChatAction: "/api/admin-chat-action",
+  adminChatConfig: "/api/admin-chat-config",
   adminKbSeed: "/api/admin-kb-seed",
   adminKbSave: "/api/admin-kb-save",
   adminKbDelete: "/api/admin-kb-delete",
