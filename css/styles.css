@@ -286,13 +286,18 @@ h1, h2, h3, h4, h5, h6 {
   top: 100%;
   right: 0;
   margin-top: 8px;
-  background: var(--charcoal);
+  background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
   padding: 20px;
   z-index: 1001;
   white-space: normal;
   min-width: 620px;
+}
+
+[data-theme="dark"] .weather-widget .forecast-dropdown {
+  background: #1e1e21;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
 .weather-widget.forecast-open .forecast-dropdown {
@@ -302,20 +307,27 @@ h1, h2, h3, h4, h5, h6 {
 .weather-widget .forecast-header {
   font-size: 0.9rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.8);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 16px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .weather-widget .forecast-header {
+  color: rgba(255, 255, 255, 0.8);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
 .weather-widget .forecast-loading {
   padding: 24px 0;
   text-align: center;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(0, 0, 0, 0.65);
 }
+
+[data-theme="dark"] .weather-widget .forecast-loading { color: rgba(255, 255, 255, 0.65); }
 
 .weather-widget .forecast-cards {
   display: flex;
@@ -324,24 +336,30 @@ h1, h2, h3, h4, h5, h6 {
 
 .weather-widget .forecast-card {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.04);
   border-radius: 8px;
   padding: 14px;
   text-align: center;
 }
 
+[data-theme="dark"] .weather-widget .forecast-card { background: rgba(255, 255, 255, 0.05); }
+
 .weather-widget .forecast-day {
   font-size: 0.85rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.9);
   text-transform: uppercase;
 }
 
+[data-theme="dark"] .weather-widget .forecast-day { color: rgba(255, 255, 255, 0.9); }
+
 .weather-widget .forecast-date {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(0, 0, 0, 0.4);
   margin-bottom: 8px;
 }
+
+[data-theme="dark"] .weather-widget .forecast-date { color: rgba(255, 255, 255, 0.4); }
 
 .weather-widget .forecast-card-icon {
   font-size: 2rem;
@@ -359,13 +377,17 @@ h1, h2, h3, h4, h5, h6 {
 .weather-widget .forecast-high {
   font-size: 0.8rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(0, 0, 0, 0.85);
 }
+
+[data-theme="dark"] .weather-widget .forecast-high { color: rgba(255, 255, 255, 0.85); }
 
 .weather-widget .forecast-low {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(0, 0, 0, 0.5);
 }
+
+[data-theme="dark"] .weather-widget .forecast-low { color: rgba(255, 255, 255, 0.5); }
 
 .weather-widget .forecast-precip {
   font-size: 0.7rem;
@@ -387,17 +409,32 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 2px;
 }
 
+/* Compass direction-letter/speed text is drawn as inline SVG <text> (see
+   buildCompass/buildForecastCompass in main.js) with no fill attribute, so
+   these classes are what actually color it in each theme. */
+.weather-widget .wind-compass-svg .cw-n { fill: rgba(0, 0, 0, 0.7); }
+.weather-widget .wind-compass-svg .cw-dir { fill: rgba(0, 0, 0, 0.5); }
+.weather-widget .wind-compass-svg .cw-speed { fill: rgba(0, 0, 0, 0.9); }
+
+[data-theme="dark"] .weather-widget .wind-compass-svg .cw-n { fill: rgba(255, 255, 255, 0.7); }
+[data-theme="dark"] .weather-widget .wind-compass-svg .cw-dir { fill: rgba(255, 255, 255, 0.5); }
+[data-theme="dark"] .weather-widget .wind-compass-svg .cw-speed { fill: rgba(255, 255, 255, 0.9); }
+
 .weather-widget .forecast-compass-label {
   font-size: 0.6rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(0, 0, 0, 0.4);
 }
+
+[data-theme="dark"] .weather-widget .forecast-compass-label { color: rgba(255, 255, 255, 0.4); }
 
 .weather-widget .forecast-desc {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(0, 0, 0, 0.55);
   line-height: 1.4;
   text-align: left;
 }
+
+[data-theme="dark"] .weather-widget .forecast-desc { color: rgba(255, 255, 255, 0.55); }
 
 /* ============================================
    Navigation

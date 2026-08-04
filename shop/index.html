@@ -389,6 +389,7 @@
     }
 
     /* ─── Info Strip ─── */
+    .shop-info-section { background: #f9f9f9; }
     .shop-info-strip {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -418,6 +419,96 @@
       .pm-details-inner { position: static; overflow: visible; padding: 24px; display: block; }
       .pm-cta { position: static; margin-top: 0; border-top: none; padding: 0; }
     }
+
+    /* ============================================
+       Dark mode — swap the light card/section
+       surfaces for the site's standard black
+       surfaces instead of the default white/light
+       gray. This page still carries its own
+       hardcoded light-text styles above, so it
+       normally pins its overlay to a light tint in
+       dark mode (.page-content-static-light in
+       styles.css); this block overrides that pin
+       with the standard translucent black overlay
+       (--overlay-tint) plus matching card surfaces
+       and text.
+       ============================================ */
+    [data-theme="dark"] .page-content.page-content-static-light { background-color: var(--overlay-tint); }
+
+    [data-theme="dark"] .shop-intro h2 { color: #f3e9dc; }
+    [data-theme="dark"] .shop-intro p { color: #cbb9a4; }
+
+    [data-theme="dark"] .product-card {
+      background: #1e1e21;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="dark"] .product-card:hover { box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55); }
+    [data-theme="dark"] .product-image { background: #121214; }
+    [data-theme="dark"] .product-info h3 { color: #f3e9dc; }
+    [data-theme="dark"] .product-info .product-desc { color: #a68f76; }
+    [data-theme="dark"] .product-price small { color: #a68f76; }
+
+    [data-theme="dark"] .shop-status { color: #a68f76; }
+    [data-theme="dark"] .shop-status h3 { color: #e6d8c8; }
+    [data-theme="dark"] .shop-spinner { border-color: #38383d; border-top-color: #cc0000; }
+    [data-theme="dark"] .shop-skeleton {
+      background: linear-gradient(90deg, #1e1e21 25%, #27272b 37%, #1e1e21 63%);
+      background-size: 400% 100%;
+    }
+
+    [data-theme="dark"] .pm-dialog {
+      background: #1e1e21;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+    [data-theme="dark"] .pm-close { background: rgba(30, 30, 33, 0.9); color: #e6d8c8; }
+    [data-theme="dark"] .pm-close:hover { background: #27272b; }
+    [data-theme="dark"] .pm-media { background: #1e1e21; }
+    [data-theme="dark"] .pm-main { background: #121214; }
+    [data-theme="dark"] .pm-nav { background: rgba(30, 30, 33, 0.85); color: #e6d8c8; }
+    [data-theme="dark"] .pm-nav:hover { background: #27272b; }
+    [data-theme="dark"] .pm-thumbs { background: #1e1e21; }
+    [data-theme="dark"] .pm-thumb { background: #27272b; }
+    [data-theme="dark"] .pm-cta { background: #1e1e21; border-top-color: #38383d; }
+    [data-theme="dark"] .pm-details h2 { color: #f3e9dc; }
+    [data-theme="dark"] .pm-desc { color: #cbb9a4; }
+    [data-theme="dark"] .pm-desc strong,
+    [data-theme="dark"] .pm-desc b { color: #e6d8c8; }
+    [data-theme="dark"] .pm-desc h3,
+    [data-theme="dark"] .pm-desc h4,
+    [data-theme="dark"] .pm-desc h5 { color: #f3e9dc; }
+
+    [data-theme="dark"] .info-overlay { background: rgba(0, 0, 0, 0.7); }
+    [data-theme="dark"] .info-dialog {
+      background: #1e1e21;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+    [data-theme="dark"] .info-close { color: #a68f76; }
+    [data-theme="dark"] .info-dialog h3 { color: #f3e9dc; }
+    [data-theme="dark"] .info-shipping { border-top-color: #38383d; }
+    [data-theme="dark"] .info-shipping h4 { color: #f3e9dc; }
+    [data-theme="dark"] .info-shipping p { color: #cbb9a4; }
+    [data-theme="dark"] .info-shipping strong { color: #e6d8c8; }
+
+    [data-theme="dark"] .pm-optgroup > label { color: #e6d8c8; }
+    [data-theme="dark"] .pm-optgroup > label .pm-optval { color: #a68f76; }
+    [data-theme="dark"] .pm-chip {
+      background: #27272b;
+      border-color: #38383d;
+      color: #cbb9a4;
+    }
+    [data-theme="dark"] .pm-chip.selected { background: rgba(204, 0, 0, 0.18); }
+    [data-theme="dark"] .pm-swatch { border-color: #38383d; }
+    [data-theme="dark"] .pm-swatch.selected { box-shadow: 0 0 0 2px #1e1e21, 0 0 0 4px #cc0000; }
+    [data-theme="dark"] .pm-qtyrow label { color: #e6d8c8; }
+    [data-theme="dark"] .pm-qty { border-color: #38383d; }
+    [data-theme="dark"] .pm-qty button { background: #27272b; color: #e6d8c8; }
+    [data-theme="dark"] .pm-qty button:hover { background: #38383d; }
+    [data-theme="dark"] .pm-add[disabled] { background: #38383d; color: #8a7660; }
+
+    [data-theme="dark"] .shop-info-section { background: #121214; }
+    [data-theme="dark"] .info-icon { background: rgba(204, 0, 0, 0.18); }
+    [data-theme="dark"] .info-item h4 { color: #f3e9dc; }
+    [data-theme="dark"] .info-item p { color: #a68f76; }
   </style>
 
   <!-- Open Graph / Facebook -->
@@ -510,7 +601,7 @@
   </section>
 
   <!-- Info Strip -->
-  <section style="background: #f9f9f9;">
+  <section class="shop-info-section">
     <div class="container">
       <div class="shop-info-strip">
         <div class="info-item">

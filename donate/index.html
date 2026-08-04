@@ -738,6 +738,84 @@
       .donate-impact-grid { grid-template-columns: 1fr; }
       .donate-cta-row .btn { padding: 16px 40px; width: 100%; }
     }
+
+    /* ============================================
+       Dark mode — swap the light card/section
+       surfaces for the site's standard black
+       surfaces instead of the default white/light
+       gray.
+       ============================================ */
+    [data-theme="dark"] .donate-intro h2 { color: #f3e9dc; }
+    [data-theme="dark"] .donate-intro p { color: #cbb9a4; }
+
+    [data-theme="dark"] .donate-form-section { background: #121214; }
+    [data-theme="dark"] .donate-form-card {
+      background: #1e1e21;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="dark"] .donate-form-card h2 { color: #f3e9dc; }
+
+    [data-theme="dark"] .donate-step-dot { background: #27272b; border-color: #38383d; }
+    [data-theme="dark"] .donate-step-line { background: #38383d; }
+
+    [data-theme="dark"] .donate-frequency { border-bottom-color: #38383d; }
+    [data-theme="dark"] .donate-frequency-btn { color: #a68f76; }
+
+    [data-theme="dark"] .donate-amount-btn {
+      background: #27272b;
+      border-color: #38383d;
+      color: #e6d8c8;
+    }
+    [data-theme="dark"] .donate-other-input-wrap .currency {
+      background: #27272b;
+      color: #cbb9a4;
+    }
+    [data-theme="dark"] .donate-other-input-wrap input {
+      background: #27272b;
+      color: #f3e9dc;
+    }
+
+    [data-theme="dark"] .donate-monthly-upsell { background: #27272b; }
+
+    [data-theme="dark"] .donate-fee-row { color: #cbb9a4; }
+    [data-theme="dark"] .donate-fee-row input[type="checkbox"] {
+      background: #27272b;
+      border-color: #38383d;
+    }
+    [data-theme="dark"] .donate-fee-info { border-color: #6b5a45; color: #a68f76; }
+
+    [data-theme="dark"] .donate-fee-modal-box { background: #1e1e21; color: #cbb9a4; }
+    [data-theme="dark"] .donate-fee-modal-box h3 { color: #f3e9dc; }
+    [data-theme="dark"] .donate-fee-modal-close { color: #a68f76; }
+
+    [data-theme="dark"] .donor-info-grid input {
+      background: #27272b;
+      border-color: #38383d;
+      color: #f3e9dc;
+    }
+
+    [data-theme="dark"] .donate-back-btn {
+      background: #27272b;
+      border-color: #38383d;
+      color: #cbb9a4;
+    }
+    [data-theme="dark"] .donate-back-btn:hover { border-color: #a68f76; color: #f3e9dc; }
+
+    [data-theme="dark"] #stripe-card-element { background: #27272b; border-color: #38383d; }
+    [data-theme="dark"] .donate-pane-placeholder { border-color: #38383d; color: #a68f76; }
+
+    [data-theme="dark"] .donate-total-line .total-freq { color: #a68f76; }
+
+    [data-theme="dark"] .donate-or { color: #a68f76; }
+    [data-theme="dark"] .donate-or::before,
+    [data-theme="dark"] .donate-or::after { background: #38383d; }
+
+    [data-theme="dark"] .donate-impact-card {
+      background: #1e1e21;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="dark"] .donate-impact-card h3 { color: #f3e9dc; }
+    [data-theme="dark"] .donate-impact-card p { color: #cbb9a4; }
   </style>
 
   <!-- Open Graph / Facebook -->
