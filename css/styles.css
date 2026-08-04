@@ -19,6 +19,30 @@
   --nav-height: 80px;
   --max-width: 1200px;
   --transition: 0.3s ease;
+
+  /* Theme-aware surface/text tokens. The navbar, footer, hero, and other
+     always-dark chrome intentionally keep using --white/--charcoal/--dark
+     directly (they don't change between themes). These tokens are only for
+     the "light card on a light page" surfaces that DO need to flip. */
+  --surface: var(--white);
+  --surface-alt: var(--light-gray);
+  --page-bg: var(--white);
+  --text-primary: var(--text);
+  --text-heading: var(--charcoal);
+  --text-muted: rgba(0, 0, 0, 0.45);
+  --border-subtle: var(--light-gray);
+  --overlay-tint: rgba(255, 255, 255, 0.50);
+}
+
+[data-theme="dark"] {
+  --surface: #1e1e21;
+  --surface-alt: #27272b;
+  --page-bg: #121214;
+  --text-primary: #cfcfd3;
+  --text-heading: #f2f2f4;
+  --text-muted: rgba(255, 255, 255, 0.45);
+  --border-subtle: #38383d;
+  --overlay-tint: rgba(14, 14, 16, 0.72);
 }
 
 /* --- Reset --- */
@@ -46,10 +70,11 @@ html {
 
 body {
   font-family: var(--font-body);
-  color: var(--text);
-  background: var(--white);
+  color: var(--text-primary);
+  background: var(--page-bg);
   line-height: 1.6;
   overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 img {
@@ -89,15 +114,15 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   z-index: 1;
   padding: 80px 0;
-  background: var(--white);
+  background: var(--page-bg);
 }
 
 .section-padding.semi-transparent {
-  background: rgba(255, 255, 255, 0.50);
+  background: var(--overlay-tint);
 }
 
 .section-padding.semi-transparent .section-heading h2 {
-  color: var(--charcoal);
+  color: var(--text-heading);
 }
 
 .section-padding.semi-transparent .section-heading p {
@@ -453,6 +478,49 @@ h1, h2, h3, h4, h5, h6 {
   padding: 10px 24px;
 }
 
+/* Dark mode toggle — sits just left of the profile avatar. */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-left: 20px;
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.theme-toggle .icon-moon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle .icon-sun {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle .icon-moon {
+  display: block;
+}
+
 /* Reserve the auth (profile avatar) slot from first paint so the async-loaded
    avatar doesn't pop in and shove the menu sideways. 36px avatar + 2px border
    each side = 40px. The dropdown/modal styling is added by js/auth-widget.js. */
@@ -591,6 +659,7 @@ h1, h2, h3, h4, h5, h6 {
      (far right); the avatar/cart keep small gaps. */
   .nav-logo { margin-right: auto; }
   .nav-toggle { display: flex; order: 100; margin-left: 14px; }
+  .theme-toggle { margin-left: 8px; }
   .tdo-auth { margin-left: 0; }
 
   .nav-links {
@@ -700,6 +769,15 @@ h1, h2, h3, h4, h5, h6 {
 .page-content {
   position: relative;
   z-index: 1;
+  background-color: var(--overlay-tint);
+}
+
+/* A few pages (volunteer/shop/survey/account) still have their own inline
+   <style> blocks with hardcoded dark text colors sitting directly on this
+   overlay — not yet converted to the theme tokens above. Keeping their
+   overlay pinned to the light tint avoids dark-on-dark text until those
+   pages get their own pass. */
+[data-theme="dark"] .page-content.page-content-static-light {
   background-color: rgba(255, 255, 255, 0.50);
 }
 
@@ -777,7 +855,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .section-heading h2 {
   font-size: 2.5rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
   margin-bottom: 12px;
 }
 
@@ -811,7 +889,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .route-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -850,7 +928,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .route-card .card-body h3 {
   font-size: 1.4rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
   margin-bottom: 12px;
 }
 
@@ -870,12 +948,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .route-card .stat .stat-value {
   font-weight: 700;
-  color: var(--charcoal);
+  color: var(--text-heading);
 }
 
 .route-card .card-body p {
   font-size: 0.95rem;
-  color: var(--text);
+  color: var(--text-primary);
   margin-bottom: 16px;
 }
 
@@ -1002,7 +1080,7 @@ h1, h2, h3, h4, h5, h6 {
 .route-row-map {
   overflow: hidden;
   max-height: 720px;
-  background: #f0f0f0;
+  background: var(--surface-alt);
   position: relative;
 }
 
@@ -1049,7 +1127,7 @@ h1, h2, h3, h4, h5, h6 {
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  background: #ffffff;
+  background: var(--surface);
   padding: 24px 48px;
   border-radius: 12px;
 }
@@ -1060,7 +1138,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 3px;
-  color: #000000;
+  color: var(--text-heading);
   margin: 0;
 }
 
@@ -1080,7 +1158,7 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   cursor: pointer;
   background: transparent;
-  color: rgba(0,0,0,0.5);
+  color: var(--text-muted);
   transition: background var(--transition), color var(--transition);
   white-space: nowrap;
   text-transform: uppercase;
@@ -1089,7 +1167,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .route-app-btn:hover {
   background: rgba(204, 0, 0, 0.15);
-  color: #000000;
+  color: var(--text-heading);
 }
 
 .route-app-btn.active {
@@ -1104,8 +1182,8 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-  color: var(--charcoal);
+  background: var(--surface-alt);
+  color: var(--text-heading);
   text-align: center;
   gap: 16px;
 }
@@ -1133,7 +1211,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .schedule-day {
-  background: var(--white);
+  background: var(--surface);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -1164,7 +1242,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .schedule-event {
   padding: 12px 0;
-  border-bottom: 1px solid var(--light-gray);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .schedule-event:last-child {
@@ -1183,7 +1261,7 @@ h1, h2, h3, h4, h5, h6 {
 .schedule-event .event-name {
   font-weight: 600;
   font-size: 1rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
 }
 
 .schedule-event .event-desc {
@@ -1237,7 +1315,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 auto;
   border-radius: 12px;
   overflow: hidden;
-  background: var(--white);
+  background: var(--surface);
   box-shadow: 0 4px 24px rgba(0,0,0,0.1);
 }
 
@@ -1268,14 +1346,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .info-split .info-text h2 {
   font-size: 2rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
   margin-bottom: 16px;
 }
 
 .info-split .info-text p {
   font-size: 1.05rem;
   margin-bottom: 20px;
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 @media (max-width: 768px) {
@@ -1515,7 +1593,7 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 1;
   padding: 60px 0;
   text-align: center;
-  background: var(--off-white);
+  background: var(--surface-alt);
 }
 
 .sponsors-grid {
@@ -1530,7 +1608,7 @@ h1, h2, h3, h4, h5, h6 {
 .sponsor-logo {
   width: 140px;
   height: 70px;
-  background: var(--light-gray);
+  background: var(--surface-alt);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -1554,7 +1632,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .pricing-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -1594,9 +1672,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .pricing-card .card-details li {
   padding: 8px 0;
-  border-bottom: 1px solid var(--light-gray);
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 0.95rem;
-  color: var(--text);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1617,7 +1695,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .faq-item {
-  border-bottom: 1px solid var(--light-gray);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .faq-question {
@@ -1628,7 +1706,7 @@ h1, h2, h3, h4, h5, h6 {
   text-align: left;
   font-family: var(--font-heading);
   font-size: 1.1rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -1660,7 +1738,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .faq-answer p {
   font-size: 0.95rem;
-  color: var(--text);
+  color: var(--text-primary);
   line-height: 1.7;
 }
 
@@ -1740,7 +1818,7 @@ h1, h2, h3, h4, h5, h6 {
 .video-section {
   position: relative;
   z-index: 1;
-  background: var(--white);
+  background: var(--page-bg);
   padding: 60px 0;
   text-align: center;
 }
@@ -2140,7 +2218,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .blog-card {
   display: block;
-  background: var(--white);
+  background: var(--surface);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -2179,7 +2257,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   font-size: 1.3rem;
   font-weight: 600;
-  color: var(--charcoal);
+  color: var(--text-heading);
   text-transform: none;
   letter-spacing: 0;
   line-height: 1.3;
@@ -2188,7 +2266,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .blog-card-body p {
   font-size: 0.9rem;
-  color: var(--text);
+  color: var(--text-primary);
   line-height: 1.6;
   margin-bottom: 12px;
 }
@@ -2216,7 +2294,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .blog-back-link a:hover {
-  color: var(--charcoal);
+  color: var(--text-heading);
 }
 
 .blog-featured-image {
@@ -2248,7 +2326,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .blog-title {
   font-size: 2.2rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
   text-transform: none;
   letter-spacing: 0;
   line-height: 1.25;
@@ -2258,13 +2336,13 @@ h1, h2, h3, h4, h5, h6 {
 .blog-article p {
   font-size: 1.05rem;
   line-height: 1.8;
-  color: var(--text);
+  color: var(--text-primary);
   margin-bottom: 20px;
 }
 
 .blog-article h3 {
   font-size: 1.5rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
   text-transform: none;
   letter-spacing: 0;
   margin-top: 40px;
@@ -2272,7 +2350,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .blog-cta {
-  background: var(--light-gray);
+  background: var(--surface-alt);
   border-left: 4px solid var(--red);
   padding: 32px;
   margin-top: 48px;
@@ -2281,7 +2359,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .blog-cta h3 {
   font-size: 1.3rem;
-  color: var(--charcoal);
+  color: var(--text-heading);
   text-transform: none;
   letter-spacing: 0;
   margin-top: 0;
@@ -2323,7 +2401,7 @@ h1, h2, h3, h4, h5, h6 {
 .text-center { text-align: center; }
 .text-red { color: var(--red); }
 .bg-dark { background: var(--charcoal); color: var(--white); position: relative; z-index: 1; }
-.bg-light { background: var(--light-gray); position: relative; z-index: 1; }
+.bg-light { background: var(--surface-alt); color: var(--text-primary); position: relative; z-index: 1; }
 .mt-2 { margin-top: 16px; }
 .mt-4 { margin-top: 32px; }
 .mb-2 { margin-bottom: 16px; }
@@ -2338,7 +2416,7 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 20px;
   width: 360px;
   max-width: calc(100vw - 40px);
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 12px;
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
   padding: 24px 24px 18px;
@@ -2359,14 +2437,14 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--dark);
+  color: var(--text-heading);
   margin: 0 0 6px;
 }
 
 .newsletter-popup p {
   font-size: 0.9rem;
   line-height: 1.5;
-  color: rgba(0, 0, 0, 0.72);
+  color: var(--text-primary);
   margin: 0 0 14px;
 }
 
@@ -2390,7 +2468,7 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   font-size: 1.6rem;
   line-height: 1;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 6px 10px;
   transition: color 0.2s ease;

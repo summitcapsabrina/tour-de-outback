@@ -69,6 +69,31 @@ function initNavScroll() {
   });
 }
 
+// --- Dark Mode Toggle ---
+// Theme is applied early by an inline script in <head> (before first paint,
+// reading localStorage / prefers-color-scheme) so there's no flash. This
+// just wires the button and keeps localStorage + aria-pressed in sync.
+function initThemeToggle() {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  var root = document.documentElement;
+
+  function isDark() {
+    return root.getAttribute('data-theme') === 'dark';
+  }
+
+  btn.setAttribute('aria-pressed', isDark() ? 'true' : 'false');
+
+  btn.addEventListener('click', () => {
+    var dark = !isDark();
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
+    btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    try {
+      localStorage.setItem('tdo-theme', dark ? 'dark' : 'light');
+    } catch (e) {}
+  });
+}
+
 // --- FAQ Accordion ---
 function initFAQ() {
   const items = document.querySelectorAll('.faq-item');
@@ -768,6 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
   initMobileNav();
   initNavScroll();
+  initThemeToggle();
   initFAQ();
   setActiveNav();
   initNewsletter();
