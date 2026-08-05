@@ -1682,9 +1682,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Partner logos are light/transparent PNGs — keep this section's background
-   the same light gray in dark mode too, or the logos disappear. */
+   the same light gray in dark mode too, or the logos disappear. Same reason
+   the heading stays dark below: the section never actually changes tone. */
 [data-theme="dark"] .sponsors-section {
   background: var(--light-gray);
+}
+
+[data-theme="dark"] .sponsors-section .section-heading h2 {
+  color: var(--charcoal);
 }
 
 .sponsors-grid {
