@@ -2349,7 +2349,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 8px;
 }
 
-.blog-card-body h3 {
+.blog-card-body h2 {
   font-family: var(--font-heading);
   font-size: 1.3rem;
   font-weight: 600;
@@ -2485,7 +2485,7 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 480px) {
   .blog-card-image { height: 180px; }
   .blog-card-body { padding: 20px; }
-  .blog-card-body h3 { font-size: 1.15rem; }
+  .blog-card-body h2 { font-size: 1.15rem; }
   .blog-title { font-size: 1.4rem; }
   .blog-article h3 { font-size: 1.2rem; margin-top: 32px; }
   .blog-cta { padding: 20px 16px; }

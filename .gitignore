@@ -15,3 +15,6 @@ functions/node_modules/
 
 # Internal marketing context (product-marketing skill) — keep out of the public repo
 .agents/
+
+# SEO-GOD local state, secrets, and OpenSEO data
+.seo-god/
