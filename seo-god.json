@@ -6,12 +6,12 @@
     "status": "running"
   },
   "gsc": {
-    "connected": false
+    "connected": true
   },
   "phases": {
     "setup": "done",
     "audit": "done",
-    "measure": "in_progress",
+    "measure": "done",
     "ai_visibility": "pending",
     "schedule": "pending"
   },
@@ -26,5 +26,22 @@
     "dataforseo": false,
     "llm_keys": false,
     "telegram": false
-  }
+  },
+  "keywords": [
+    "Oregon Tour de Outback",
+    "Lakeview Oregon cycling event",
+    "gravel cycling Oregon",
+    "Oregon century bike ride",
+    "Lake County Oregon bike routes",
+    "Oregon road cycling event",
+    "gravel bike routes Oregon",
+    "cycling event Lakeview Oregon",
+    "Tour de Outback registration",
+    "Oregon gravel century",
+    "Lake County Search and Rescue cycling",
+    "best gravel rides Oregon",
+    "Oregon outback cycling",
+    "things to do Lakeview Oregon",
+    "Dark Sky Sanctuary Lake County"
+  ]
 }
