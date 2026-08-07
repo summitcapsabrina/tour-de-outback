@@ -104,5 +104,21 @@
       { "query": "where is the oregon outback", "clicks": 0, "impressions": 1, "position": 28 }
     ]
   },
-  "ai_visibility": { "measured": false, "prompts_ok": 0, "cited": 0, "competitors": {} }
+  "ai_visibility": {
+    "measured": true,
+    "prompts_ok": 10,
+    "cited": 5,
+    "competitors": {
+      "en.wikipedia.org": 5,
+      "dirtyfreehub.org": 4,
+      "tourdeoutback.org": 4,
+      "cycleoregon.com": 3,
+      "granfondoguide.com": 3,
+      "mudslingerevents.com": 3,
+      "westcoastcyclingevents.com": 3,
+      "bikepacking.com": 2,
+      "breakawaypromotions.com": 2,
+      "elite-wheels.com": 2
+    }
+  }
 }
