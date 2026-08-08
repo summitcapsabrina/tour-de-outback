@@ -734,7 +734,7 @@ h1, h2, h3, h4, h5, h6 {
 /* --- Mobile Nav --- */
 @media (max-width: 768px) {
   .navbar .container {
-    padding: 0 22px;
+    padding: 0 14px;
   }
   .weather-widget {
     display: none;
@@ -2044,8 +2044,11 @@ h1, h2, h3, h4, h5, h6 {
   :root {
     --nav-height: 64px;
   }
+  /* Shrunk from 48px to claw back the ~60px the theme-toggle button added to
+     the icon row on mobile — the logo is the only part of the row without a
+     tappable button, so it's the one that gives up space, not the icons. */
   .nav-logo-img {
-    height: 48px;
+    height: 34px;
   }
 
   /* Reduce section padding */

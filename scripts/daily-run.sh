@@ -126,7 +126,7 @@ if [ "$DRY" = "1" ]; then
     echo "DRY: would pass no --add-dir (skill dir missing, or inside the project)"
   fi
   echo "DRY: would pass --allowedTools $ALLOWED_TOOLS"
-  echo 'DRY: would run claude -p "/seo-god daily" --permission-mode acceptEdits --max-turns 80'
+  echo 'DRY: would run claude -p "/seo-god daily" --permission-mode acceptEdits --max-turns 30'
   if command -v claude >/dev/null 2>&1; then
     echo "DRY: claude CLI found"
   else
@@ -169,14 +169,14 @@ fi
 STEP="claude -p /seo-god daily"
 # MSYS2_ARG_CONV_EXCL is the Git Bash trap: MSYS rewrites any argument that looks
 # like an absolute POSIX path before handing it to a native .exe, so the prompt
-# would reach claude.exe as "C:/Program Files/Git/seo-god daily" — a real 80-turn
+# would reach claude.exe as "C:/Program Files/Git/seo-god daily" — a real 50-turn
 # acceptEdits session on a garbage prompt, ending in an ok:true marker. Scoped to
 # this one prefix, and ignored outright by macOS and Linux shells.
 MSYS2_ARG_CONV_EXCL='/seo-god' claude -p "/seo-god daily" \
   --permission-mode acceptEdits \
   --allowedTools "$ALLOWED_TOOLS" \
   ${ADD_DIR_ARGS[@]+"${ADD_DIR_ARGS[@]}"} \
-  --max-turns 80
+  --max-turns 30
 
 NOTES="$(notes_all)"
 if [ -n "$NOTES" ]; then
