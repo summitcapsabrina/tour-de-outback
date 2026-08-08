@@ -188,6 +188,12 @@
       '#tdo-chat-panel{left:0;right:0;top:0;bottom:0;width:100%;max-width:100%;height:100dvh;max-height:none;border-radius:0}' +
       '#tdo-c-kbbuf{display:block;height:' + MOBILE_KEYBOARD_BUFFER_PX + 'px}' +
       '#tdo-chat-launch{right:16px;bottom:16px}' +
+      // iOS Safari auto-zooms the page on focusing any input/textarea with a
+      // computed font-size under 16px, and doesn't reliably zoom back out on
+      // blur -- leaving the fixed-position panel visibly cut off afterward.
+      // 16px sidesteps the zoom entirely; only overridden on mobile so the
+      // desktop bubble/input sizing (0.92rem) is untouched.
+      '.tdo-c-in,.tdo-c-gate input{font-size:16px}' +
     '}'
   ].join('');
   document.head.appendChild(css);
