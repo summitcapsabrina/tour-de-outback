@@ -77,6 +77,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.tourdeoregon.com/blog/lake-county-hot-springs/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.tourdeoregon.com/privacy/</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
