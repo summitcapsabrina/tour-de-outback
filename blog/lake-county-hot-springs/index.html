@@ -110,11 +110,21 @@
       display: block;
       border-radius: 8px;
     }
+    .blog-float-right .photo-label, .blog-float-left .photo-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #cc0000;
+      text-align: center;
+      margin-top: 6px;
+      margin-bottom: 0;
+    }
     .blog-float-right .photo-credit, .blog-float-left .photo-credit {
       font-size: 0.7rem;
       color: #999;
       text-align: center;
-      margin-top: 4px;
+      margin-top: 2px;
       line-height: 1.4;
     }
     .blog-float-right .photo-credit a, .blog-float-left .photo-credit a {
@@ -122,14 +132,27 @@
       text-decoration: underline;
     }
     .blog-article .clearfix { clear: both; }
+    .featured-photo-label {
+      max-width: 600px;
+      margin: -28px auto 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #cc0000;
+      text-align: center;
+    }
     .featured-photo-credit {
       max-width: 600px;
-      margin: -28px auto 36px;
+      margin: 2px auto 36px;
       font-size: 0.75rem;
       color: #999;
       text-align: center;
     }
     .featured-photo-credit a { color: #999; text-decoration: underline; }
+    @media (max-width: 768px) {
+      .featured-photo-label { margin-top: 8px; }
+    }
     @media (max-width: 768px) {
       .featured-photo-credit { margin-top: 8px; }
     }
@@ -151,6 +174,7 @@
         <div class="blog-featured-image">
           <img src="hart-mountain-hero.jpg" alt="Soaking pool at the Hart Mountain hot springs campground in Lake County, Oregon">
         </div>
+        <p class="featured-photo-label">Hart Mountain Hot Springs</p>
         <p class="featured-photo-credit">Photo courtesy of <a href="https://thatoregonlife.com/2026/05/this-remote-oregon-hot-springs-lets-you-soak-beneath-desert-skies-where-wild-horses-roam/" target="_blank">That Oregon Life</a></p>
       </div>
       <div class="container blog-article">
@@ -169,6 +193,7 @@
 
         <div class="blog-float-right">
           <img src="old-perpetual-geyser.jpg" alt="Old Perpetual geyser erupting at Hunter's Hot Springs near Lakeview, Oregon">
+          <p class="photo-label">Hunter's Hot Springs</p>
           <p class="photo-credit">Public domain photo via <a href="https://en.wikipedia.org/wiki/File:Old_Perpetual_geyser.jpg" target="_blank">U.S. DOT / Wikimedia Commons</a></p>
         </div>
 
@@ -182,6 +207,7 @@
 
         <div class="blog-float-left">
           <img src="summer-lake-hot-springs.jpg" alt="Sunset over the outdoor rock-walled soaking tubs at Summer Lake Hot Springs in Lake County, Oregon">
+          <p class="photo-label">Summer Lake Hot Springs</p>
           <p class="photo-credit">Photo courtesy of <a href="https://www.summerlakehotsprings.com/" target="_blank">Summer Lake Hot Springs</a></p>
         </div>
 
