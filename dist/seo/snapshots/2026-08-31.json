@@ -1,0 +1,108 @@
+{
+  "date": "2026-08-31",
+  "source": "seo-god",
+  "site": "https://www.tourdeoregon.com",
+  "crawl": {
+    "pages": 18,
+    "issues": [
+      {
+        "type": "orphan-page",
+        "severity": "warn",
+        "urls": [
+          "https://www.tourdeoregon.com/privacy/",
+          "https://www.tourdeoregon.com/terms/"
+        ]
+      },
+      {
+        "type": "heading-order-skip",
+        "severity": "info",
+        "urls": [
+          "https://www.tourdeoregon.com/blog/",
+          "https://www.tourdeoregon.com/routes/",
+          "https://www.tourdeoregon.com/shop/"
+        ]
+      },
+      {
+        "type": "meta-description-too-long",
+        "severity": "info",
+        "urls": [
+          "https://www.tourdeoregon.com/",
+          "https://www.tourdeoregon.com/blog/2026-ride-recap/",
+          "https://www.tourdeoregon.com/blog/dark-sky-sanctuary/",
+          "https://www.tourdeoregon.com/blog/explore-lakeview/",
+          "https://www.tourdeoregon.com/blog/first-gravel-ride/",
+          "https://www.tourdeoregon.com/blog/lakeview-skatepark/"
+        ]
+      },
+      {
+        "type": "title-too-long",
+        "severity": "info",
+        "urls": [
+          "https://www.tourdeoregon.com/blog/dark-sky-sanctuary/",
+          "https://www.tourdeoregon.com/blog/explore-lakeview/",
+          "https://www.tourdeoregon.com/blog/first-gravel-ride/",
+          "https://www.tourdeoregon.com/blog/gravel-cycling-fastest-growing-sport/",
+          "https://www.tourdeoregon.com/blog/lakeview-skatepark/",
+          "https://www.tourdeoregon.com/blog/wild-beauty-lake-county/"
+        ]
+      }
+    ]
+  },
+  "ranks": [
+    { "keyword": "Oregon Tour de Outback", "position": null, "url": "" },
+    { "keyword": "Lakeview Oregon cycling event", "position": null, "url": "" },
+    { "keyword": "gravel cycling Oregon", "position": null, "url": "" },
+    { "keyword": "Oregon century bike ride", "position": null, "url": "" },
+    { "keyword": "Lake County Oregon bike routes", "position": null, "url": "" },
+    { "keyword": "Oregon road cycling event", "position": null, "url": "" },
+    { "keyword": "gravel bike routes Oregon", "position": null, "url": "" },
+    { "keyword": "cycling event Lakeview Oregon", "position": null, "url": "" },
+    { "keyword": "Tour de Outback registration", "position": null, "url": "" },
+    { "keyword": "Oregon gravel century", "position": null, "url": "" },
+    { "keyword": "Lake County Search and Rescue cycling", "position": null, "url": "" },
+    { "keyword": "best gravel rides Oregon", "position": null, "url": "" },
+    { "keyword": "Oregon outback cycling", "position": null, "url": "" },
+    { "keyword": "things to do Lakeview Oregon", "position": null, "url": "" },
+    { "keyword": "Dark Sky Sanctuary Lake County", "position": null, "url": "" }
+  ],
+  "gsc": {
+    "available": true,
+    "clicks28d": 20,
+    "impressions28d": 490,
+    "top_queries": [
+      { "query": "tour de outback", "clicks": 3, "impressions": 4, "position": 1 },
+      { "query": "oregon tour de outback", "clicks": 1, "impressions": 2, "position": 1 },
+      { "query": "american outback adventures and events", "clicks": 0, "impressions": 3, "position": 19.7 },
+      { "query": "bayview blast", "clicks": 0, "impressions": 1, "position": 48 },
+      { "query": "cycle oregon 2027", "clicks": 0, "impressions": 7, "position": 4.1 },
+      { "query": "lake county fairgrounds lakeview camping", "clicks": 0, "impressions": 11, "position": 7.7 },
+      { "query": "lake county fairgrounds oregon", "clicks": 0, "impressions": 6, "position": 11.7 },
+      { "query": "lakeview fairgrounds", "clicks": 0, "impressions": 6, "position": 11.2 },
+      { "query": "lakeview oregon fair", "clicks": 0, "impressions": 4, "position": 11.5 },
+      { "query": "oregon cycling events", "clicks": 0, "impressions": 2, "position": 15.5 },
+      { "query": "oregon cycling events 2026", "clicks": 0, "impressions": 4, "position": 10.5 },
+      { "query": "oregon outback", "clicks": 0, "impressions": 8, "position": 25.5 },
+      { "query": "oregon outback bike route", "clicks": 0, "impressions": 3, "position": 8.3 },
+      { "query": "oregon outback bikepacking", "clicks": 0, "impressions": 2, "position": 14.5 },
+      { "query": "oregon outback route", "clicks": 0, "impressions": 2, "position": 8.5 },
+      { "query": "oregon outback trail", "clicks": 0, "impressions": 6, "position": 36.7 },
+      { "query": "oregon triple crown", "clicks": 0, "impressions": 1, "position": 28 },
+      { "query": "outback cycling", "clicks": 0, "impressions": 3, "position": 8 },
+      { "query": "outback oregon", "clicks": 0, "impressions": 2, "position": 18.5 },
+      { "query": "the oregon outback", "clicks": 0, "impressions": 1, "position": 74 },
+      { "query": "tour de glaze", "clicks": 0, "impressions": 1, "position": 37 },
+      { "query": "tour de gravel", "clicks": 0, "impressions": 1, "position": 2 },
+      { "query": "tour de lakes", "clicks": 0, "impressions": 1, "position": 31 },
+      { "query": "tour de lakes 2026", "clicks": 0, "impressions": 1, "position": 35 },
+      { "query": "tour de mont blanc", "clicks": 0, "impressions": 1, "position": 2 },
+      { "query": "tour de outback 2026", "clicks": 0, "impressions": 1, "position": 2 },
+      { "query": "tour de pines", "clicks": 0, "impressions": 1, "position": 41 },
+      { "query": "tour de proviso 2025", "clicks": 0, "impressions": 1, "position": 32 },
+      { "query": "tour de tugaloo", "clicks": 0, "impressions": 1, "position": 23 },
+      { "query": "tour of acoma", "clicks": 0, "impressions": 1, "position": 39 },
+      { "query": "tour of the reservoir", "clicks": 0, "impressions": 1, "position": 54 },
+      { "query": "was there one in june?", "clicks": 0, "impressions": 1, "position": 2 }
+    ]
+  },
+  "ai_visibility": { "measured": false, "prompts_ok": 0, "cited": 0, "competitors": {} }
+}
