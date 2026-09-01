@@ -527,7 +527,7 @@ exports.adminListUsers = onRequest(
 // body: { uid?, email?, admin: true|false }  -> { ok, uid, email, admin }
 // ---------------------------------------------------------------------------
 exports.adminSetRole = onRequest(
-  { cors: ALLOWED_ORIGINS, invoker: 'public' },
+  { cors: ALLOWED_ORIGINS, invoker: 'public', secrets: [RESEND_API_KEY] },
   async (req, res) => {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
     const adminUser = await verifyAdmin(req);
@@ -557,7 +557,35 @@ exports.adminSetRole = onRequest(
         updatedBy: adminUser.email || null,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
-      return res.json({ ok: true, uid: userRecord.uid, email: userRecord.email || null, admin: makeAdmin });
+
+      // The admin claim is worthless until the email is verified (verifyAdmin
+      // requires both — see above), so a promoted-but-unverified account would
+      // otherwise be stuck with no way in. Email them the verification link now
+      // instead of waiting on them to find "Resend" on the denied /admin/ screen.
+      let verificationEmailed = false;
+      if (makeAdmin && !userRecord.emailVerified && userRecord.email) {
+        try {
+          const link = await admin.auth().generateEmailVerificationLink(userRecord.email, {
+            url: 'https://oregon-tour-de-outback.web.app/admin/',
+          });
+          verificationEmailed = await sendEmail({
+            from: MAIL_FROM.account,
+            to: userRecord.email,
+            subject: 'Verify your email to access Tour de Outback admin',
+            html: '<p>You’ve been granted admin access on the Oregon Tour de Outback site.</p>' +
+              '<p>Your email address isn’t verified yet, which admin access requires. ' +
+              'Click the link below to verify it, then sign in and visit ' +
+              '<a href="https://oregon-tour-de-outback.web.app/admin/">/admin/</a>.</p>' +
+              '<p><a href="' + link + '">Verify my email</a></p>',
+            text: 'You’ve been granted admin access on the Oregon Tour de Outback site. ' +
+              'Verify your email first: ' + link,
+          });
+        } catch (e) { logger.warn('adminSetRole: verification email failed', (e && e.message) || e); }
+      }
+      return res.json({
+        ok: true, uid: userRecord.uid, email: userRecord.email || null, admin: makeAdmin,
+        emailVerified: !!userRecord.emailVerified, verificationEmailed: verificationEmailed,
+      });
     } catch (err) {
       const code = err && err.code;
       if (code === 'auth/user-not-found') return res.status(404).json({ error: 'No user with that email/ID.' });
@@ -833,6 +861,7 @@ const MAIL_FROM = {
   chat: 'Sabrina — Tour de Outback <notifications@tourdeoutback.org>',
   shop: 'Tour de Outback Shop <notifications@tourdeoutback.org>',
   donation: 'Tour de Outback Donations <notifications@tourdeoutback.org>',
+  account: 'Tour de Outback <notifications@tourdeoutback.org>',
 };
 
 // Send an email through the Resend API using global fetch (Node 22). Best-effort:

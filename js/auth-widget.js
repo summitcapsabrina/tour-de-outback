@@ -7,7 +7,7 @@ import {
   onAuthStateChanged, signOut,
   GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
-  sendSignInLinkToEmail
+  sendSignInLinkToEmail, sendEmailVerification
 } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
 
 (function () {
@@ -240,9 +240,14 @@ import {
       if (signupMode) {
         var consentBox = modalBody.querySelector('#tdo-consent');
         var wantsEmail = !!(consentBox && consentBox.checked);
-        createUserWithEmailAndPassword(auth, email, pw).then(function () {
+        createUserWithEmailAndPassword(auth, email, pw).then(function (cred) {
           fireConversion(CONV_ACCOUNT_SIGNUP);
           if (wantsEmail) { subscribeAndTrack(email); }
+          sendEmailVerification(cred.user).then(function () {
+            msg('ok', 'Account created — check ' + email + ' for a verification link before you can access admin features.');
+          }).catch(function () {
+            msg('ok', 'Account created, but we couldn’t send a verification email. Use “Resend verification email” on the Admin page once you sign in.');
+          });
         }).catch(function (e) { msg('err', friendly(e)); });
       } else {
         signInWithEmailAndPassword(auth, email, pw).catch(function (e) { msg('err', friendly(e)); });

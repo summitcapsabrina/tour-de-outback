@@ -1474,7 +1474,7 @@
   <script src="../js/us-states-boundaries.min.js" defer></script>
   <script type="module">
     import { auth, API, isAdminUser, resolveIsAdmin, db } from "/js/firebase-init.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
+    import { onAuthStateChanged, signOut, sendEmailVerification } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
     import { collection, query, orderBy, limit, onSnapshot }
       from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
 
@@ -1482,7 +1482,47 @@
     function show(id) { $(id).hidden = false; } function hide(id) { $(id).hidden = true; }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
-    $('open-signin').addEventListener('click', function () { if (window.tdoOpenAuth) window.tdoOpenAuth(); });
+    // The denied panel has three states: signed out, signed in but unverified
+    // (blocks admin access even with the admin:true claim — see verifyAdmin in
+    // functions/index.js), and signed in + verified but not an admin.
+    function renderDenied(user) {
+      var card = document.querySelector('#view-denied .admin-panel');
+      if (user && !user.emailVerified) {
+        card.innerHTML =
+          '<h2>Verify your email</h2>' +
+          '<p class="sub">You’re signed in as ' + esc(user.email || '') + ', but this address hasn’t been verified yet. ' +
+          'Admin access requires a verified email — check your inbox for the link, then come back here.</p>' +
+          '<button class="adm-btn" id="resend-verify">Resend verification email</button> ' +
+          '<button class="adm-btn" id="recheck-verify" style="background:#222">I’ve verified — recheck</button>';
+        $('resend-verify').addEventListener('click', function () {
+          var b = this; b.disabled = true; b.textContent = 'Sending…';
+          sendEmailVerification(user).then(function () {
+            b.textContent = 'Sent — check your inbox';
+          }).catch(function (err) {
+            b.disabled = false; b.textContent = 'Resend verification email';
+            alert((err && err.message) || 'Could not send the verification email.');
+          });
+        });
+        $('recheck-verify').addEventListener('click', function () {
+          var b = this; b.disabled = true; b.textContent = 'Checking…';
+          user.reload().then(function () { location.reload(); })
+            .catch(function () { location.reload(); });
+        });
+      } else if (user) {
+        card.innerHTML =
+          '<h2>Admins only</h2>' +
+          '<p class="sub">Signed in as ' + esc(user.email || '') + ', but this account doesn’t have admin access. ' +
+          'Ask an existing admin to grant it from Users → Admins.</p>' +
+          '<button class="adm-btn" id="denied-signout">Sign out</button>';
+        $('denied-signout').addEventListener('click', function () { signOut(auth); });
+      } else {
+        card.innerHTML =
+          '<h2>Admins only</h2>' +
+          '<p class="sub">Sign in with an administrator account to continue.</p>' +
+          '<button class="adm-btn" id="open-signin">Sign in</button>';
+        $('open-signin').addEventListener('click', function () { if (window.tdoOpenAuth) window.tdoOpenAuth(); });
+      }
+    }
 
     // Tab switching
     var ADMIN_TABS = ['chat', 'registration', 'surveys', 'accounting', 'analytics', 'shop', 'discounts', 'photos', 'users'];
@@ -2362,7 +2402,7 @@
           if (!surveysInited) { surveysInited = true; initSurveys(); }
           if (!acctInited) { acctInited = true; initAccounting(user); }
         } else {
-          hide('view-admin'); show('view-denied');
+          hide('view-admin'); renderDenied(user); show('view-denied');
         }
       });
     });
@@ -4014,7 +4054,14 @@
           : 'Remove admin access from ' + (name || 'this user') + '?')) return;
       apiPost(API.adminSetRole, { uid: uid, admin: makeAdmin }).then(function (res) {
         if (!res.ok) { var el = $('users-error'); el.textContent = (res.d && res.d.error) || 'Could not update role.'; el.classList.add('show'); return; }
-        setUsersMsg(makeAdmin ? 'Admin access granted. Ask them to reload /admin or /chat.' : 'Admin access removed.');
+        var d = res.d || {};
+        var okMsg = makeAdmin ? 'Admin access granted. Ask them to reload /admin or /chat.' : 'Admin access removed.';
+        if (makeAdmin && !d.emailVerified) {
+          okMsg += d.verificationEmailed
+            ? ' Their email isn’t verified yet, so we also emailed them a verification link (required before admin access works).'
+            : ' Their email isn’t verified yet — admin access won’t work until they verify it, and we couldn’t send the verification email automatically. Ask them to use “Resend verification email” on the /admin/ sign-in screen.';
+        }
+        setUsersMsg(okMsg);
         if (currentUser) loadUsers(currentUser);   // re-partitions → the user moves between the Riders/Admins tabs
       }).catch(function () { var el = $('users-error'); el.textContent = 'Network error.'; el.classList.add('show'); });
     }
