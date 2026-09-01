@@ -580,6 +580,7 @@ exports.adminSetRole = onRequest(
             text: 'You’ve been granted admin access on the Oregon Tour de Outback site. ' +
               'Verify your email first: ' + link,
           });
+          logger.info('adminSetRole: verification email ' + (verificationEmailed ? 'sent' : 'FAILED (see prior sendEmail log)') + ' to ' + userRecord.email);
         } catch (e) { logger.warn('adminSetRole: verification email failed', (e && e.message) || e); }
       }
       return res.json({
@@ -1623,6 +1624,19 @@ exports.chatTyping = onRequest(
 // POST /api/admin-chat-reply  — human operator replies in a thread (admins only).
 // body: { conversationId, text }
 // ---------------------------------------------------------------------------
+// A conversation already in 'human' status belongs to whichever admin took it
+// over — a second admin replying or taking over would silently reassign it out
+// from under the first (each overwrite is invisible to the admin who "had" it).
+// Returns the blocking admin's display name if the caller isn't the owner,
+// otherwise null (unclaimed, or the caller already owns it).
+function chatOwnershipConflict(convData, adminUser) {
+  if (!convData || convData.status !== 'human') return null;
+  const ownerEmail = (convData.adminEmail || '').toLowerCase();
+  const callerEmail = (adminUser.email || '').toLowerCase();
+  if (!ownerEmail || ownerEmail === callerEmail) return null;
+  return convData.adminName || 'another team member';
+}
+
 exports.adminChatReply = onRequest(
   { cors: ALLOWED_ORIGINS, invoker: 'public' },
   async (req, res) => {
@@ -1637,6 +1651,8 @@ exports.adminChatReply = onRequest(
       const convRef = db.collection('conversations').doc(cid);
       const convSnap = await convRef.get();
       if (!convSnap.exists) return res.status(404).json({ error: 'No conversation.' });
+      const owner = chatOwnershipConflict(convSnap.data(), adminUser);
+      if (owner) return res.status(409).json({ error: owner + ' is already handling this chat.' });
       const name = await adminFirstName(adminUser);
       await convRef.set({
         status: 'human',
@@ -1677,10 +1693,18 @@ exports.adminChatAction = onRequest(
       const convRef = db.collection('conversations').doc(cid);
       const convSnap = await convRef.get();
       if (!convSnap.exists) return res.status(404).json({ error: 'No conversation.' });
+      const convData = convSnap.data();
       const name = await adminFirstName(adminUser);
       const now = admin.firestore.FieldValue.serverTimestamp();
 
       if (action === 'takeover') {
+        const owner = chatOwnershipConflict(convData, adminUser);
+        if (owner) return res.status(409).json({ error: owner + ' is already handling this chat.' });
+        // Already the owner (e.g. a reload re-fired the click) — nothing to do,
+        // and don't spam another "has joined" line into the thread.
+        if (convData.status === 'human' && (convData.adminEmail || '').toLowerCase() === (adminUser.email || '').toLowerCase()) {
+          return res.json({ ok: true });
+        }
         await convRef.set({ status: 'human', adminName: name, adminEmail: adminUser.email || null,
           unread: false, backupEmailSent: true, lastAdminSeenAt: now }, { merge: true });
         // Replace the "Connecting you with our team…" notice with the join line so

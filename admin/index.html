@@ -2756,12 +2756,23 @@
       if (!conv) return;
       $('th-who').textContent = (conv.visitorName || 'Visitor') + (conv.visitorEmail ? ' · ' + conv.visitorEmail : '');
       var st = conv.status || 'bot';
+      // A conversation already in 'human' status is claimed by whichever admin
+      // took it over — replying as anyone else would silently reassign it out
+      // from under them (the server also rejects it), so lock the composer.
+      var myEmail = (currentUser && currentUser.email || '').toLowerCase();
+      var mine = (conv.adminEmail || '').toLowerCase() === myEmail;
+      var lockedByOther = st === 'human' && !mine;
       $('th-meta').innerHTML = '<span class="pill ' + st + '">' + st + '</span> ' +
         (isOnline(conv) ? 'online' : 'last seen ' + ago(conv.lastVisitorSeenAt)) +
-        (conv.pageUrl ? ' · on ' + esc(String(conv.pageUrl).replace(/^https?:\/\/[^/]+/, '') || '/') : '');
+        (conv.pageUrl ? ' · on ' + esc(String(conv.pageUrl).replace(/^https?:\/\/[^/]+/, '') || '/') : '') +
+        (lockedByOther ? ' · <b>claimed by ' + esc(conv.adminName || 'another admin') + '</b>' : '');
       $('th-takeover').disabled = (st === 'human');
+      $('th-takeover').title = lockedByOther ? (conv.adminName || 'Another admin') + ' is already handling this chat.' : '';
       $('th-handback').disabled = (st === 'bot');
       $('th-resolve').disabled = (st === 'resolved');
+      $('th-input').disabled = lockedByOther;
+      $('th-send').disabled = lockedByOther;
+      $('th-input').placeholder = lockedByOther ? (conv.adminName || 'Another admin') + ' is handling this chat' : 'Reply as a human…';
     }
     // Live preview: show the visitor's in-progress draft (from the conversation
     // snapshot) as a ghost bubble, plus a "typing…" line when they're active but
@@ -2816,7 +2827,11 @@
     }
     function convAction(action) {
       if (!selectedCid) return;
-      apiPost(API.adminChatAction, { conversationId: selectedCid, action: action }).catch(function () {});
+      apiPost(API.adminChatAction, { conversationId: selectedCid, action: action }).then(function (res) {
+        // Two admins can race a Take-over on the same still-unclaimed chat; the
+        // loser needs to hear about it instead of silently believing they got it.
+        if (!res.ok) alert((res.d && res.d.error) || 'Action failed.');
+      }).catch(function () {});
     }
 
     // -------------------------- Knowledge Base --------------------------

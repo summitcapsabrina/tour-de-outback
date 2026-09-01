@@ -289,7 +289,7 @@
     $("th-back").addEventListener("click", closeThread);
     $("th-send").addEventListener("click", sendReply);
     $("th-input").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); } });
-    $("th-input").addEventListener("input", () => { const i = $("th-input"); i.style.height="auto"; i.style.height=Math.min(i.scrollHeight,120)+"px"; });
+    $("th-input").addEventListener("input", onAdminType);
     $("th-takeover").addEventListener("click", () => act("takeover"));
     $("th-complete").addEventListener("click", () => { $("confirm-ov").hidden = false; });
     $("confirm-cancel").addEventListener("click", () => { $("confirm-ov").hidden = true; });
@@ -362,7 +362,22 @@
     }
 
     // ---- thread ----
-    let draftTimer = null;
+    let draftTimer = null, draftSaveTimer = null, adminTypingSent = 0;
+    // Broadcasts to the visitor that a human is typing (mirrors the desktop
+    // admin dashboard) and debounce-saves the in-progress draft. Uses its own
+    // timer (draftSaveTimer) — draftTimer is the periodic thread-refresh interval.
+    function onAdminType() {
+      const i = $("th-input"); i.style.height = "auto"; i.style.height = Math.min(i.scrollHeight, 120) + "px";
+      const now = Date.now();
+      if (selectedCid && now - adminTypingSent > 2500) {
+        adminTypingSent = now;
+        apiPost(API.action, { conversationId: selectedCid, action: "typing", typing: true });
+      }
+      if (draftSaveTimer) clearTimeout(draftSaveTimer);
+      draftSaveTimer = setTimeout(() => {
+        if (selectedCid) apiPost(API.action, { conversationId: selectedCid, action: "draft", draft: $("th-input").value });
+      }, 900);
+    }
     function openThread(cid) {
       selectedCid = cid;
       $("thread").classList.add("open");
@@ -415,11 +430,16 @@
       const presence = presenceOpen(c)
         ? '<span style="color:#8ef0a6">chat open</span>'
         : 'chat closed' + (c.lastVisitorSeenAt ? ' · last seen '+ago(c.lastVisitorSeenAt)+" ago" : "");
-      $("th-meta").innerHTML = esc(st) + " · " + presence;
-      // Bottom: reply box once a human is handling; otherwise the big Take-over button.
-      const human = (st === "human");
-      $("th-reply").hidden = !human;
-      $("th-takeover-bar").hidden = human;
+      // A conversation already claimed by another admin is locked: no Take-over
+      // button (nothing to take over into) and no reply box (replying would
+      // silently reassign it — the server rejects it anyway, but don't invite it).
+      const mine = (user && (c.adminEmail || "").toLowerCase() === (user.email || "").toLowerCase());
+      const lockedByOther = (st === "human") && !mine;
+      $("th-meta").innerHTML = esc(st) + " · " + presence + (lockedByOther ? " · claimed by " + esc(c.adminName || "another admin") : "");
+      $("th-reply").hidden = !(st === "human" && mine);
+      $("th-takeover-bar").hidden = (st === "human" && mine);
+      $("th-takeover").disabled = lockedByOther;
+      $("th-takeover").textContent = lockedByOther ? (c.adminName || "Another admin") + " is handling this chat" : "Take over this chat";
     }
     async function sendReply() {
       const text = $("th-input").value.trim(); if (!text || !selectedCid) return;
