@@ -1575,24 +1575,38 @@ exports.chatEscalate = onRequest(
       }
       if (!cid) {
         const now = admin.firestore.FieldValue.serverTimestamp();
-        convRef = db.collection('conversations').doc();
-        cid = convRef.id;
-        await convRef.set({
-          status: 'bot',
-          createdAt: now,
-          updatedAt: now,
-          lastMessageAt: now,
-          visitorId: String(body.visitorId || '').slice(0, 80) || null,
-          visitorName: String(body.visitorName || '').slice(0, 120) || null,
-          visitorEmail: String(body.visitorEmail || '').slice(0, 160) || null,
-          userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
-          pageUrl: String(body.pageUrl || '').slice(0, 300) || null,
-          firstMessage: '',
-          messageCount: 0,
-          unread: true,
-          adminName: null,
-        });
-        convSnap = await convRef.get();
+        const visitorId = String(body.visitorId || '').slice(0, 80) || null;
+        const existing = await findActiveConversationForVisitor(visitorId);
+        if (existing) {
+          convRef = existing.ref;
+          cid = convRef.id;
+          if (body.visitorName || body.visitorEmail) {
+            await convRef.set({
+              visitorName: String(body.visitorName || existing.data.visitorName || '').slice(0, 120) || null,
+              visitorEmail: String(body.visitorEmail || existing.data.visitorEmail || '').slice(0, 160) || null,
+            }, { merge: true });
+          }
+          convSnap = await convRef.get();
+        } else {
+          convRef = db.collection('conversations').doc();
+          cid = convRef.id;
+          await convRef.set({
+            status: 'bot',
+            createdAt: now,
+            updatedAt: now,
+            lastMessageAt: now,
+            visitorId: visitorId,
+            visitorName: String(body.visitorName || '').slice(0, 120) || null,
+            visitorEmail: String(body.visitorEmail || '').slice(0, 160) || null,
+            userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
+            pageUrl: String(body.pageUrl || '').slice(0, 300) || null,
+            firstMessage: '',
+            messageCount: 0,
+            unread: true,
+            adminName: null,
+          });
+          convSnap = await convRef.get();
+        }
       }
       const conv = convSnap.data();
       if (conv.status === 'escalated' || conv.status === 'human') {

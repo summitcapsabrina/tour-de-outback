@@ -31,6 +31,15 @@
   var visitorId = lsGet(LS.vid);
   if (!visitorId) { visitorId = makeId(); lsSet(LS.vid, visitorId); }
 
+  // If the visitor has this site open in two tabs, each loads before the other's
+  // reply has saved a conversation id — the server now reuses their existing
+  // conversation in that case (matched by visitorId), but adopting the id the
+  // moment a sibling tab writes it means this tab's very next message goes to
+  // the same thread instead of relying on the server to catch up.
+  window.addEventListener('storage', function (e) {
+    if (e.key === LS.cid && e.newValue && e.newValue !== state.cid) state.cid = e.newValue;
+  });
+
   var state = {
     cid: lsGet(LS.cid) || '',
     name: lsGet(LS.name) || '',
