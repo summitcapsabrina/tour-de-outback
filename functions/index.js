@@ -1366,6 +1366,28 @@ async function adminFirstName(user) {
   return name ? name.split(/\s+/)[0] : 'Team';
 }
 
+// A visitor with no conversationId (a race between two tabs open at once — each
+// loads before the other's response has saved a conversation id back to
+// localStorage — or a page nav that beat the save) still carries a stable
+// visitorId from localStorage. Before spinning up a second, disconnected
+// conversation nobody else is watching, reuse their most recent still-open one.
+async function findActiveConversationForVisitor(visitorId) {
+  if (!visitorId) return null;
+  try {
+    const snap = await db.collection('conversations').where('visitorId', '==', visitorId).get();
+    let best = null;
+    snap.forEach((doc) => {
+      const d = doc.data();
+      if (d.status === 'resolved') return;
+      const t = d.lastMessageAt && d.lastMessageAt.toDate ? d.lastMessageAt.toDate().getTime() : 0;
+      if (!best || t > best.t) best = { ref: doc.ref, data: d, t: t };
+    });
+    return best;
+  } catch (e) {
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // POST /api/chat  — visitor sends a message; Sabrina answers (open to everyone).
 // body: { conversationId?, message, visitorId, visitorName?, visitorEmail?, pageUrl? }
@@ -1391,24 +1413,38 @@ exports.chat = onRequest(
         if (!convSnap.exists) cid = '';
       }
       if (!cid) {
-        convRef = db.collection('conversations').doc();
-        cid = convRef.id;
-        await convRef.set({
-          status: 'bot',
-          createdAt: now,
-          updatedAt: now,
-          lastMessageAt: now,
-          visitorId: String(body.visitorId || '').slice(0, 80) || null,
-          visitorName: String(body.visitorName || '').slice(0, 120) || null,
-          visitorEmail: String(body.visitorEmail || '').slice(0, 160) || null,
-          userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
-          pageUrl: String(body.pageUrl || '').slice(0, 300) || null,
-          firstMessage: message.slice(0, 300),
-          messageCount: 0,
-          unread: true,
-          adminName: null,
-        });
-        convSnap = await convRef.get();
+        const visitorId = String(body.visitorId || '').slice(0, 80) || null;
+        const existing = await findActiveConversationForVisitor(visitorId);
+        if (existing) {
+          convRef = existing.ref;
+          cid = convRef.id;
+          if (body.visitorName || body.visitorEmail) {
+            await convRef.set({
+              visitorName: String(body.visitorName || existing.data.visitorName || '').slice(0, 120) || null,
+              visitorEmail: String(body.visitorEmail || existing.data.visitorEmail || '').slice(0, 160) || null,
+            }, { merge: true });
+          }
+          convSnap = await convRef.get();
+        } else {
+          convRef = db.collection('conversations').doc();
+          cid = convRef.id;
+          await convRef.set({
+            status: 'bot',
+            createdAt: now,
+            updatedAt: now,
+            lastMessageAt: now,
+            visitorId: visitorId,
+            visitorName: String(body.visitorName || '').slice(0, 120) || null,
+            visitorEmail: String(body.visitorEmail || '').slice(0, 160) || null,
+            userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
+            pageUrl: String(body.pageUrl || '').slice(0, 300) || null,
+            firstMessage: message.slice(0, 300),
+            messageCount: 0,
+            unread: true,
+            adminName: null,
+          });
+          convSnap = await convRef.get();
+        }
       } else if (body.visitorName || body.visitorEmail) {
         await convRef.set({
           visitorName: String(body.visitorName || convSnap.data().visitorName || '').slice(0, 120) || null,
